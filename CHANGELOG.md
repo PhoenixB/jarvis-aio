@@ -1,3 +1,7 @@
+## [7.85.10] — localization catalog completed (Excluded Entities card, floor-plan labels, and more)
+
+Closed the last localization gap: a set of interface strings that had never been added to the translation catalog — so they showed English in every language, French included. Now translated across all 18 languages: the Excluded Entities card and its help text, the floor-plan editor element labels (doors, windows, dormers, "Add Room", zones), the Suggestions tab, and several dropdown placeholders and hints. The catalog is now identical across every language.
+
 ## [7.85.9] — excluded entities are now dropped from voice output too
 
 Excluding an entity now also stops JARVIS from speaking through it. Until now, exclusion covered presence, the observer and learning, but not speaker selection or the final voice-output step — so an excluded media player could still be picked as a room speaker and spoken to. Both now honor your exclusions.
