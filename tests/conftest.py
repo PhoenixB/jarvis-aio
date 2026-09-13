@@ -70,6 +70,9 @@ def _install_ha_stubs() -> None:
     er.async_get = lambda hass: types.SimpleNamespace(
         entities={}, async_get=lambda eid: None)
     dr.async_get = lambda hass: types.SimpleNamespace(devices={})
+    areg = types.ModuleType("homeassistant.helpers.area_registry")
+    areg.async_get = lambda hass: types.SimpleNamespace(
+        areas={}, async_list_areas=lambda: [], async_get_area=lambda aid: None)
     ac = types.ModuleType("homeassistant.helpers.aiohttp_client")
     ac.async_get_clientsession = lambda hass: None
     net = types.ModuleType("homeassistant.helpers.network")
@@ -86,6 +89,7 @@ def _install_ha_stubs() -> None:
     helpers = types.ModuleType("homeassistant.helpers")
     helpers.entity_registry = er
     helpers.device_registry = dr
+    helpers.area_registry = areg
     helpers.aiohttp_client = ac
     helpers.network = net
 
@@ -123,6 +127,7 @@ def _install_ha_stubs() -> None:
         "homeassistant.helpers": helpers,
         "homeassistant.helpers.entity_registry": er,
         "homeassistant.helpers.device_registry": dr,
+        "homeassistant.helpers.area_registry": areg,
         "homeassistant.helpers.aiohttp_client": ac,
         "homeassistant.helpers.network": net,
         "homeassistant.helpers.llm": llm_mod,

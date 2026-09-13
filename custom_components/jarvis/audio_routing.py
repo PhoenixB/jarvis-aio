@@ -124,11 +124,17 @@ def speakers_in_area(hass: HomeAssistant, area_id: str) -> list[str]:
         movie = jarvis_config.get("movie_media_player", "") or ""
     except Exception:
         movie = ""
+    try:
+        from .entity_filter import is_excluded
+    except Exception:
+        is_excluded = lambda _h, _e: False
     out = []
     for e in _entities_by_domain(hass, "media_player"):
         if entity_area(hass, e) != area_id:
             continue
         if e == movie:
+            continue
+        if is_excluded(hass, e):
             continue
         st = hass.states.get(e)
         if st is not None and st.attributes.get("device_class") == "tv":
@@ -175,13 +181,24 @@ def drop_display_targets(hass: HomeAssistant, targets, context: str = "") -> lis
                     break
     except Exception:
         movie = ""
+    try:
+        from .entity_filter import is_excluded
+    except Exception:
+        is_excluded = lambda _h, _e: False
     kept, dropped = [], []
     for t in list(targets or []):
-        (dropped if _is_display_target(hass, t, movie) else kept).append(t)
+        # Drop TVs / the movie player, and anything the user has excluded — the
+        # latter also covers displays that don't self-report device_class 'tv'
+        # (e.g. a second dlna_dmr entity for a TV that the samsungtv entity
+        # already represents).
+        if _is_display_target(hass, t, movie) or is_excluded(hass, t):
+            dropped.append(t)
+        else:
+            kept.append(t)
     if dropped:
         _LOGGER.warning(
-            "JARVIS: refused to send TTS to display target(s) %s (context=%s) — "
-            "a routing path tried to speak through a TV; speaking to %s instead",
+            "JARVIS: refused to send TTS to display/excluded target(s) %s (context=%s) — "
+            "kept %s instead",
             dropped, context or "?", kept or "nothing",
         )
     return kept

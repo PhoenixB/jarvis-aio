@@ -109,3 +109,20 @@ def test_area_command_path_applies_exclusion():
     assert m, "could not isolate _find_entities_in_area"
     body = m.group(1)
     assert "is_excluded" in body, "_find_entities_in_area must filter excluded entities"
+
+
+def test_drop_display_targets_strips_excluded_entity(load):
+    """A display that doesn't report device_class 'tv' (e.g. a dlna_dmr entity for
+    a TV) is still removed from TTS once the user excludes it — issue: DLNA TV
+    entity taking TTS. drop_display_targets must honor excluded_entities."""
+    routing, const = load("audio_routing"), load("const")
+    from fakes import FakeHass
+    h = FakeHass()
+    h.data = {const.DOMAIN: {"e1": {"runtime_config": {
+        "excluded_entities": ["media_player.tv_samsung_7_series_65"]}}}}
+    # neither device_class tv nor movie_media_player — only the exclusion catches it
+    h.states.set("media_player.tv_samsung_7_series_65", "idle")
+    h.states.set("media_player.kitchen_speaker", "idle")
+    kept = routing.drop_display_targets(
+        h, ["media_player.kitchen_speaker", "media_player.tv_samsung_7_series_65"], "obs")
+    assert kept == ["media_player.kitchen_speaker"]

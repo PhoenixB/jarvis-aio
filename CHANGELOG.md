@@ -1,3 +1,9 @@
+## [7.85.9] — excluded entities are now dropped from voice output too
+
+Excluding an entity now also stops JARVIS from speaking through it. Until now, exclusion covered presence, the observer and learning, but not speaker selection or the final voice-output step — so an excluded media player could still be picked as a room speaker and spoken to. Both now honor your exclusions.
+
+This fixes a specific case of unwanted TTS on a TV: when a television is exposed by two integrations at once (e.g. the Samsung TV integration plus a DLNA/DMR entity for the same set), the second entity doesn't report itself as a TV, so JARVIS's automatic TV-skip didn't catch it and tried to speak through it. You can now silence it by adding that entity to Settings → Excluded Entities. (Alternatively, disabling the redundant DLNA/DMR entity in Home Assistant also resolves it, since the Samsung integration already covers the TV.)
+
 ## [7.85.8] — full UI translations for Finnish, Romanian, Turkish, Ukrainian (all languages complete)
 
 The final four languages are now fully translated (302/302): Finnish, Romanian, Turkish, and Ukrainian. With these, all 18 interface languages are complete — Czech, Danish, Dutch, English, Finnish, French, German, Italian, Norwegian Bokmål, Polish, Portuguese, Brazilian Portuguese, Romanian, Russian, Slovak, Spanish, Swedish, Turkish, and Ukrainian all cover the full panel. Set your language in Home Assistant and the JARVIS panel follows it end to end.
