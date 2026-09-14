@@ -23,6 +23,21 @@ def _install_stubs():
         def __init_subclass__(cls, **kw):
             pass
 
+        async def async_set_unique_id(self, unique_id):
+            self._unique_id = unique_id
+
+        def _abort_if_unique_id_configured(self, **kw):
+            pass
+
+        def async_show_form(self, **kw):
+            return {"type": "form", **kw}
+
+        def async_create_entry(self, **kw):
+            return {"type": "create_entry", **kw}
+
+        def async_abort(self, **kw):
+            return {"type": "abort", **kw}
+
     class OptionsFlow:
         def async_show_form(self, **kw):
             return {"type": "form", **kw}
@@ -105,6 +120,39 @@ def test_find_config_missing_file_is_none(config_flow, tmp_path, monkeypatch):
     monkeypatch.setattr(config_flow, "_RUNTIME_CONFIG_PATH",
                         str(tmp_path / "nope.json"))
     assert config_flow._find_config() is None
+
+
+def _user_flow(config_flow, fake_hass, monkeypatch, tmp_path):
+    # No pre-existing runtime config, so async_step_user takes the manual path.
+    monkeypatch.setattr(config_flow, "_RUNTIME_CONFIG_PATH",
+                        str(tmp_path / "nope.json"))
+    flow = config_flow.JarvisConfigFlow()
+    flow.hass = fake_hass
+    return flow
+
+
+async def test_user_step_renders_provider_field(config_flow, fake_hass, monkeypatch, tmp_path):
+    res = await _user_flow(config_flow, fake_hass, monkeypatch, tmp_path).async_step_user(None)
+    assert res["type"] == "form" and res["step_id"] == "user"
+    assert "llm_provider" in res["data_schema"].schema
+
+
+async def test_user_step_honors_explicit_provider_choice(
+    config_flow, fake_hass, monkeypatch, tmp_path, load,
+):
+    llm_provider = load("llm_provider")
+
+    async def _ok(hass, provider, api_key, model, base_url):
+        return None
+    monkeypatch.setattr(llm_provider, "test_connection", _ok)
+
+    flow = _user_flow(config_flow, fake_hass, monkeypatch, tmp_path)
+    res = await flow.async_step_user({
+        "llm_provider": "custom", "llm_base_url": "http://x/v1",
+        "api_key": "", "model": "m", "honorific": "sir",
+    })
+    assert res["type"] == "create_entry"
+    assert res["data"]["llm_provider"] == "custom"
 
 
 def _flow(config_flow, fake_hass):

@@ -5,6 +5,7 @@
         "title": "Configuração do JARVIS",
         "description": "{note}",
         "data": {
+          "llm_provider": "Fornecedor",
           "api_key": "Chave API de LLM na nuvem (ex. Groq)",
           "llm_base_url": "URL base do LLM local — para o Ollama use o anfitrião homeassistant.local, porta 11434, caminho /v1",
           "model": "Modelo de conversação",

@@ -94,17 +94,21 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self.async_step_import(cfg)
 
         # Manual fallback — a cloud API key OR a local LLM endpoint.
+        from .llm_provider import list_providers, test_connection
+
         errors: dict[str, str] = {}
         if user_input is not None:
             api_key = user_input.get(CONF_API_KEY, "").strip()
             base_url = user_input.get("llm_base_url", "").strip()
-            if api_key or base_url:
-                # No cloud key + a local URL ⇒ run a local model (Ollama).
-                provider = "groq" if api_key else "ollama"
+            provider = user_input.get("llm_provider", "groq")
+            # Left at the default with no key but a URL ⇒ still infer Ollama,
+            # so filling in just the URL (the old flow) keeps working.
+            if provider == "groq" and not api_key and base_url:
+                provider = "ollama"
+            if api_key or base_url or provider in ("ollama", "custom"):
                 model = user_input.get(CONF_MODEL, DEFAULT_MODEL)
                 # Validate the endpoint before committing, so a wrong URL or key
                 # fails here instead of installing into a broken state.
-                from .llm_provider import test_connection
                 conn_err = await test_connection(
                     self.hass, provider, api_key, model, base_url or None)
                 if conn_err:
@@ -129,6 +133,10 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
+                vol.Optional("llm_provider", default="groq"):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=list_providers(),
+                        mode=selector.SelectSelectorMode.DROPDOWN)),
                 vol.Optional(CONF_API_KEY, default=""): str,
                 vol.Optional("llm_base_url", default=""): str,
                 vol.Optional(CONF_MODEL, default=DEFAULT_MODEL): str,
@@ -136,10 +144,11 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
             }),
             errors=errors,
             description_placeholders={
-                "note": "Enter a cloud API key (e.g. Groq), OR leave it blank and "
-                        "enter a local LLM URL (e.g. http://homeassistant.local:11434/v1) "
-                        "to run Ollama with no cloud account. Everything else is "
-                        "configured later in the JARVIS panel → Settings.",
+                "note": "Pick a provider, then enter a cloud API key (e.g. Groq), OR "
+                        "leave the key blank and enter a local LLM URL (e.g. "
+                        "http://homeassistant.local:11434/v1) to run Ollama with no "
+                        "cloud account. Everything else is configured later in the "
+                        "JARVIS panel → Settings.",
             },
         )
 

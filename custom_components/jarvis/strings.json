@@ -5,6 +5,7 @@
         "title": "JARVIS Setup",
         "description": "{note}",
         "data": {
+          "llm_provider": "Provider",
           "api_key": "Cloud LLM API key (e.g. Groq)",
           "llm_base_url": "Local LLM base URL — for Ollama use host homeassistant.local, port 11434, path /v1",
           "model": "Conversation model",
