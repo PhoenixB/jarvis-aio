@@ -1,3 +1,12 @@
+## [7.86.0] — place devices on the floor plan + use your real plan as the background
+
+You can now pin Home Assistant devices onto the floor plan and control them there, and use an imported real floor-plan image as the visual background.
+
+- **Devices on the plan.** In Settings → Floor Plan Editor there's a new "Devices on plan" section: add a device, then drag its pin to where it actually is. Each pin shows the device's live state — lights ON/OFF, doors/windows OPEN/SHUT, locks, motion/occupancy, a person's home/away, or a sensor's reading (e.g. a temperature). Tap a pin to open that entity's full Home Assistant controls. Right-click removes it. Pin positions save with the rest of the plan.
+- **Your real floor plan as the background.** Importing a floor-plan image (PNG/SVG/JPG) as a per-floor background already existed; it now has an opacity control, so you can turn your Sweet Home 3D (or any) exported plan from a faint underlay into the prominent background, with the rooms and device pins on top.
+
+Together this gives a real spatial view of the home — your actual layout with live devices placed on it — rather than a room list.
+
 ## [7.85.10] — localization catalog completed (Excluded Entities card, floor-plan labels, and more)
 
 Closed the last localization gap: a set of interface strings that had never been added to the translation catalog — so they showed English in every language, French included. Now translated across all 18 languages: the Excluded Entities card and its help text, the floor-plan editor element labels (doors, windows, dormers, "Add Room", zones), the Suggestions tab, and several dropdown placeholders and hints. The catalog is now identical across every language.

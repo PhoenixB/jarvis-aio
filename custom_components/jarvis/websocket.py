@@ -830,6 +830,8 @@ async def ws_get_panel_data(
                 "floor_plan_units":     str(_runtime_opt(hass, entry, "floor_plan_units", "imperial") or "imperial"),
                 "floor_plan_elements":  _get_runtime_json(hass, entry, "floor_plan_elements", {}),
                 "floor_plan_cameras":   _get_runtime_json(hass, entry, "floor_plan_cameras", {}),
+                "floor_plan_entities":  _get_runtime_json(hass, entry, "floor_plan_entities", {}),
+                "floor_plan_bg_opacity": _runtime_opt(hass, entry, "floor_plan_bg_opacity", ""),
                 "floor_plan_property":  _get_runtime_json(hass, entry, "floor_plan_property", {}),
                 "home_context_max_entities": _int_opt(hass, entry, "home_context_max_entities", 15),
                 "ui_language": _runtime_opt(hass, entry, "ui_language", "auto"),
@@ -1310,6 +1312,8 @@ PANEL_WRITABLE_KEYS = {
     "satellite_pairings",        # JSON dict: {satellite_entity_id: cast_entity_id}
     "announcement_speakers",     # JSON list of cast entity IDs for announcements
     "floor_plan_rooms",          # JSON: floor plan room positions per floor
+    "floor_plan_entities",       # JSON: HA entities pinned to plan coords per floor
+    "floor_plan_bg_opacity",     # 0-1: opacity of the imported floor-plan background image
     "floor_plan_bg",             # JSON: base64 background images per floor
     # Residence model (the 3D house on the Residence tab)
     "residence_style",           # str: home style template (cape_cod, ranch, …)
