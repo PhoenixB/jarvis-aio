@@ -37,6 +37,9 @@ _LOGGER = logging.getLogger(__name__)
 SUPERVISOR = "http://supervisor"
 PIPER_DIR = Path("/share/piper")
 HF_BASE = "https://huggingface.co/jgkawell/jarvis/resolve/main/en/en_GB/jarvis"
+HF_ROOT = "https://huggingface.co/jgkawell/jarvis/resolve/main"
+# Canonical Piper voices repo — always hosts en_GB-jarvis high + medium.
+PIPER_VOICES_BASE = "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/jarvis"
 MIN_ONNX_SIZE = 1_000_000  # smaller ⇒ corrupt download
 MARKER_PATH = Path("/config/jarvis/.bootstrap_done")
 
@@ -162,6 +165,12 @@ async def _try_quality(hass: HomeAssistant, quality: str) -> bool:
          f"{HF_BASE}/{quality}/jarvis-{quality}.onnx.json"),
         (f"{HF_BASE}/{quality}/en_GB-jarvis-{quality}.onnx",
          f"{HF_BASE}/{quality}/en_GB-jarvis-{quality}.onnx.json"),
+        # Canonical Piper voices repo — reliably hosts both qualities.
+        (f"{PIPER_VOICES_BASE}/{quality}/en_GB-jarvis-{quality}.onnx",
+         f"{PIPER_VOICES_BASE}/{quality}/en_GB-jarvis-{quality}.onnx.json"),
+        # jgkawell repo-root layout (used by some community setups).
+        (f"{HF_ROOT}/en_GB-jarvis-{quality}.onnx",
+         f"{HF_ROOT}/en_GB-jarvis-{quality}.onnx.json"),
     ]
     for onnx_url, json_url in candidates:
         if await _download_file(hass, onnx_url, onnx) > MIN_ONNX_SIZE:
@@ -171,22 +180,32 @@ async def _try_quality(hass: HomeAssistant, quality: str) -> bool:
     return False
 
 
-async def _download_voice(hass: HomeAssistant, quality: str) -> bool:
+async def _download_voice(hass: HomeAssistant, quality: str) -> str | None:
+    """Ensure a JARVIS voice is on disk. Returns the quality actually available
+    ('high'/'medium') or None. Prefers the requested quality (present or freshly
+    downloaded) and only falls back to the other, so the caller can point the
+    pipeline at the voice that is really on disk — otherwise the pipeline can name
+    en_GB-jarvis-high while only medium exists and TTS fails with VoiceNotFound.
+    """
     await hass.async_add_executor_job(lambda: PIPER_DIR.mkdir(parents=True, exist_ok=True))
-    for q in ("high", "medium"):
-        if await hass.async_add_executor_job(_voice_present, q):
-            _LOGGER.info("JARVIS bootstrap: voice en_GB-jarvis-%s already present", q)
-            return True
+    other = "medium" if quality == "high" else "high"
+    if await hass.async_add_executor_job(_voice_present, quality):
+        _LOGGER.info("JARVIS bootstrap: voice en_GB-jarvis-%s already present", quality)
+        return quality
     if await _try_quality(hass, quality):
-        return True
-    if quality == "high" and await _try_quality(hass, "medium"):
-        _LOGGER.info("JARVIS bootstrap: fell back to medium voice (high not hosted)")
-        return True
+        return quality
+    if await hass.async_add_executor_job(_voice_present, other):
+        _LOGGER.info("JARVIS bootstrap: '%s' unavailable; using already-present '%s'", quality, other)
+        return other
+    if await _try_quality(hass, other):
+        _LOGGER.info("JARVIS bootstrap: '%s' not hosted; installed '%s' instead", quality, other)
+        return other
     _LOGGER.warning(
-        "JARVIS bootstrap: voice download failed. Manual: "
-        "https://huggingface.co/jgkawell/jarvis/tree/main/en/en_GB/jarvis/%s "
-        "→ copy both files to %s/", quality, PIPER_DIR)
-    return False
+        "JARVIS bootstrap: voice download failed. Manual: download "
+        "en_GB-jarvis-%s.onnx and en_GB-jarvis-%s.onnx.json from "
+        "https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_GB/jarvis/%s "
+        "→ copy both into %s/ and restart Piper.", quality, quality, quality, PIPER_DIR)
+    return None
 
 
 # ── HA-side steps (in-process) ───────────────────────────────────────────────
@@ -281,23 +300,35 @@ async def _create_pipeline(hass: HomeAssistant, voice_quality: str) -> bool:
             existing = None
         if existing is not None:
             # A JARVIS pipeline exists — ensure its CONVERSATION AGENT is JARVIS's
-            # own entity. async_create_default_pipeline (and manual setups) leave
-            # the agent on HA's default (or an LLM integration), and then JARVIS's
-            # reply routing — delivering the reply to the paired room/Cast speaker
-            # — never runs, because the turn is handled by the wrong agent. Repair
-            # it in place rather than leaving it as-is.
+            # own entity (async_create_default_pipeline / manual setups leave it on
+            # HA's default, so JARVIS's reply routing never runs), and repair a
+            # JARVIS voice that points at a MISSING file — e.g. tts_voice is
+            # en_GB-jarvis-high while only medium is on disk, which is exactly the
+            # VoiceNotFoundError / no-speech case. Only touch a jarvis-* voice whose
+            # file is absent, so a deliberate voice choice is never clobbered.
             try:
+                updates = {}
                 if getattr(existing, "conversation_engine", None) != agent:
-                    await assist_pipeline.async_update_pipeline(
-                        hass, existing, conversation_engine=agent)
-                    _LOGGER.info(
-                        "JARVIS bootstrap: pointed pipeline '%s' conversation agent at %s",
-                        getattr(existing, "name", "?"), agent)
+                    updates["conversation_engine"] = agent
+                cur_voice = (getattr(existing, "tts_voice", "") or "")
+                if cur_voice.startswith("en_GB-jarvis-") and cur_voice != tts_voice:
+                    cur_q = cur_voice.rsplit("-", 1)[-1]
+                    cur_ok = await hass.async_add_executor_job(_voice_present, cur_q)
+                    want_ok = await hass.async_add_executor_job(_voice_present, voice_quality)
+                    if not cur_ok and want_ok:
+                        updates["tts_voice"] = tts_voice
+                        _LOGGER.info(
+                            "JARVIS bootstrap: pipeline voice '%s' is missing on disk; "
+                            "repointing to installed '%s'", cur_voice, tts_voice)
+                if updates:
+                    await assist_pipeline.async_update_pipeline(hass, existing, **updates)
+                    _LOGGER.info("JARVIS bootstrap: updated pipeline '%s' (%s)",
+                                 getattr(existing, "name", "?"), ", ".join(updates))
                 else:
-                    _LOGGER.info("JARVIS bootstrap: JARVIS pipeline already uses %s", agent)
+                    _LOGGER.info("JARVIS bootstrap: JARVIS pipeline already correct (agent=%s)", agent)
             except Exception as exc:
                 _LOGGER.warning(
-                    "JARVIS bootstrap: couldn't set pipeline conversation agent: %s", exc)
+                    "JARVIS bootstrap: couldn't update existing pipeline: %s", exc)
             return True
 
         pipeline = await assist_pipeline.async_create_default_pipeline(
@@ -306,15 +337,22 @@ async def _create_pipeline(hass: HomeAssistant, voice_quality: str) -> bool:
             _LOGGER.warning("JARVIS bootstrap: default pipeline creation returned nothing")
             _manual_pipeline_hint(voice_quality)
             return False
-        # async_create_default_pipeline uses HA's default conversation agent — set
-        # it to JARVIS's entity so JARVIS handles the turn and its reply routing runs.
+        # async_create_default_pipeline uses HA's default conversation agent and a
+        # default voice — set JARVIS's agent AND the installed JARVIS voice so the
+        # turn is handled by JARVIS and speaks in its own voice. tts_voice can be
+        # rejected on some HA versions, so fall back to agent-only.
         try:
             await assist_pipeline.async_update_pipeline(
-                hass, pipeline, conversation_engine=agent)
+                hass, pipeline, conversation_engine=agent, tts_voice=tts_voice)
         except Exception as exc:
+            try:
+                await assist_pipeline.async_update_pipeline(
+                    hass, pipeline, conversation_engine=agent)
+            except Exception:
+                pass
             _LOGGER.warning(
-                "JARVIS bootstrap: created pipeline but couldn't set agent to %s: %s",
-                agent, exc)
+                "JARVIS bootstrap: created pipeline; agent set but voice '%s' not applied "
+                "(%s) — select it under Voice assistants if needed", tts_voice, exc)
         _LOGGER.info("JARVIS bootstrap: created JARVIS pipeline (agent=%s stt=%s tts=%s/%s)",
                      agent, stt, tts, tts_voice)
         return True
@@ -394,8 +432,10 @@ async def async_run_bootstrap(hass: HomeAssistant, *, force: bool = False) -> di
 
     # Phase 2 — voice model
     if tts_provider == "piper_jarvis":
-        status["voice_ok"] = await _download_voice(hass, voice_quality)
+        installed_voice_q = await _download_voice(hass, voice_quality)
+        status["voice_ok"] = installed_voice_q is not None
     else:
+        installed_voice_q = voice_quality
         status["voice_ok"] = True
 
     # Phase 3 — restart Piper to rescan the voice
@@ -415,7 +455,7 @@ async def async_run_bootstrap(hass: HomeAssistant, *, force: bool = False) -> di
     if auto_pipeline:
         agent = await _wait_for_agent(hass)
         if agent:
-            status["pipeline_ok"] = await _create_pipeline(hass, voice_quality)
+            status["pipeline_ok"] = await _create_pipeline(hass, installed_voice_q or voice_quality)
         else:
             _LOGGER.warning("JARVIS bootstrap: conversation agent didn't register in time")
             _manual_pipeline_hint(voice_quality)
