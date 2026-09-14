@@ -149,7 +149,7 @@ _FILLER = {
 }
 
 
-def _is_addressed_to_jarvis(text: str) -> bool:
+def _is_addressed_to_jarvis(text: str, strict: bool = False) -> bool:
     """
     Relevance gate: does this utterance look like it's actually addressed to
     JARVIS (a command or question), versus ambient speech a satellite happened
@@ -161,6 +161,10 @@ def _is_addressed_to_jarvis(text: str) -> bool:
     those signals and clearly reads as filler or a stray fragment. The PRIMARY
     defense against TV noise is wake-word gating on the satellite; this is a
     backstop for whatever slips through. Returns True = process, False = ignore.
+
+    ``strict`` tightens the default: when media is playing near the satellite
+    (so ambient speech is almost certainly the TV/movie), input that carried no
+    positive signal is REJECTED rather than passed.
     """
     t = (text or "").strip().lower()
     if not t:
@@ -187,9 +191,11 @@ def _is_addressed_to_jarvis(text: str) -> bool:
     if sentence_breaks >= 2 and len(words) >= 8:
         return False
 
-    # Default: PASS. Better to occasionally answer ambient speech than to drop
-    # a real request — wake-word gating is the real filter.
-    return True
+    # Default: PASS in a quiet room (better to occasionally answer ambient
+    # speech than to drop a real request). But when media is playing nearby
+    # (strict), the ambient source is almost certainly the TV/movie, so anything
+    # that reached here without a positive signal is dropped.
+    return not strict
 
 
 def _is_connectivity_failure(text: str) -> bool:
@@ -395,6 +401,35 @@ class JarvisAgent(conversation.ConversationEntity):
             room_routing=bool(self._opt(CONF_ROOM_ROUTING, DEFAULT_ROOM_ROUTING)),
             satellite_pairings=sat_pairings,
         )
+
+    def _media_playing_near(self, device_id: str | None) -> bool:
+        """True if media is actively playing near this satellite — the designated
+        movie player (TV) anywhere, or any media_player in the satellite's own
+        area. Used to tighten the relevance gate and pause continued-conversation
+        follow-ups during media, so TV/movie dialogue isn't answered as a command.
+        """
+        hass = self.hass
+        try:
+            movie = self._rt_opt("movie_media_player", "") or ""
+            if movie:
+                st = hass.states.get(movie)
+                if st is not None and str(st.state).lower() == "playing":
+                    return True
+            if not device_id:
+                return False
+            from . import audio_routing, continued_conversation as _cc
+            sat = _cc.satellite_for_device(hass, device_id)
+            area = audio_routing.entity_area(hass, sat) if sat else None
+            if area:
+                for e in audio_routing._entities_by_domain(hass, "media_player"):
+                    if audio_routing.entity_area(hass, e) != area:
+                        continue
+                    st = hass.states.get(e)
+                    if st is not None and str(st.state).lower() == "playing":
+                        return True
+        except Exception:
+            pass
+        return False
 
     def _satellite_speaker(self, device_id: str) -> str | None:
         """
@@ -903,9 +938,10 @@ class JarvisAgent(conversation.ConversationEntity):
         # to JARVIS (filler, fragments, rambling dialogue) BEFORE it reaches the
         # local engine or the agent — staying silent rather than acting on, or
         # chattering back at, ambient noise. Toggle off via `relevance_gate`.
-        if self._opt("relevance_gate", True) and not _is_addressed_to_jarvis(user_input.text):
-            jarvis_log("GATE", f"ignored ambient input: '{user_input.text.strip()[:60]}'")
-            _LOGGER.info("JARVIS relevance gate: ignored '%s'", user_input.text.strip()[:80])
+        _media_near = self._media_playing_near(device_id)
+        if self._opt("relevance_gate", True) and not _is_addressed_to_jarvis(user_input.text, strict=_media_near):
+            jarvis_log("GATE", f"ignored ambient input{' (media playing)' if _media_near else ''}: '{user_input.text.strip()[:60]}'")
+            _LOGGER.info("JARVIS relevance gate: ignored '%s' (media_near=%s)", user_input.text.strip()[:80], _media_near)
             ir = intent.IntentResponse(language=user_input.language)
             ir.async_set_speech("")  # silence — do not respond to ambient speech
             return conversation.ConversationResult(response=ir, conversation_id=cid)
@@ -1201,7 +1237,8 @@ class JarvisAgent(conversation.ConversationEntity):
         # older HA cores may not carry the field.
         try:
             from . import continued_conversation as _cc
-            if _cc.enabled() and _cc.should_continue(response_text):
+            if (_cc.enabled() and _cc.should_continue(response_text)
+                    and not self._media_playing_near(reopen_device)):
                 sat_ent = (_cc.satellite_for_device(self.hass, reopen_device)
                            if reopen_device else None)
                 if (cast_routed and reopen_speaker and sat_ent

@@ -59,3 +59,52 @@ def test_context_includes_household_temperature_unit():
         "conversation context must read HA's configured temperature unit"
     assert "temperatures in" in src, \
         "context must instruct the model which temperature unit to use"
+
+
+import re as _re
+
+
+def _load_gate_fn():
+    """Exec _is_addressed_to_jarvis + its constant deps in isolation (the entity
+    needs a live HA stack, so the module can't be imported wholesale)."""
+    import ast, types
+    src = SRC.read_text()
+    tree = ast.parse(src)
+    mod = types.ModuleType("conv_gate_stub")
+    want_fns = {"_is_addressed_to_jarvis"}
+    want_assign = {"_COMMAND_VERBS", "_QUESTION_STARTS", "_DOMAIN_KEYWORDS", "_FILLER"}
+    for n in tree.body:
+        seg = None
+        if isinstance(n, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id in want_assign for t in n.targets):
+            seg = ast.get_source_segment(src, n)
+        elif isinstance(n, ast.FunctionDef) and n.name in want_fns:
+            seg = ast.get_source_segment(src, n)
+        if seg is not None:
+            exec(compile(seg, "<conv_gate>", "exec"), mod.__dict__)
+    return mod.__dict__["_is_addressed_to_jarvis"]
+
+
+def test_relevance_gate_strict_drops_ambient_during_media():
+    g = _load_gate_fn()
+    # Real commands pass whether or not media is playing.
+    for cmd in ["turn on the lights", "what's the temperature", "jarvis status", "lock the front door"]:
+        assert g(cmd, strict=False) is True, cmd
+        assert g(cmd, strict=True) is True, cmd
+    # TV/movie dialogue fragments: still pass in a quiet room (lenient default,
+    # unchanged), but are DROPPED when media is playing nearby.
+    for frag in ["um sergeant", "Thank you.",
+                 "than you're paid for and they're often knowing that you're"]:
+        assert g(frag, strict=False) is True, frag       # lenient default unchanged
+        assert g(frag, strict=True) is False, frag        # media playing → dropped
+
+
+def test_gate_and_followups_are_media_aware():
+    src = SRC.read_text()
+    assert "_media_playing_near(device_id)" in src, "gate must check media state"
+    assert "_is_addressed_to_jarvis(user_input.text, strict=" in src, "gate must pass strict"
+    assert "not self._media_playing_near(reopen_device)" in src, \
+        "continued-conversation reopen must be suppressed during media"
+    m = _re.search(r"def _media_playing_near\(.*?\n(.*?)\n\n    def ", src, _re.S)
+    assert m and "movie_media_player" in m.group(1) and "entity_area" in m.group(1), \
+        "media detector must check the movie player + the satellite's area"

@@ -1,3 +1,7 @@
+## [7.86.1] — stop answering TV/media audio as if it were commands
+
+When media is playing, JARVIS no longer treats ambient dialogue as commands. If your designated TV/movie player is playing, or any media player in a satellite's own area is playing, the relevance gate tightens: only input carrying a clear signal (the wake word, a command verb, a question, or a device name) is acted on — stray TV/movie dialogue is dropped instead of being answered. Continued-conversation follow-ups are also paused while media plays, so the microphone isn't reopened into the soundtrack. In a quiet room, behaviour is unchanged. Note: the primary defence against this is still wake-word gating on the satellites themselves — if a satellite transcribes ambient audio at all, make sure it requires the wake word rather than listening continuously.
+
 ## [7.86.0] — place devices on the floor plan + use your real plan as the background
 
 You can now pin Home Assistant devices onto the floor plan and control them there, and use an imported real floor-plan image as the visual background.
