@@ -117,7 +117,7 @@ async def test_step_init_renders_menu(config_flow, fake_hass):
     # init is now a landing menu (not a form) — jump to any section directly
     res = await _flow(config_flow, fake_hass).async_step_init(None)
     assert res["type"] == "menu" and res["step_id"] == "init"
-    assert set(res["menu_options"]) == {"core", "routing", "observer", "identity", "email"}
+    assert set(res["menu_options"]) == {"llm", "core", "routing", "observer", "identity", "email"}
 
 
 async def test_step_core_renders_fields(config_flow, fake_hass):
@@ -159,4 +159,33 @@ async def test_section_saves_independently(config_flow, fake_hass):
     assert res["type"] == "create_entry"
     # only the submitted keys are carried in _data (other sections untouched)
     assert flow._data == {"honorific": "boss", "model": "x"}
+
+
+async def test_step_llm_renders_fields(config_flow, fake_hass):
+    res = await _flow(config_flow, fake_hass).async_step_llm(None)
+    assert res["type"] == "form" and res["step_id"] == "llm"
+    assert len(res["data_schema"].schema) == 4   # api_key, provider, base_url, model
+
+
+async def test_step_llm_saves_new_api_key_after_validating(config_flow, fake_hass, monkeypatch, load):
+    llm_provider = load("llm_provider")
+
+    async def _ok(hass, provider, api_key, model, base_url):
+        return None
+    monkeypatch.setattr(llm_provider, "test_connection", _ok)
+    flow = _flow(config_flow, fake_hass)
+    res = await flow.async_step_llm({"api_key": "gsk_new", "llm_provider": "groq", "model": "x"})
+    assert res["type"] == "create_entry"
+    assert flow._data["api_key"] == "gsk_new"
+
+
+async def test_step_llm_shows_error_on_bad_key(config_flow, fake_hass, monkeypatch, load):
+    llm_provider = load("llm_provider")
+
+    async def _bad(hass, provider, api_key, model, base_url):
+        return "invalid_auth"
+    monkeypatch.setattr(llm_provider, "test_connection", _bad)
+    flow = _flow(config_flow, fake_hass)
+    res = await flow.async_step_llm({"api_key": "wrong", "llm_provider": "groq", "model": "x"})
+    assert res["type"] == "form" and res["errors"]["base"] == "invalid_auth"
 

@@ -28,11 +28,22 @@
       "init": {
         "title": "JARVIS — Konfigurieren",
         "menu_options": {
+          "llm": "LLM — API-Schlüssel / lokalen Endpunkt ändern",
           "core": "Kern — Persona, Direktive, Konversationsmodell",
           "routing": "Routing — Schlafzimmerbereiche, Broadcast-Gruppe, Benachrichtigungsdienst",
           "observer": "Beobachter — proaktive Wahrnehmung (benötigt einen Gemini-Schlüssel)",
           "identity": "Identität — Erkennung pro Person",
           "email": "E-Mail — schreibgeschützter Posteingang (Passwort über secrets.yaml)"
+        }
+      },
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "data": {
+          "api_key": "Cloud-LLM-API-Schlüssel (z. B. Groq)",
+          "llm_provider": "Anbieter",
+          "llm_base_url": "Basis-URL des lokalen LLM — für Ollama Host homeassistant.local, Port 11434, Pfad /v1",
+          "model": "Konversationsmodell"
         }
       },
       "core": {
@@ -102,6 +113,12 @@
           "imap_secret_key": "secrets.yaml-Schlüssel mit dem Passwort"
         }
       }
+    },
+    "error": {
+      "need_llm": "Gib entweder einen Cloud-API-Schlüssel oder eine lokale LLM-URL ein.",
+      "cannot_connect": "LLM nicht erreichbar. Prüfe, ob die URL/der Endpunkt korrekt ist und der Server (z. B. Ollama) läuft.",
+      "invalid_auth": "Der API-Schlüssel wurde abgelehnt. Prüfe den Schlüssel und versuche es erneut.",
+      "unknown": "LLM-Verbindung konnte nicht überprüft werden. Prüfe die Einstellungen und versuche es erneut."
     }
   },
   "issues": {

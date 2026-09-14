@@ -28,11 +28,22 @@
       "init": {
         "title": "JARVIS — Configurar",
         "menu_options": {
+          "llm": "LLM — alterar chave de API / endpoint local",
           "core": "Núcleo — persona, diretiva, modelo de conversação",
           "routing": "Encaminhamento — áreas de quarto, grupo de difusão, serviço de notificação",
           "observer": "Observador — perceção proativa (precisa de uma chave Gemini)",
           "identity": "Identidade — reconhecimento por pessoa",
           "email": "Email — caixa de entrada só de leitura (palavra-passe via secrets.yaml)"
+        }
+      },
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "data": {
+          "api_key": "Chave API de LLM na nuvem (ex. Groq)",
+          "llm_provider": "Fornecedor",
+          "llm_base_url": "URL base do LLM local — para o Ollama use o anfitrião homeassistant.local, porta 11434, caminho /v1",
+          "model": "Modelo de conversação"
         }
       },
       "core": {
@@ -101,8 +112,12 @@
           "imap_ssl": "Usar SSL (recomendado)",
           "imap_secret_key": "Chave do secrets.yaml que contém a palavra-passe"
         }
-      }
-    }
+      }    },
+    "error": {
+      "need_llm": "Introduza uma chave API na nuvem ou um URL de LLM local.",
+      "cannot_connect": "Não foi possível contactar o LLM. Verifique se o URL/endpoint está correto e se o servidor (ex. Ollama) está em execução.",
+      "invalid_auth": "A chave API foi rejeitada. Verifique a chave e tente novamente.",
+      "unknown": "Não foi possível validar a ligação ao LLM. Verifique as definições e tente novamente."    }
   },
   "issues": {
     "llm_unavailable": {

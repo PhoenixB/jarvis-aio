@@ -28,11 +28,22 @@
       "init": {
         "title": "JARVIS — Configure",
         "menu_options": {
+          "llm": "LLM — change API key / local endpoint",
           "core": "Core — persona, directive, conversation model",
           "routing": "Routing — bedroom areas, broadcast group, notify service",
           "observer": "Observer — proactive awareness (needs a Gemini key)",
           "identity": "Identity — per-person recognition",
           "email": "Email — read-only inbox (password via secrets.yaml)"
+        }
+      },
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "data": {
+          "api_key": "Cloud LLM API key (e.g. Groq)",
+          "llm_provider": "Provider",
+          "llm_base_url": "Local LLM base URL — for Ollama use host homeassistant.local, port 11434, path /v1",
+          "model": "Conversation model"
         }
       },
       "core": {
@@ -102,6 +113,12 @@
           "imap_secret_key": "secrets.yaml key holding the password"
         }
       }
+    },
+    "error": {
+      "need_llm": "Enter either a cloud API key or a local LLM URL.",
+      "cannot_connect": "Couldn't reach the LLM. Check the URL/endpoint is correct and the server (e.g. Ollama) is running.",
+      "invalid_auth": "The API key was rejected. Check the key and try again.",
+      "unknown": "Couldn't validate the LLM connection. Check the settings and try again."
     }
   },
   "issues": {

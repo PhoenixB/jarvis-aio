@@ -228,7 +228,58 @@ class JarvisOptionsFlow(OptionsFlow):
         """Landing menu — jump to any section directly."""
         return self.async_show_menu(
             step_id="init",
-            menu_options=["core", "routing", "observer", "identity", "email"],
+            menu_options=["llm", "core", "routing", "observer", "identity", "email"],
+        )
+
+    async def async_step_llm(self, user_input: dict[str, Any] | None = None) -> dict:
+        """LLM — change the cloud API key / local endpoint entered at setup.
+
+        This is the only section that needs live validation before saving:
+        a bad key or endpoint here breaks every conversation, so it's tested
+        the same way as the initial setup step before being written."""
+        from .llm_provider import test_connection, list_providers
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            api_key = user_input.get(CONF_API_KEY, "").strip()
+            base_url = user_input.get("llm_base_url", "").strip()
+            provider = user_input.get("llm_provider", "groq")
+            model = user_input.get(CONF_MODEL, DEFAULT_MODEL)
+            if not api_key and provider not in ("ollama", "custom") and not base_url:
+                errors["base"] = "need_llm"
+            else:
+                conn_err = await test_connection(
+                    self.hass, provider, api_key, model, base_url or None)
+                if conn_err:
+                    errors["base"] = conn_err
+                else:
+                    return await self._save_section({
+                        CONF_API_KEY: api_key,
+                        "llm_base_url": base_url,
+                        "llm_provider": provider,
+                        CONF_MODEL: model,
+                    })
+        schema = vol.Schema({
+            vol.Optional(CONF_API_KEY, description=self._sv(CONF_API_KEY, "")):
+                selector.TextSelector(selector.TextSelectorConfig(
+                    type=selector.TextSelectorType.PASSWORD)),
+            vol.Optional("llm_provider", description=self._sv("llm_provider", "groq")):
+                selector.SelectSelector(selector.SelectSelectorConfig(
+                    options=list_providers(),
+                    mode=selector.SelectSelectorMode.DROPDOWN)),
+            vol.Optional("llm_base_url", description=self._sv("llm_base_url", "")):
+                selector.TextSelector(),
+            vol.Optional(CONF_MODEL, description=self._sv(CONF_MODEL, DEFAULT_MODEL)):
+                selector.TextSelector(),
+        })
+        return self.async_show_form(
+            step_id="llm",
+            data_schema=schema,
+            errors=errors,
+            description_placeholders={
+                "note": "Enter a cloud API key (e.g. Groq) to rotate/change it, OR "
+                        "leave it blank and set a local LLM URL to run Ollama instead.",
+            },
         )
 
     async def async_step_core(self, user_input: dict[str, Any] | None = None) -> dict:
