@@ -204,8 +204,8 @@ async def async_announce(
     try:
         from .audio_routing import drop_display_targets
         speakers = drop_display_targets(hass, speakers, context)
-    except Exception:
-        pass
+    except Exception as exc:
+        _LOGGER.warning("JARVIS: display-target filter failed (TTS may reach a screen): %s", exc)
     if not speakers:
         return False
 

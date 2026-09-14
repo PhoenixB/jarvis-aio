@@ -1474,8 +1474,8 @@ async def _exec_bulk_control(hass: HomeAssistant, args: dict) -> str:
                     continue
                 await hass.services.async_call(sd, sn, {"entity_id": eid}, blocking=False)
                 success += 1
-        except Exception:
-            pass
+        except Exception as exc:
+            _LOGGER.warning("JARVIS: bulk device control failed: %s", exc)
 
     result = {
         "success": True,

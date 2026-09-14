@@ -499,8 +499,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                             "then restart."),
                         "notification_id": "jarvis_config_corrupt",
                     }, blocking=False)
-            except Exception:
-                pass
+            except Exception as exc:
+                _LOGGER.warning("JARVIS: could not raise config-corruption notice: %s", exc)
         restore_keys = set(PANEL_WRITABLE_KEYS) | {
             "broadcast_group", "observer_quiet_start",
             "observer_quiet_end", "bedroom_areas",

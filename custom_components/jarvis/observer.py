@@ -837,8 +837,8 @@ async def _speak(message: str, *, targets: list[str]) -> None:
     try:
         from .audio_routing import drop_display_targets
         targets = drop_display_targets(hass, targets, "observer")
-    except Exception:
-        pass
+    except Exception as exc:
+        _LOGGER.warning("JARVIS: display-target filter failed (observer TTS may reach a screen): %s", exc)
     if not targets:
         return
     _LOGGER.info("Observer speaking → %s: %s", targets, message)

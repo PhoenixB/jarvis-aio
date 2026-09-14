@@ -1113,8 +1113,8 @@ async def _announce_done(sensor: _SensorState, appliance_label: str) -> None:
                             {"message": message, "title": "JARVIS"},
                             blocking=False,
                         )
-                except Exception:
-                    pass
+                except Exception as exc:
+                    _LOGGER.warning("JARVIS: appliance notification via '%s' failed: %s", notify_svc, exc)
             return
 
         # Speak

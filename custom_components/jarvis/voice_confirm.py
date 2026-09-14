@@ -302,8 +302,8 @@ async def _start_listening(hass, satellite: str) -> bool:
             blocking=False,
         )
         return True
-    except Exception:
-        pass
+    except Exception as exc:
+        _LOGGER.debug("JARVIS: voice-confirm satellite prompt failed, trying ESPHome fallback: %s", exc)
     # ESPHome fallback: user maps satellite → esphome start action entity
     esph = _cfg(hass, "satellite_start_action", {})
     if isinstance(esph, dict) and satellite in esph:

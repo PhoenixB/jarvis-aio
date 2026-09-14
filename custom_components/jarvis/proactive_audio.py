@@ -255,8 +255,8 @@ async def _speak_tts(
     try:
         from .audio_routing import drop_display_targets
         targets = drop_display_targets(hass, targets, "proactive_audio")
-    except Exception:
-        pass
+    except Exception as exc:
+        _LOGGER.warning("JARVIS: display-target filter failed (proactive TTS may reach a screen): %s", exc)
     if not targets:
         return
     payload = {

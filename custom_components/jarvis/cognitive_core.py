@@ -2940,8 +2940,8 @@ async def _notify_all_devices(hass, config, message, action_type, snapshot_url=N
                 {"message": message, "title": title,
                  "notification_id": "jarvis_intrusion"},
                 blocking=False)
-        except Exception:
-            pass
+        except Exception as exc:
+            _LOGGER.warning("JARVIS: intrusion notification failed to post: %s", exc)
 
 
 async def _execute_action_data(hass, action_data: dict) -> bool:

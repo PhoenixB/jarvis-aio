@@ -881,22 +881,22 @@ async def try_local(hass, text, honorific="sir", force=False):
             try:
                 await hass.services.async_call(dtype, "turn_on", {"entity_id": eid}, blocking=True)
                 return LocalResult(text=f"Goodnight, {honorific}. {fname} activated. Rest well.", success=True)
-            except Exception:
-                pass
+            except Exception as exc:
+                _LOGGER.warning("JARVIS: goodnight scene/script '%s' failed to run: %s", eid, exc)
         off_count = 0
         for s in hass.states.async_all("light"):
             if s.state == "on":
                 try:
                     await hass.services.async_call("light", "turn_off", {"entity_id": s.entity_id}, blocking=False)
                     off_count += 1
-                except Exception:
-                    pass
+                except Exception as exc:
+                    _LOGGER.debug("JARVIS: goodnight could not turn off %s: %s", s.entity_id, exc)
         for s in hass.states.async_all("lock"):
             if s.state == "unlocked":
                 try:
                     await hass.services.async_call("lock", "lock", {"entity_id": s.entity_id}, blocking=False)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    _LOGGER.warning("JARVIS: goodnight could not lock %s: %s", s.entity_id, exc)
         return LocalResult(text=f"Goodnight, {honorific}. {off_count} lights off, all locks secured. Rest well.", success=True)
 
     # Single-entity patterns
