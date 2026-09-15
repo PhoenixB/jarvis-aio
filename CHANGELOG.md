@@ -1,3 +1,9 @@
+## [7.89.0] — Driving mode: alerts follow you to the car screen (Android Auto)
+
+When your phone is connected to the car over Android Auto, JARVIS can send its proactive heads-ups to the car screen instead of speaking them to an empty house. This is especially useful for leave-now reminders: a departure alert that used to be announced to your living room while you were already in the driveway now shows up on the car display where you'll actually see it.
+
+You choose which alerts follow you to the car — departure and travel-time reminders, proactive briefings, and security/hazard alerts — each with its own toggle, and you can optionally keep the home speakers silent for those alerts while you're driving. Set it all up under Settings → Anticipation & Memory. JARVIS auto-detects the Home Assistant companion app's Android Auto connection sensor, or you can point it at a specific sensor. Driving mode is off until you turn it on, and when it's off nothing about your existing alerts changes.
+
 ## [7.88.0] — Setup dialog localized in 14 more languages
 
 The Home Assistant setup and configuration dialogs (config/options flow — the screens where you enter your LLM key, pick models, and configure routing, observer, identity, and email) are now translated into 14 additional languages, bringing the dialog to full parity with the in-panel HUD. Added: Czech, Danish, Finnish, Norwegian Bokmål, Polish, Romanian, Russian, Slovak, Swedish, Turkish, Ukrainian, Brazilian Portuguese, Simplified Chinese, and Traditional Chinese. That's 20 languages now covering both the panel and the setup dialog. Placeholders and technical tokens (entity IDs, model names, hosts, ports, secrets.yaml keys) are preserved, and anything still untranslated falls back to English.
