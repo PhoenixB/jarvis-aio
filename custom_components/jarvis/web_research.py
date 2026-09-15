@@ -80,7 +80,10 @@ async def _duckduckgo(hass, q: str) -> dict:
         _DDG_ENDPOINT, params=params,
         timeout=aiohttp.ClientTimeout(total=_TIMEOUT),
     ) as resp:
-        if resp.status != 200:
+        # DDG (or a CDN/cache in front of it) sometimes answers 202 Accepted
+        # with a perfectly good body rather than 200 — only a real error status
+        # should give up without even reading it.
+        if resp.status not in (200, 202):
             return {"query": q, "error": f"search returned HTTP {resp.status}"}
         data = await resp.json(content_type=None)
 
@@ -132,7 +135,8 @@ async def _searxng(hass, q: str) -> dict:
         f"{base}/search", params=params,
         timeout=aiohttp.ClientTimeout(total=_TIMEOUT),
     ) as resp:
-        if resp.status != 200:
+        # Same 202-with-a-real-body allowance as the DuckDuckGo path above.
+        if resp.status not in (200, 202):
             return {"query": q, "error": f"searxng returned HTTP {resp.status}"}
         data = await resp.json(content_type=None)
     return _shape_searxng(q, data)

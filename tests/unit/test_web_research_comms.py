@@ -2,13 +2,19 @@
 paths need live egress this harness lacks, so we test the PURE shapers
 (_shape_ddg / _shape_searxng) and the pure conflict analysis exhaustively —
 those hold the actual logic; the fetch wrappers are thin."""
+import sys
+import types
 from datetime import datetime, timedelta
 
 import pytest
 
 
 @pytest.fixture
-def wr(load):
+def wr(load, monkeypatch):
+    if "aiohttp" not in sys.modules:
+        fake_aiohttp = types.ModuleType("aiohttp")
+        fake_aiohttp.ClientTimeout = lambda **k: None
+        monkeypatch.setitem(sys.modules, "aiohttp", fake_aiohttp)
     return load("web_research")
 
 
@@ -86,6 +92,69 @@ def test_new_agent_tools_registered(load):
     assert {"web_research", "calendar_agenda"} <= names
     assert "web_research" in agent._TOOL_MAP
     assert "calendar_agenda" in agent._TOOL_MAP
+
+
+# ── HTTP 202: a real body must not be discarded as a hard failure ───────────
+# DuckDuckGo (or a CDN/cache in front of it) sometimes answers 202 Accepted
+# with a perfectly good result rather than 200 — treating any non-200 as an
+# error threw away genuine answers and surfaced as "still processing".
+
+class _FakeResp:
+    def __init__(self, status, payload):
+        self.status = status
+        self._payload = payload
+    async def __aenter__(self):
+        return self
+    async def __aexit__(self, *a):
+        return False
+    async def json(self, content_type=None):
+        return self._payload
+
+
+class _FakeSession:
+    def __init__(self, resp):
+        self._resp = resp
+    def get(self, url, params=None, timeout=None):
+        return self._resp
+
+
+def _patch_session(monkeypatch, resp):
+    import homeassistant.helpers.aiohttp_client as ac
+    monkeypatch.setattr(ac, "async_get_clientsession",
+                        lambda h: _FakeSession(resp), raising=False)
+
+
+async def test_duckduckgo_202_with_body_is_used(wr, fake_hass, monkeypatch):
+    _patch_session(monkeypatch, _FakeResp(202, {
+        "AbstractText": "Ada Lovelace was a 19th-century mathematician.",
+        "AbstractSource": "Wikipedia",
+    }))
+    out = await wr._duckduckgo(fake_hass, "who is ada lovelace")
+    assert "error" not in out
+    assert "mathematician" in out["answer"]
+
+
+async def test_duckduckgo_real_error_status_still_fails(wr, fake_hass, monkeypatch):
+    _patch_session(monkeypatch, _FakeResp(503, {}))
+    out = await wr._duckduckgo(fake_hass, "q")
+    assert "error" in out and "503" in out["error"]
+
+
+async def test_searxng_202_with_body_is_used(wr, fake_hass, monkeypatch):
+    monkeypatch.setattr(wr, "_cfg", lambda k, d: "http://searx.local" if k == "searxng_url" else d)
+    _patch_session(monkeypatch, _FakeResp(202, {
+        "results": [{"title": "The GIL", "content": "info", "url": "http://x", "engine": "ddg"}],
+    }))
+    out = await wr._searxng(fake_hass, "python gil")
+    assert "error" not in out
+    assert out["answer"] == "info"
+
+
+async def test_searxng_real_error_status_still_fails(wr, fake_hass, monkeypatch):
+    monkeypatch.setattr(wr, "_cfg", lambda k, d: "http://searx.local" if k == "searxng_url" else d)
+    _patch_session(monkeypatch, _FakeResp(500, {}))
+    out = await wr._searxng(fake_hass, "q")
+    assert "error" in out and "500" in out["error"]
 
 
 # ── comms conflict detection ────────────────────────────────────────────────
