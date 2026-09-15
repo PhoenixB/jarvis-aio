@@ -1,3 +1,7 @@
+## [7.87.1] — Traditional Chinese
+
+Added Traditional Chinese (繁體中文) alongside Simplified — all 336 panel strings, converted with OpenCC using Taiwan phrasing (e.g. 設定, 網路, 載入中…). It's picked up automatically when Home Assistant is set to Traditional Chinese (zh-Hant), and is selectable manually under Settings → General → Language. Regional codes are covered too: zh-Hant/zh-TW use Taiwan-style Traditional, zh-HK uses Hong Kong Traditional, so Traditional users never fall back to Simplified. Simplified remains the default for zh-Hans / zh-CN.
+
 ## [7.87.0] — Simplified Chinese, and every language now selectable
 
 Added a Simplified Chinese (中文) translation of the JARVIS panel — all 336 interface strings — the first non-Latin-script language. It's picked up automatically when Home Assistant is set to Chinese (zh-Hans / zh-CN), and can be chosen manually under Settings → General → Language.

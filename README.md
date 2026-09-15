@@ -226,7 +226,7 @@ JARVIS follows your Home Assistant language automatically, and you can override 
 
 **Fully localized (panel + setup dialog):** French, German, Spanish, Italian, Portuguese, Dutch.
 
-**Panel fully localized (setup dialog on the way):** Simplified Chinese, Polish, Russian, Ukrainian, Czech, Slovak, Swedish, Danish, Norwegian, Finnish, Turkish, Romanian, Brazilian Portuguese.
+**Panel fully localized (setup dialog on the way):** Simplified Chinese, Traditional Chinese, Polish, Russian, Ukrainian, Czech, Slovak, Swedish, Danish, Norwegian, Finnish, Turkish, Romanian, Brazilian Portuguese.
 
 ### Help translate
 
