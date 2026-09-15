@@ -1,0 +1,113 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "JARVIS är redan konfigurerad.",
+      "import_failed": "Hittade en JARVIS-konfiguration men ingen användbar LLM (ingen API-nyckel och ingen lokal endpoint)."
+    },
+    "error": {
+      "cannot_connect": "Kunde inte nå LLM:en. Kontrollera att URL/endpoint är korrekt och att servern (t.ex. Ollama) körs.",
+      "invalid_auth": "API-nyckeln avvisades. Kontrollera nyckeln och försök igen.",
+      "need_llm": "Ange antingen en moln-API-nyckel eller en lokal LLM-URL.",
+      "unknown": "Kunde inte validera LLM-anslutningen. Kontrollera inställningarna och försök igen."
+    },
+    "step": {
+      "user": {
+        "data": {
+          "api_key": "API-nyckel för moln-LLM (t.ex. Groq)",
+          "honorific": "Tilltala mig som",
+          "llm_base_url": "Bas-URL för lokal LLM — för Ollama använd värd homeassistant.local, port 11434, sökväg /v1",
+          "model": "Konversationsmodell"
+        },
+        "description": "{note}",
+        "title": "JARVIS-konfiguration"
+      }
+    }
+  },
+  "issues": {
+    "llm_unavailable": {
+      "description": "JARVIS kunde inte nå sin resonemangsmodell, så den körs i begränsat läge — enhetsstyrning, status och scener fungerar fortfarande. Orsak: {detail}\n\nÖppna JARVIS-panelen → Inställningar och kontrollera din leverantör, modell och API-nyckel. Om din leverantör har fasat ut modellen, välj den igen från listan. Detta meddelande försvinner automatiskt när resonemang fungerar igen.",
+      "title": "JARVIS resonemangsbackend är otillgänglig"
+    }
+  },
+  "options": {
+    "step": {
+      "core": {
+        "data": {
+          "directive": "Anpassat direktiv (valfritt, åsidosätter förval)",
+          "directive_preset": "Direktivförval",
+          "honorific": "Tilltala mig som",
+          "model": "Konversationsmodell",
+          "use_hass_api": "Aktivera hemstyrning (lampor, klimat, lås osv.)"
+        },
+        "description": "Persona, direktiv och konversationsmodell.",
+        "title": "JARVIS — Kärna"
+      },
+      "email": {
+        "data": {
+          "imap_enabled": "Aktivera e-postläsning",
+          "imap_folder": "Brevlådemapp (standard INBOX)",
+          "imap_host": "IMAP-värd (t.ex. imap.gmail.com)",
+          "imap_port": "IMAP-port (SSL: 993)",
+          "imap_secret_key": "secrets.yaml-nyckel som innehåller lösenordet",
+          "imap_ssl": "Använd SSL (rekommenderas)",
+          "imap_user": "IMAP-användarnamn / e-postadress"
+        },
+        "description": "Skrivskyddad åtkomst till inkorgen. IMAP-lösenordet läses från Home Assistants secrets.yaml — lägg till det där under nyckeln nedan (standard jarvis_imap_password); det lagras aldrig i panelkonfigurationen.",
+        "title": "JARVIS — E-post"
+      },
+      "identity": {
+        "data": {
+          "identity_enabled": "Känn igen vem som talar",
+          "identity_min_confidence": "Lägsta säkerhet innan koppling till en person",
+          "identity_voice_fingerprint": "Röstfingeravtryck (kräver en lokal GPU)",
+          "voice_recognition_auto_enroll": "Flagga röster automatiskt för registrering medan folk talar",
+          "voice_recognition_source": "Källa för röstigenkänning (entitet från en talarigenkänningstjänst, t.ex. binary_sensor.*_voice)"
+        },
+        "data_description": {
+          "identity_enabled": "Använder vem som är hemma + nyligen gjord ansiktsigenkänning från kamera. Ingen GPU krävs.",
+          "identity_min_confidence": "Högre = mer försiktig; förblir neutral vid osäkerhet.",
+          "identity_voice_fingerprint": "Låt vara avstängt om du inte har en GPU-server som kör en röst-ID-modell."
+        },
+        "description": "igenkänning per person, så att JARVIS anpassar sig efter vem som talar. Fungerar utan särskild hårdvara med hjälp av närvaro och (om konfigurerat) ansiktsigenkänning från kamera. Röstfingeravtryck är mest exakt men kräver en lokal GPU, så det är avstängt som standard.",
+        "title": "JARVIS — Identitet"
+      },
+      "init": {
+        "menu_options": {
+          "core": "Kärna — persona, direktiv, konversationsmodell",
+          "email": "E-post — skrivskyddad inkorg (lösenord via secrets.yaml)",
+          "identity": "Identitet — igenkänning per person",
+          "observer": "Observatör — proaktiv medvetenhet (kräver en Gemini-nyckel)",
+          "routing": "Routing — sovrumsområden, utsändningsgrupp, aviseringstjänst"
+        },
+        "title": "JARVIS — Konfigurera"
+      },
+      "observer": {
+        "data": {
+          "classifier_model": "Klassificeringsmodell (nivå 1 — billig)",
+          "gemini_api_key": "Gemini API-nyckel",
+          "observer_enabled": "Aktivera observatörsläge",
+          "observer_quiet_end": "Tysta timmar slutar (HH:MM)",
+          "observer_quiet_start": "Tysta timmar börjar (HH:MM)",
+          "reasoning_model": "Resonemangsmodell (nivå 2 — huvud)",
+          "review_model": "Granskningsmodell (nivå 3 — periodisk)"
+        },
+        "description": "proaktiv medvetenhet. JARVIS bevakar ditt hem och säger till när något är värt att notera. Kräver en Gemini API-nyckel (fakturering rekommenderas aktiverad).",
+        "title": "JARVIS — Observatörsläge"
+      },
+      "routing": {
+        "data": {
+          "bedroom_areas": "Sovrumsområden (för sömndetektering under tysta timmar)",
+          "broadcast_group": "Högtalargrupp för utsändning (vanligtvis din Cast-grupp hemma)",
+          "notify_service": "Telefonens aviseringstjänst (t.ex. notify.mobile_app_yourphone)"
+        },
+        "data_description": {
+          "bedroom_areas": "Alla närvarosensorer i dessa områden utlöser sömnläge under tysta timmar.",
+          "broadcast_group": "Används för kritiska och mycket brådskande meddelanden.",
+          "notify_service": "Används när du är borta hemifrån eller sover."
+        },
+        "description": "välj vilka HA-områden som är sovrum (för sömndetektering), vilken media_player-grupp som ska användas för utsändningar och din telefons aviseringstjänst.",
+        "title": "JARVIS — Routing"
+      }
+    }
+  }
+}

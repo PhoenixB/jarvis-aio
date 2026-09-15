@@ -224,9 +224,7 @@ This lives in `/config/jarvis/config.json` (merge it into the existing object �
 
 JARVIS follows your Home Assistant language automatically, and you can override it in **Settings → General → Language** (or leave it on *Auto*). The setup and configuration dialogs are localized through Home Assistant's own translation system; the in-panel HUD is localized by JARVIS. Anything not yet translated falls back cleanly to English, so nothing ever breaks.
 
-**Fully localized (panel + setup dialog):** French, German, Spanish, Italian, Portuguese, Dutch.
-
-**Panel fully localized (setup dialog on the way):** Simplified Chinese, Traditional Chinese, Polish, Russian, Ukrainian, Czech, Slovak, Swedish, Danish, Norwegian, Finnish, Turkish, Romanian, Brazilian Portuguese.
+**Fully localized (panel + setup dialog):** French, German, Spanish, Italian, Portuguese, Brazilian Portuguese, Dutch, Simplified Chinese, Traditional Chinese, Czech, Danish, Finnish, Norwegian, Polish, Romanian, Russian, Slovak, Swedish, Turkish, Ukrainian — 20 languages, each covering both the in-panel HUD and the Home Assistant setup/configuration dialogs.
 
 ### Help translate
 

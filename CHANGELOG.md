@@ -1,3 +1,7 @@
+## [7.88.0] — Setup dialog localized in 14 more languages
+
+The Home Assistant setup and configuration dialogs (config/options flow — the screens where you enter your LLM key, pick models, and configure routing, observer, identity, and email) are now translated into 14 additional languages, bringing the dialog to full parity with the in-panel HUD. Added: Czech, Danish, Finnish, Norwegian Bokmål, Polish, Romanian, Russian, Slovak, Swedish, Turkish, Ukrainian, Brazilian Portuguese, Simplified Chinese, and Traditional Chinese. That's 20 languages now covering both the panel and the setup dialog. Placeholders and technical tokens (entity IDs, model names, hosts, ports, secrets.yaml keys) are preserved, and anything still untranslated falls back to English.
+
 ## [7.87.1] — Traditional Chinese
 
 Added Traditional Chinese (繁體中文) alongside Simplified — all 336 panel strings, converted with OpenCC using Taiwan phrasing (e.g. 設定, 網路, 載入中…). It's picked up automatically when Home Assistant is set to Traditional Chinese (zh-Hant), and is selectable manually under Settings → General → Language. Regional codes are covered too: zh-Hant/zh-TW use Taiwan-style Traditional, zh-HK uses Hong Kong Traditional, so Traditional users never fall back to Simplified. Simplified remains the default for zh-Hans / zh-CN.
