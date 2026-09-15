@@ -158,7 +158,20 @@ class OpenAIProvider(LLMProvider):
         extra = self._extra_body()
         if extra:
             kwargs["extra_body"] = extra
-        resp = self._client.chat.completions.create(**kwargs)
+        try:
+            resp = self._client.chat.completions.create(**kwargs)
+        except Exception as exc:
+            # Newer OpenAI models (o1/o3/gpt-5.x reasoning family) reject the
+            # classic `max_tokens` outright — retry once with the renamed
+            # param instead of hardcoding a model list that will always be
+            # out of date.
+            msg = str(exc).lower()
+            if ("max_tokens" in kwargs and "max_tokens" in msg
+                    and "max_completion_tokens" in msg):
+                kwargs["max_completion_tokens"] = kwargs.pop("max_tokens")
+                resp = self._client.chat.completions.create(**kwargs)
+            else:
+                raise
         choice = resp.choices[0]
         tool_calls = []
         # Check message.tool_calls directly — some providers set
