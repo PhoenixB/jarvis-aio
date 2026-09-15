@@ -23,13 +23,14 @@ class _Msg:
 
 
 class _Choice:
-    def __init__(self, content="ok"):
+    def __init__(self, content="ok", finish_reason="stop"):
         self.message = _Msg(content)
+        self.finish_reason = finish_reason
 
 
 class _Resp:
-    def __init__(self, content="ok"):
-        self.choices = [_Choice(content)]
+    def __init__(self, content="ok", finish_reason="stop"):
+        self.choices = [_Choice(content, finish_reason)]
 
 
 class _FakeCompletions:
@@ -90,3 +91,59 @@ def test_normal_call_unaffected(provider):
     result = provider.chat([{"role": "user", "content": "hi"}], max_tokens=5, temperature=0.7)
     assert result["text"] == "ok"
     assert len(provider._client.chat.completions.calls) == 1
+
+
+# ── reasoning models (o1/o3/gpt-5.x): empty content + finish_reason=length ──
+# means the token budget was entirely consumed by hidden reasoning, with no
+# error raised — must retry once with a much larger budget instead of quietly
+# returning nothing.
+
+class _EmptyThenFullCompletions:
+    """Call 1: classic max_tokens rejected outright (reasoning model).
+    Call 2 (renamed to max_completion_tokens): budget spent entirely on
+    hidden reasoning, empty visible content. Call 3 (bigger budget): real
+    text."""
+    def __init__(self):
+        self.calls = []
+
+    def create(self, **kwargs):
+        self.calls.append(kwargs)
+        if len(self.calls) == 1:
+            raise Exception(
+                "Error code: 400 - {'error': {'message': \"Unsupported "
+                "parameter: 'max_tokens' is not supported with this model. "
+                "Use 'max_completion_tokens' instead.\"}}"
+            )
+        if len(self.calls) == 2:
+            return _Resp(content="", finish_reason="length")
+        return _Resp(content="the answer", finish_reason="stop")
+
+
+def test_retries_with_bigger_budget_on_empty_reasoning_output(provider):
+    fake_completions = _EmptyThenFullCompletions()
+    provider._client = _FakeClient()
+    provider._client.chat.completions = fake_completions
+    result = provider.chat(
+        [{"role": "user", "content": "hi"}],
+        max_tokens=5, temperature=0.7,
+    )
+    assert result["text"] == "the answer"
+    calls = fake_completions.calls
+    assert len(calls) == 3
+    assert calls[2]["max_completion_tokens"] > calls[1]["max_completion_tokens"]
+
+
+def test_no_retry_when_length_truncation_has_real_content(provider):
+    # finish_reason=length with actual visible text is a normal truncation,
+    # not the "all-budget-to-reasoning" failure mode — must not retry.
+    class _TruncatedButHasText(_FakeCompletions):
+        def create(self, **kwargs):
+            self.calls.append(kwargs)
+            return _Resp(content="partial answer", finish_reason="length")
+
+    fake = _TruncatedButHasText()
+    provider._client = _FakeClient()
+    provider._client.chat.completions = fake
+    result = provider.chat([{"role": "user", "content": "hi"}], max_tokens=5, temperature=0.7)
+    assert result["text"] == "partial answer"
+    assert len(fake.calls) == 1   # real content present — no retry needed
