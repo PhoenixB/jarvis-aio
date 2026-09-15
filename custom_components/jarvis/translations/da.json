@@ -11,15 +11,64 @@
       "unknown": "Kunne ikke validere LLM-forbindelsen. Kontrollér indstillingerne, og prøv igen."
     },
     "step": {
-      "user": {
-        "data": {
-          "api_key": "Cloud-LLM API-nøgle (f.eks. Groq)",
-          "honorific": "Tiltal mig som",
-          "llm_base_url": "Lokal LLM base-URL — for Ollama brug vært homeassistant.local, port 11434, sti /v1",
-          "model": "Samtalemodel"
-        },
+      "provider_menu": {
+        "title": "JARVIS — Tilføj en udbyder",
         "description": "{note}",
-        "title": "JARVIS-opsætning"
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Brugerdefineret (OpenAI-kompatibel)",
+          "ollama": "Ollama (lokal)",
+          "finish": "Afslut opsætning"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq API-nøgle"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API-nøgle"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API-nøgle"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API-nøgle"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Brugerdefineret udbyder",
+        "data": {
+          "llm_base_url": "API-basis-URL (OpenAI-kompatibel)",
+          "api_key": "API-nøgle (valgfri, hvis endpointet kræver en)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Basis-URL (tom bruger http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Afslut opsætning",
+        "description": "{note}",
+        "data": {
+          "llm_provider": "Hovedagentens udbyder",
+          "model": "Samtalemodel",
+          "honorific": "Tiltal mig som"
+        }
       }
     }
   },
@@ -30,6 +79,12 @@
     }
   },
   "options": {
+    "error": {
+      "cannot_connect": "Kunne ikke nå LLM'en. Kontrollér, at URL/endpoint er korrekt, og at serveren (f.eks. Ollama) kører.",
+      "invalid_auth": "API-nøglen blev afvist. Kontrollér nøglen, og prøv igen.",
+      "need_llm": "Indtast enten en cloud-API-nøgle eller en lokal LLM-URL.",
+      "unknown": "Kunne ikke validere LLM-forbindelsen. Kontrollér indstillingerne, og prøv igen."
+    },
     "step": {
       "core": {
         "data": {
@@ -76,10 +131,68 @@
           "core": "Kerne — persona, direktiv, samtalemodel",
           "email": "E-mail — skrivebeskyttet indbakke (adgangskode via secrets.yaml)",
           "identity": "Identitet — genkendelse pr. person",
+          "llm": "LLM — administrer udbydernøgler",
           "observer": "Observatør — proaktiv opmærksomhed (kræver en Gemini-nøgle)",
           "routing": "Routing — soveværelsesområder, broadcast-gruppe, notifikationstjeneste"
         },
         "title": "JARVIS — Konfigurér"
+      },
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Brugerdefineret (OpenAI-kompatibel)",
+          "ollama": "Ollama (lokal)",
+          "llm_main": "Angiv Hovedagentens udbyder & model"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq API-nøgle"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API-nøgle"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API-nøgle"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API-nøgle"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Brugerdefineret udbyder",
+        "data": {
+          "llm_base_url": "API-basis-URL (OpenAI-kompatibel)",
+          "api_key": "API-nøgle (valgfri, hvis endpointet kræver en)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Basis-URL (tom bruger http://homeassistant.local:11434/v1)"
+        }
+      },
+      "llm_main": {
+        "title": "JARVIS — Hovedagent",
+        "data": {
+          "llm_provider": "Hovedagentens udbyder",
+          "model": "Samtalemodel"
+        }
       },
       "observer": {
         "data": {

@@ -80,6 +80,34 @@ def test_runtime_cache_poisoning_self_heals(jcfg, monkeypatch):
     assert jcfg.get("k2") == "v2"
 
 
+# ── credentials never land in config.json (secrets.yaml only) ───────────────
+
+def test_set_refuses_credential_keys(jcfg):
+    jcfg.load()
+    jcfg.set("api_key", "gsk_should_not_persist")
+    assert jcfg.get("api_key") is None
+    # refused before any write — the file is never even created
+    assert not jcfg.CONFIG_PATH.exists()
+
+
+def test_set_many_drops_only_credential_keys(jcfg):
+    jcfg.load()
+    jcfg.set_many({"openai_api_key": "sk_no", "honorific": "sir"})
+    assert jcfg.get("openai_api_key") is None
+    assert jcfg.get("honorific") == "sir"          # non-credential keys still work
+
+
+def test_init_from_entry_skips_credential_keys(jcfg):
+    jcfg.load()
+    jcfg.init_from_entry(
+        {"api_key": "gsk_x", "gemini_api_key": "g_x", "honorific": "sir"},
+        {},
+    )
+    assert jcfg.get("api_key") is None
+    assert jcfg.get("gemini_api_key") is None
+    assert jcfg.get("honorific") == "sir"
+
+
 def test_missing_file_stays_clean(jcfg):
     assert jcfg.load() == {}
     assert jcfg.last_load_error is None

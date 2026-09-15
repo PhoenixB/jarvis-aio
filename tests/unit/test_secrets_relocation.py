@@ -130,7 +130,10 @@ async def test_relocate_drops_redundant_when_same(hs, fake_hass, tmp_path, load,
     assert n == 1 and deleted == ["api_key"]          # redundant plaintext dropped
 
 
-async def test_relocate_keeps_both_when_different(hs, fake_hass, tmp_path, load, monkeypatch):
+async def test_relocate_overwrites_stale_secret_when_different(hs, fake_hass, tmp_path, load, monkeypatch):
+    # config.json is retired for credentials after this migration, so on a
+    # conflict its (freshest) value wins over a stale secrets.yaml entry —
+    # otherwise an old secret would permanently shadow a newly-entered key.
     jc = load("jarvis_config")
     p = tmp_path / "secrets.yaml"
     p.write_text('jarvis_api_key: "SECRETVAL"\n')
@@ -139,4 +142,5 @@ async def test_relocate_keeps_both_when_different(hs, fake_hass, tmp_path, load,
     monkeypatch.setattr(jc, "get_all", lambda: {"api_key": "DIFFERENT"})
     monkeypatch.setattr(jc, "delete", lambda k: deleted.append(k))
     n = await hs.relocate_plaintext_credentials(fake_hass)
-    assert n == 0 and deleted == []                   # differ -> leave both, don't guess
+    assert n == 1 and deleted == ["api_key"]
+    assert hs.get_secret_sync("jarvis_api_key", path=p) == "DIFFERENT"

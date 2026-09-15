@@ -1,13 +1,61 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "JARVIS-installatie",
+      "provider_menu": {
+        "title": "JARVIS — Provider toevoegen",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Aangepast (OpenAI-compatibel)",
+          "ollama": "Ollama (lokaal)",
+          "finish": "Installatie afronden"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq API-sleutel"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API-sleutel"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API-sleutel"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API-sleutel"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Aangepaste Provider",
+        "data": {
+          "llm_base_url": "API-basis-URL (OpenAI-compatibel)",
+          "api_key": "API-sleutel (optioneel, als het endpoint er een vereist)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Basis-URL (leeg gebruikt http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Installatie Afronden",
         "description": "{note}",
         "data": {
-          "llm_provider": "Provider",
-          "api_key": "Cloud-LLM-API-sleutel (bijv. Groq)",
-          "llm_base_url": "Basis-URL van lokale LLM — voor Ollama host homeassistant.local, poort 11434, pad /v1",
+          "llm_provider": "Provider van de Hoofdagent",
           "model": "Conversatiemodel",
           "honorific": "Spreek mij aan met"
         }
@@ -29,7 +77,7 @@
       "init": {
         "title": "JARVIS — Configureren",
         "menu_options": {
-          "llm": "LLM — API-sleutel / lokaal eindpunt wijzigen",
+          "llm": "LLM — providersleutels beheren",
           "core": "Kern — persona, richtlijn, conversatiemodel",
           "routing": "Routering — slaapkamergebieden, omroepgroep, meldingsdienst",
           "observer": "Waarnemer — proactief bewustzijn (vereist een Gemini-sleutel)",
@@ -40,10 +88,57 @@
       "llm": {
         "title": "JARVIS — LLM",
         "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Aangepast (OpenAI-compatibel)",
+          "ollama": "Ollama (lokaal)",
+          "llm_main": "Provider & model van de Hoofdagent instellen"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
         "data": {
-          "api_key": "Cloud-LLM-API-sleutel (bijv. Groq)",
-          "llm_provider": "Provider",
-          "llm_base_url": "Basis-URL van lokale LLM — voor Ollama host homeassistant.local, poort 11434, pad /v1",
+          "api_key": "Groq API-sleutel"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API-sleutel"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API-sleutel"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API-sleutel"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Aangepaste Provider",
+        "data": {
+          "llm_base_url": "API-basis-URL (OpenAI-compatibel)",
+          "api_key": "API-sleutel (optioneel, als het endpoint er een vereist)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Basis-URL (leeg gebruikt http://homeassistant.local:11434/v1)"
+        }
+      },
+      "llm_main": {
+        "title": "JARVIS — Hoofdagent",
+        "data": {
+          "llm_provider": "Provider van de Hoofdagent",
           "model": "Conversatiemodel"
         }
       },

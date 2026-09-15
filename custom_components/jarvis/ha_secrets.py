@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,7 +109,7 @@ async def async_get_secret(hass, key: str, default: Any = None) -> Any:
 # under jarvis_<key> so they can't collide with another integration's secrets in
 # the shared file.
 CREDENTIAL_KEYS = ("api_key", "gemini_api_key", "anthropic_api_key",
-                   "openai_api_key", "groq_api_key")
+                   "openai_api_key", "groq_api_key", "custom_api_key")
 
 
 def secret_key_for(config_key: str) -> str:
@@ -132,6 +132,49 @@ def overlay_credentials(config: dict, path: Path | None = None) -> dict:
         if sv not in (None, ""):
             config[ck] = sv
     return config
+
+
+def provider_key_name(provider: str) -> Optional[str]:
+    """The credential field name for `provider` (const.PROVIDER_API_KEY_FIELDS),
+    e.g. 'openai' -> 'openai_api_key'. None for a provider that needs no key
+    (ollama) or isn't recognised."""
+    from .const import PROVIDER_API_KEY_FIELDS
+    return PROVIDER_API_KEY_FIELDS.get(provider)
+
+
+def get_provider_key_sync(provider: str, path: Path | None = None) -> str:
+    """The API key for `provider`, read straight from secrets.yaml — the only
+    place credentials live now (never config.json/entry data). Blocking —
+    call via the executor from async code."""
+    field = provider_key_name(provider)
+    if not field:
+        return ""
+    val = get_secret_sync(secret_key_for(field), "", path)
+    if not val and provider == "groq":
+        # Legacy secret name from before provider-specific fields existed.
+        val = get_secret_sync(secret_key_for("groq_api_key"), "", path)
+    return val or ""
+
+
+async def async_get_provider_key(hass, provider: str) -> str:
+    """:func:`get_provider_key_sync`, off the event loop."""
+    if hass is None:
+        return get_provider_key_sync(provider)
+    return await hass.async_add_executor_job(get_provider_key_sync, provider)
+
+
+def set_provider_key_sync(provider: str, value: str, path: Path | None = None) -> bool:
+    """Store `value` as the API key for `provider` in secrets.yaml. Returns
+    False (no-op) for a provider that takes no key (ollama). Blocking."""
+    field = provider_key_name(provider)
+    if not field:
+        return False
+    return set_secret_sync(secret_key_for(field), value, path)
+
+
+async def async_set_provider_key(hass, provider: str, value: str) -> bool:
+    """:func:`set_provider_key_sync`, off the event loop."""
+    return await hass.async_add_executor_job(set_provider_key_sync, provider, value)
 
 
 def _upsert_secret_line(text: str, key: str, value) -> str:
@@ -186,11 +229,15 @@ def set_secret_sync(key: str, value, path: Path | None = None) -> bool:
 
 async def relocate_plaintext_credentials(hass) -> int:
     """One-time, safe migration of plaintext LLM credentials out of the panel
-    config (config.json) and into secrets.yaml.
+    config (config.json) and into secrets.yaml — which is now the ONLY place
+    they live; config.json must never hold one again (jarvis_config.set/
+    set_many refuse to write these keys going forward).
 
     Per credential key present in config.json with a real value:
       - already in secrets.yaml with the SAME value -> drop the redundant copy;
-      - already there but DIFFERENT -> leave both (don't guess; secrets wins on read);
+      - already there but DIFFERENT -> config.json wins (it reflects the most
+        recent config-flow submission; secrets.yaml is retiring config.json's
+        write path, so an old/stale secret must not keep shadowing a fresh one);
       - otherwise write it, re-read to VERIFY it's durable, and only then delete
         it from config.json. If write or verify fails, config.json is left
         untouched — the key still resolves via fallback, so auth can't break.
@@ -210,22 +257,18 @@ async def relocate_plaintext_credentials(hass) -> int:
         skey = secret_key_for(ck)
         try:
             existing = await hass.async_add_executor_job(get_secret_sync, skey, None)
-            if existing == val:
-                await hass.async_add_executor_job(jarvis_config.delete, ck)
-                removed += 1
-                continue
-            if existing:
-                continue  # present but different — leave both untouched
-            ok = await hass.async_add_executor_job(set_secret_sync, skey, val)
-            if not ok:
-                continue
-            check = await hass.async_add_executor_job(get_secret_sync, skey, None)
-            if check == val:
-                await hass.async_add_executor_job(jarvis_config.delete, ck)
-                removed += 1
-            # else: verify failed -> leave plaintext (resolves via fallback)
+            if existing != val:
+                ok = await hass.async_add_executor_job(set_secret_sync, skey, val)
+                if not ok:
+                    continue  # write failed — leave config.json's copy as fallback
+                check = await hass.async_add_executor_job(get_secret_sync, skey, None)
+                if check != val:
+                    continue  # verify failed — leave config.json's copy as fallback
+            await hass.async_add_executor_job(jarvis_config.delete, ck)
+            removed += 1
         except Exception as exc:
             _LOGGER.debug("JARVIS: relocate %s skipped: %s", ck, exc)
     if removed:
         _LOGGER.info("JARVIS: relocated %d plaintext credential(s) to secrets.yaml", removed)
     return removed
+

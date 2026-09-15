@@ -1999,12 +1999,19 @@ class JarvisPanel extends HTMLElement {
   }
 
   _renderModelRoles(d) {
-    const PROVIDERS = ['groq', 'openai', 'gemini', 'ollama', 'anthropic', 'custom'];
+    const ALL_PROVIDERS = ['groq', 'openai', 'gemini', 'ollama', 'anthropic', 'custom'];
     const cfg = d.config || {};
+    // Only offer providers with a stored key/endpoint — picking an
+    // unconfigured one just fails to fetch models (v7.9x.0).
+    const configured = cfg.configured_providers || ALL_PROVIDERS;
+    const cfgSet = new Set(configured);
     return this._modelRoles().map(r => {
       const curProv = cfg[r.provKey] || 'groq';
       const curModel = cfg[r.modelKey] || '';
-      const provOpts = PROVIDERS.map(p =>
+      // Always include the role's current provider, even if unconfigured,
+      // so an existing selection doesn't silently vanish from the list.
+      const provList = cfgSet.has(curProv) ? configured : [curProv, ...configured];
+      const provOpts = provList.map(p =>
         `<option value="${p}"${p === curProv ? ' selected' : ''}>${p}</option>`).join('');
       // Model select starts with the current value + a loading hint; it's
       // repopulated live from the provider via _loadModelsFor().

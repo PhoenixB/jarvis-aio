@@ -25,7 +25,6 @@ from . import audio_routing, sleep_detection
 from .const import (
     CONF_BEDROOM_AREAS,
     CONF_BROADCAST_GROUP,
-    CONF_GEMINI_API_KEY,
     CONF_NOTIFY_SERVICE,
     CONF_OBSERVER_ENABLED,
     CONF_OBSERVER_QUIET_END,
@@ -33,6 +32,7 @@ from .const import (
     DEFAULT_OBSERVER_QUIET_END,
     DEFAULT_OBSERVER_QUIET_START,
     DOMAIN,
+    PROVIDER_API_KEY_FIELDS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -564,6 +564,7 @@ async def ws_get_panel_data(
 ) -> None:
     """Return all data the panel needs for one render."""
     try:
+        from . import ha_secrets
         entry = _get_entry(hass)
 
         # ── Status flags ────────────────────────────────────────────────────
@@ -583,7 +584,7 @@ async def ws_get_panel_data(
             quiet_end=quiet_end,
         )
 
-        gemini_key = bool(_entry_opt(entry, CONF_GEMINI_API_KEY, ""))
+        gemini_key = bool(await ha_secrets.async_get_provider_key(hass, "gemini"))
         broadcast_group = _entry_opt(entry, CONF_BROADCAST_GROUP, "") or ""
         notify_service = _entry_opt(entry, CONF_NOTIFY_SERVICE, "") or ""
         observer_enabled_cfg = bool(_runtime_opt(hass, entry, CONF_OBSERVER_ENABLED, False))
@@ -791,6 +792,7 @@ async def ws_get_panel_data(
                 "door_mapping": _get_runtime_json(hass, entry, "door_mapping", {}),
                 # AI model selection (provider + model per role) — for the
                 # Settings "AI Models" section's live-fetched dropdowns.
+                "configured_providers": await _configured_providers(hass, entry),
                 "llm_provider":        str(_runtime_opt(hass, entry, "llm_provider", "groq") or "groq"),
                 "model":               str(_runtime_opt(hass, entry, "model", "") or ""),
                 "classifier_provider": str(_runtime_opt(hass, entry, "classifier_provider", "groq") or "groq"),
@@ -1855,14 +1857,25 @@ async def ws_update_config(
 
 
 def _resolve_provider_key(hass: HomeAssistant, entry, provider: str) -> str:
-    """Resolve the stored API key for a provider from config."""
-    if provider == "gemini":
-        return str(_runtime_opt(hass, entry, "gemini_api_key", "") or "")
-    # groq/openai/anthropic/custom all use the primary key field
-    key = _runtime_opt(hass, entry, "api_key", None)
-    if not key:
-        key = _runtime_opt(hass, entry, "groq_api_key", "")
-    return str(key or "")
+    """Deprecated synchronous shim — kept only so any stray caller doesn't hard
+    crash. Credentials live in secrets.yaml now; use ha_secrets.async_get_provider_key
+    (or get_provider_key_sync from the executor) instead, which this cannot be
+    since secrets.yaml reads are blocking file I/O."""
+    return ""
+
+
+async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
+    """Providers with a usable credential/endpoint today — drives the AI
+    Models role dropdowns so you can't pick a provider with nothing to call.
+    ollama needs no key and has a sensible default endpoint, so it's always
+    offered. Credentials are read straight from secrets.yaml — the only place
+    they live."""
+    from . import ha_secrets
+    out = ["ollama"]
+    for provider, field in PROVIDER_API_KEY_FIELDS.items():
+        if field and await ha_secrets.async_get_provider_key(hass, provider):
+            out.append(provider)
+    return out
 
 
 async def _fetch_models(hass, provider: str, api_key: str, base_url: str) -> list[str]:
@@ -1948,7 +1961,8 @@ async def ws_list_models(hass: HomeAssistant, connection, msg) -> None:
     """Return the live model list for a provider (Settings AI-Models dropdowns)."""
     provider = (msg.get("provider") or "").lower()
     entry = _get_entry(hass)
-    api_key = _resolve_provider_key(hass, entry, provider)
+    from . import ha_secrets
+    api_key = await ha_secrets.async_get_provider_key(hass, provider)
     base_url = msg.get("base_url") or str(_runtime_opt(hass, entry, "llm_base_url", "") or "")
     try:
         models = await _fetch_models(hass, provider, api_key, base_url)

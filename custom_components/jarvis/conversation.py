@@ -17,7 +17,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     ALL_SPEAKERS_VALUE,
-    CONF_API_KEY,
     CONF_BROADCAST_SPEAKERS,
     CONF_CAST_ANNOUNCE,
     CONF_CAST_SPEAKERS,
@@ -294,12 +293,14 @@ class JarvisAgent(conversation.ConversationEntity):
             # the panel (jarvis_config wins over stale entry data/options).
             from .llm_provider import create_provider as _cp
             from . import jarvis_config as _jc
+            from . import ha_secrets as _hs
             _eff = _jc.effective_config(entry)
             provider_name = _eff.get("llm_provider", "groq")
             base_url = _eff.get("llm_base_url", "") or None
+            api_key = _hs.get_provider_key_sync(provider_name)
             self._client = _cp(
                 provider_name,
-                _eff.get(CONF_API_KEY, "") or entry.data.get(CONF_API_KEY, ""),
+                api_key,
                 self._model(),
                 base_url,
             )
@@ -987,12 +988,10 @@ class JarvisAgent(conversation.ConversationEntity):
                     from . import ha_secrets as _hs
                     from . import jarvis_config as _jc
                     provider_name = self._rt_opt("llm_provider", "groq")
-                    api_key_val = (
-                        await self.hass.async_add_executor_job(
-                            _hs.get_secret_sync, "jarvis_api_key", "")
-                        or self._rt_opt("api_key", "")
-                        or self.entry.data.get("api_key", "")
-                    )
+                    # Credentials live only in secrets.yaml, keyed per provider,
+                    # so resolving via a shared field can't send the wrong
+                    # provider's key to a different provider's API.
+                    api_key_val = await _hs.async_get_provider_key(self.hass, provider_name)
                     model_val = self._rt_opt(CONF_MODEL, DEFAULT_MODEL)
                     base_url_val = self._rt_opt("llm_base_url", "") or None
 

@@ -12,7 +12,6 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_change
 
 from .const import (
-    CONF_API_KEY,
     CONF_BEDROOM_AREAS,
     CONF_BROADCAST_GROUP,
     CONF_HONORIFIC,
@@ -114,15 +113,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # wins over stale entry data/options) so the boot client, conversation, and
     # agent never diverge on which model to run. ───────────────────────────
     from . import jarvis_config as _jc
+    from . import ha_secrets as _hs
     _eff = await hass.async_add_executor_job(_jc.effective_config, entry)
     # Warm the remaining persisted-state caches off the event loop too, so the
     # hot paths that read them (observer tick, panel data, intrusion log) don't
     # trip Home Assistant's blocking-I/O detector on first access.
     await hass.async_add_executor_job(_prewarm_persisted_state)
-    api_key           = _eff.get(CONF_API_KEY, "") or entry.data.get(CONF_API_KEY, "")
     llm_provider_name = _eff.get("llm_provider", "groq")
     llm_model         = _eff.get("model", "openai/gpt-oss-120b")
     llm_base_url      = _eff.get("llm_base_url", "") or None
+    # Credentials live only in secrets.yaml — each provider has its own entry
+    # (PROVIDER_API_KEY_FIELDS) so switching the Main Agent's provider can't
+    # reuse a stale/different provider's key.
+    api_key = await _hs.async_get_provider_key(hass, llm_provider_name)
 
     try:
         llm_client = await hass.async_add_executor_job(
@@ -470,8 +473,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # cognition tunables, floor plan, etc.) so choices made in the panel win
     # over addon-config defaults and survive reboots/updates. runtime_config
     # takes precedence over entry.options/data, so this is authoritative.
-    # Secrets (api_key, gemini_api_key) are intentionally NOT panel-writable and
-    # therefore stay addon-controlled via the reconcile above.
+    # Secrets (api_key, gemini_api_key, etc.) live only in secrets.yaml — never
+    # panel-writable, never restored from/to config.json (jarvis_config refuses
+    # to store them; see ha_secrets.py).
     try:
         from . import jarvis_config
         from .websocket import PANEL_WRITABLE_KEYS

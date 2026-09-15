@@ -1,7 +1,9 @@
 """
 JARVIS — Centralized Configuration.
 
-Single source of truth for all JARVIS settings.
+Single source of truth for all JARVIS settings EXCEPT credentials — API keys
+live only in secrets.yaml (see ha_secrets.py); set()/set_many()/init_from_entry()
+refuse to store them here, so config.json can never hold a plaintext key again.
 
 Config file: /config/jarvis/config.json
 
@@ -223,11 +225,26 @@ def runtime_get(hass, entry, key: str, default=None):
     return default
 
 
+def _drop_credentials(updates: dict) -> dict:
+    """Strip any credential key (const.PROVIDER_API_KEY_FIELDS / legacy names) —
+    those live only in secrets.yaml now, never in config.json. Guards against a
+    future call site accidentally re-introducing the old plaintext leak."""
+    from . import ha_secrets
+    dropped = [k for k in updates if k in ha_secrets.CREDENTIAL_KEYS]
+    if dropped:
+        _LOGGER.warning(
+            "JARVIS config: refusing to store credential key(s) %s in config.json "
+            "— use ha_secrets.set_provider_key_sync instead", dropped)
+    return {k: v for k, v in updates.items() if k not in ha_secrets.CREDENTIAL_KEYS}
+
+
 def set(key: str, value: Any) -> None:
     """Set a config value and persist to disk."""
     global _loaded
     if not _loaded:
         load()
+    if not _drop_credentials({key: value}):
+        return
     with _lock:
         _cache_dict()[key] = value
     save()
@@ -239,6 +256,9 @@ def set_many(updates: dict) -> None:
     global _loaded
     if not _loaded:
         load()
+    updates = _drop_credentials(updates)
+    if not updates:
+        return
     with _lock:
         _cache_dict().update(updates)
     save()
@@ -295,10 +315,13 @@ def init_from_entry(entry_data: dict, entry_options: dict) -> None:
     if not _loaded:
         load()
 
+    from . import ha_secrets
     merged = {**entry_data, **entry_options}
     updated = 0
     with _lock:
         for key, value in merged.items():
+            if key in ha_secrets.CREDENTIAL_KEYS:
+                continue   # secrets.yaml only — never backfilled into config.json
             if key not in _cache_dict() and value:
                 _cache_dict()[key] = value
                 updated += 1

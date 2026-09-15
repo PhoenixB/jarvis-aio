@@ -11,15 +11,64 @@
       "unknown": "Nu s-a putut valida conexiunea LLM. Verifică setările și încearcă din nou."
     },
     "step": {
-      "user": {
-        "data": {
-          "api_key": "Cheie API LLM cloud (de ex. Groq)",
-          "honorific": "Adresează-mi-te cu",
-          "llm_base_url": "URL de bază LLM local — pentru Ollama folosește gazda homeassistant.local, portul 11434, calea /v1",
-          "model": "Model de conversație"
-        },
+      "provider_menu": {
+        "title": "JARVIS — Adaugă un Furnizor",
         "description": "{note}",
-        "title": "Configurare JARVIS"
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Personalizat (compatibil OpenAI)",
+          "ollama": "Ollama (local)",
+          "finish": "Finalizează configurarea"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Cheie API Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "Cheie API OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Cheie API Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Cheie API Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Furnizor Personalizat",
+        "data": {
+          "llm_base_url": "URL de bază API (compatibil OpenAI)",
+          "api_key": "Cheie API (opțională, dacă endpoint-ul o cere)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "URL de bază (gol folosește http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Finalizează Configurarea",
+        "description": "{note}",
+        "data": {
+          "llm_provider": "Furnizorul Agentului Principal",
+          "model": "Model de conversație",
+          "honorific": "Adresează-mi-te cu"
+        }
       }
     }
   },
@@ -30,6 +79,12 @@
     }
   },
   "options": {
+    "error": {
+      "cannot_connect": "Nu s-a putut contacta LLM-ul. Verifică dacă URL-ul/endpointul este corect și dacă serverul (de ex. Ollama) rulează.",
+      "invalid_auth": "Cheia API a fost respinsă. Verifică cheia și încearcă din nou.",
+      "need_llm": "Introdu fie o cheie API cloud, fie un URL LLM local.",
+      "unknown": "Nu s-a putut valida conexiunea LLM. Verifică setările și încearcă din nou."
+    },
     "step": {
       "core": {
         "data": {
@@ -76,10 +131,68 @@
           "core": "Nucleu — personalitate, directivă, model de conversație",
           "email": "E-mail — căsuță doar pentru citire (parolă prin secrets.yaml)",
           "identity": "Identitate — recunoaștere per persoană",
+          "llm": "LLM — gestionează cheile furnizorilor",
           "observer": "Observator — conștientizare proactivă (necesită o cheie Gemini)",
           "routing": "Rutare — zone de dormitor, grup de difuzare, serviciu de notificare"
         },
         "title": "JARVIS — Configurează"
+      },
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Personalizat (compatibil OpenAI)",
+          "ollama": "Ollama (local)",
+          "llm_main": "Setează furnizorul și modelul Agentului Principal"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Cheie API Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "Cheie API OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Cheie API Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Cheie API Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Furnizor Personalizat",
+        "data": {
+          "llm_base_url": "URL de bază API (compatibil OpenAI)",
+          "api_key": "Cheie API (opțională, dacă endpoint-ul o cere)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "URL de bază (gol folosește http://homeassistant.local:11434/v1)"
+        }
+      },
+      "llm_main": {
+        "title": "JARVIS — Agent Principal",
+        "data": {
+          "llm_provider": "Furnizorul Agentului Principal",
+          "model": "Model de conversație"
+        }
       },
       "observer": {
         "data": {

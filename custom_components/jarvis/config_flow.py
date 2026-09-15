@@ -2,11 +2,14 @@
 JARVIS Config Flow.
 
 HACS integration: the config flow is the primary setup path.
-  1. Manual entry of a cloud API key OR a local LLM endpoint (the common case).
+  1. Pick and configure one or more LLM providers (each gets its own stored
+     key so multiple providers stay usable at once — e.g. Groq for the Main
+     Agent, Gemini for the Observer tiers), then finish setup by choosing
+     which configured provider drives the Main Agent.
   2. If /config/jarvis/config.json already exists (a previous install — the
      panel's runtime config survives integration removal), auto-imports it so
      a re-install is zero-touch.
-  3. Options flow: a 4-step Configure dialog (Core, Routing, Observer, Identity)
+  3. Options flow: a Configure dialog (LLM, Core, Routing, Observer, Identity)
      for the common settings — the full set still lives in the JARVIS panel.
 
 All runtime configuration is managed via the JARVIS panel and
@@ -62,18 +65,31 @@ _LOGGER = logging.getLogger(__name__)
 # path /config/jarvis_config.json is no longer read.)
 _RUNTIME_CONFIG_PATH = "/config/jarvis/config.json"
 
+# Providers offered in the "add a provider" menu — ollama needs no key, every
+# other one gets its own dedicated credential field (PROVIDER_API_KEY_FIELDS)
+# so configuring one never overwrites another's key.
+_PROVIDER_STEPS = ("groq", "openai", "anthropic", "gemini", "custom", "ollama")
+
 
 def _find_config() -> dict | None:
-    """Read an existing runtime config, if one with a usable LLM exists."""
+    """Read an existing runtime config, if one with a usable LLM exists.
+    Credentials live only in secrets.yaml (never config.json), so "usable"
+    means either a provider secret is present there, or a local provider
+    (ollama/custom) is set up with a base URL and needs no key."""
     try:
-        if os.path.exists(_RUNTIME_CONFIG_PATH):
-            with open(_RUNTIME_CONFIG_PATH) as f:
-                data = json.load(f)
-            if data.get(CONF_API_KEY) or data.get("groq_api_key"):
-                return data
+        if not os.path.exists(_RUNTIME_CONFIG_PATH):
+            return None
+        with open(_RUNTIME_CONFIG_PATH) as f:
+            data = json.load(f)
     except Exception:
-        pass
-    return None
+        return None
+    from . import ha_secrets
+    has_secret = any(
+        ha_secrets.get_secret_sync(ha_secrets.secret_key_for(k), "")
+        for k in ha_secrets.CREDENTIAL_KEYS
+    )
+    local_ok = bool(data.get("llm_base_url")) and data.get("llm_provider") in ("ollama", "custom")
+    return data if (has_secret or local_ok) else None
 
 
 class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -81,106 +97,205 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    def __init__(self) -> None:
+        super().__init__()
+        # provider -> {"api_key": ..., "llm_base_url": ...} for whatever was
+        # configured this flow session (not yet written anywhere until Finish).
+        self._provider_keys: dict[str, dict[str, str]] = {}
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None,
     ) -> dict:
         """
-        UI-driven setup. Tries auto-import first; falls back to
-        manual API key entry only if no config file exists.
+        UI-driven setup. Tries auto-import first; falls back to the
+        provider-picker menu only if no config file exists.
         """
         # Try auto-import from an existing runtime config (re-install case)
         cfg = await self.hass.async_add_executor_job(_find_config)
         if cfg:
             return await self.async_step_import(cfg)
+        return await self.async_step_provider_menu()
 
-        # Manual fallback — a cloud API key OR a local LLM endpoint.
-        from .llm_provider import list_providers, test_connection
+    async def async_step_provider_menu(self, user_input: dict[str, Any] | None = None) -> dict:
+        """Landing menu — add a provider's key, or finish once at least one is set."""
+        if self._provider_keys:
+            note = ("Configured so far: " + ", ".join(sorted(self._provider_keys)) +
+                    ". Add another provider, or choose Finish setup.")
+        else:
+            note = ("Pick a provider to add its API key (or URL for Ollama/Custom). "
+                    "At least one is required before you can finish setup.")
+        return self.async_show_menu(
+            step_id="provider_menu",
+            menu_options=list(_PROVIDER_STEPS) + ["finish"],
+            description_placeholders={"note": note},
+        )
+
+    async def _async_step_simple_key(self, provider: str, user_input: dict[str, Any] | None) -> dict:
+        """Shared body for the single-API-key-field provider steps."""
+        from .llm_provider import test_connection
 
         errors: dict[str, str] = {}
         if user_input is not None:
-            api_key = user_input.get(CONF_API_KEY, "").strip()
-            base_url = user_input.get("llm_base_url", "").strip()
-            provider = user_input.get("llm_provider", "groq")
-            # Left at the default with no key but a URL ⇒ still infer Ollama,
-            # so filling in just the URL (the old flow) keeps working.
-            if provider == "groq" and not api_key and base_url:
-                provider = "ollama"
-            if api_key or base_url or provider in ("ollama", "custom"):
-                model = user_input.get(CONF_MODEL, DEFAULT_MODEL)
-                # Validate the endpoint before committing, so a wrong URL or key
-                # fails here instead of installing into a broken state.
-                conn_err = await test_connection(
-                    self.hass, provider, api_key, model, base_url or None)
+            api_key = (user_input.get(CONF_API_KEY) or "").strip()
+            if not api_key:
+                errors["base"] = "need_llm"
+            else:
+                conn_err = await test_connection(self.hass, provider, api_key, DEFAULT_MODEL, None)
                 if conn_err:
                     errors["base"] = conn_err
                 else:
-                    await self.async_set_unique_id(DOMAIN)
-                    self._abort_if_unique_id_configured()
-                    return self.async_create_entry(
-                        title="JARVIS",
-                        data={
-                            CONF_API_KEY: api_key,
-                            CONF_MODEL: model,
-                            CONF_HONORIFIC: user_input.get(CONF_HONORIFIC, DEFAULT_HONORIFIC),
-                            "llm_provider": provider,
-                            "llm_base_url": base_url,
-                            "schema_version": 7,
-                        },
-                    )
-            else:
-                errors["base"] = "need_llm"
+                    self._provider_keys[provider] = {"api_key": api_key}
+                    return await self.async_step_provider_menu()
+        schema = vol.Schema({
+            vol.Required(CONF_API_KEY): selector.TextSelector(selector.TextSelectorConfig(
+                type=selector.TextSelectorType.PASSWORD)),
+        })
+        return self.async_show_form(step_id=provider, data_schema=schema, errors=errors)
 
+    async def async_step_groq(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_simple_key("groq", user_input)
+
+    async def async_step_openai(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_simple_key("openai", user_input)
+
+    async def async_step_anthropic(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_simple_key("anthropic", user_input)
+
+    async def async_step_gemini(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_simple_key("gemini", user_input)
+
+    async def async_step_custom(self, user_input: dict[str, Any] | None = None) -> dict:
+        """Any OpenAI-compatible endpoint — needs a URL; the key is optional
+        (some self-hosted servers don't require one)."""
+        from .llm_provider import test_connection
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            api_key = (user_input.get(CONF_API_KEY) or "").strip()
+            base_url = (user_input.get("llm_base_url") or "").strip()
+            if not base_url:
+                errors["base"] = "need_llm"
+            else:
+                conn_err = await test_connection(self.hass, "custom", api_key, DEFAULT_MODEL, base_url)
+                if conn_err:
+                    errors["base"] = conn_err
+                else:
+                    self._provider_keys["custom"] = {"api_key": api_key, "llm_base_url": base_url}
+                    return await self.async_step_provider_menu()
+        schema = vol.Schema({
+            vol.Required("llm_base_url"): str,
+            vol.Optional(CONF_API_KEY, default=""): selector.TextSelector(selector.TextSelectorConfig(
+                type=selector.TextSelectorType.PASSWORD)),
+        })
+        return self.async_show_form(step_id="custom", data_schema=schema, errors=errors)
+
+    async def async_step_ollama(self, user_input: dict[str, Any] | None = None) -> dict:
+        """Local Ollama server — no key needed; a blank URL uses the default."""
+        from .llm_provider import test_connection
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            base_url = (user_input.get("llm_base_url") or "").strip()
+            conn_err = await test_connection(self.hass, "ollama", "", DEFAULT_MODEL, base_url or None)
+            if conn_err:
+                errors["base"] = conn_err
+            else:
+                self._provider_keys["ollama"] = {"llm_base_url": base_url}
+                return await self.async_step_provider_menu()
+        schema = vol.Schema({
+            vol.Optional("llm_base_url", default=""): str,
+        })
+        return self.async_show_form(step_id="ollama", data_schema=schema, errors=errors)
+
+    async def async_step_finish(self, user_input: dict[str, Any] | None = None) -> dict:
+        """Pick which configured provider drives the Main Agent, then create
+        the entry — writing every configured provider's key to secrets.yaml
+        (never config.json) so they're all usable immediately (Observer
+        tiers, AI Models roles), not just the Main Agent's."""
+        if not self._provider_keys:
+            return await self.async_step_provider_menu()
+
+        providers = sorted(self._provider_keys)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            provider = user_input.get("llm_provider", providers[0])
+            model = user_input.get(CONF_MODEL, DEFAULT_MODEL)
+            honorific = user_input.get(CONF_HONORIFIC, DEFAULT_HONORIFIC)
+            if provider not in self._provider_keys:
+                errors["base"] = "need_llm"
+            else:
+                await self.async_set_unique_id(DOMAIN)
+                self._abort_if_unique_id_configured()
+
+                from . import ha_secrets, jarvis_config
+                base_url = ""
+                for prov, fields in self._provider_keys.items():
+                    if fields.get("api_key"):
+                        await ha_secrets.async_set_provider_key(
+                            self.hass, prov, fields["api_key"])
+                    if fields.get("llm_base_url"):
+                        base_url = fields["llm_base_url"]
+                if base_url:
+                    await self.hass.async_add_executor_job(
+                        jarvis_config.set, "llm_base_url", base_url)
+
+                return self.async_create_entry(
+                    title="JARVIS",
+                    data={
+                        CONF_API_KEY: "",
+                        CONF_MODEL: model,
+                        CONF_HONORIFIC: honorific,
+                        "llm_provider": provider,
+                        "llm_base_url": base_url,
+                        "schema_version": 7,
+                    },
+                )
+        schema = vol.Schema({
+            vol.Required("llm_provider", default=providers[0]):
+                selector.SelectSelector(selector.SelectSelectorConfig(
+                    options=providers, mode=selector.SelectSelectorMode.DROPDOWN)),
+            vol.Optional(CONF_MODEL, default=DEFAULT_MODEL): str,
+            vol.Optional(CONF_HONORIFIC, default=DEFAULT_HONORIFIC): str,
+        })
         return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema({
-                vol.Optional("llm_provider", default="groq"):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=list_providers(),
-                        mode=selector.SelectSelectorMode.DROPDOWN)),
-                vol.Optional(CONF_API_KEY, default=""): str,
-                vol.Optional("llm_base_url", default=""): str,
-                vol.Optional(CONF_MODEL, default=DEFAULT_MODEL): str,
-                vol.Optional(CONF_HONORIFIC, default=DEFAULT_HONORIFIC): str,
-            }),
+            step_id="finish",
+            data_schema=schema,
             errors=errors,
             description_placeholders={
-                "note": "Pick a provider, then enter a cloud API key (e.g. Groq), OR "
-                        "leave the key blank and enter a local LLM URL (e.g. "
-                        "http://homeassistant.local:11434/v1) to run Ollama with no "
-                        "cloud account. Everything else is configured later in the "
-                        "JARVIS panel → Settings.",
+                "note": "Choose which configured provider runs the Main Agent. "
+                        "Everything else is configured later in the JARVIS panel → Settings.",
             },
         )
 
     async def async_step_import(
         self, import_data: dict[str, Any],
     ) -> dict:
-        """Create the entry from an existing runtime config (re-install)."""
-        api_key = (
-            import_data.get(CONF_API_KEY)
-            or import_data.get("groq_api_key", "")
-        ).strip()
+        """Create the entry from an existing runtime config (re-install).
+        Credentials live in secrets.yaml (independent of the integration), so
+        this only needs to confirm one exists for the chosen provider — never
+        reads/writes a key value itself."""
+        from . import ha_secrets
+
         base_url = (import_data.get("llm_base_url", "") or "").strip()
         provider = import_data.get("llm_provider", "groq")
-        local_ok = bool(base_url) or provider in ("ollama", "custom")
+        local_ok = bool(base_url) and provider in ("ollama", "custom")
+        has_key = bool(await ha_secrets.async_get_provider_key(self.hass, provider))
 
         # An LLM is required, but a local model counts: proceed if we have either
-        # a cloud key OR a local endpoint (provider=ollama/custom, or a base_url).
-        if not api_key and not local_ok:
+        # a cloud key (in secrets.yaml) OR a local endpoint (ollama/custom + URL).
+        if not has_key and not local_ok:
             _LOGGER.warning("JARVIS: config found but no API key and no local LLM")
             return self.async_abort(reason="import_failed")
 
         await self.async_set_unique_id(DOMAIN)
-        self._abort_if_unique_id_configured(
-            updates={CONF_API_KEY: api_key}
-        )
+        self._abort_if_unique_id_configured()
 
         _LOGGER.info("JARVIS: auto-configuring from existing runtime config (provider=%s%s)",
-                     provider, ", local" if (not api_key and local_ok) else "")
+                     provider, ", local" if (not has_key and local_ok) else "")
         return self.async_create_entry(
             title="JARVIS",
             data={
-                CONF_API_KEY: api_key,
+                CONF_API_KEY: "",
                 CONF_MODEL: import_data.get(CONF_MODEL, import_data.get("model", DEFAULT_MODEL)),
                 CONF_HONORIFIC: import_data.get(CONF_HONORIFIC, import_data.get("honorific", DEFAULT_HONORIFIC)),
                 "llm_provider": provider,
@@ -188,7 +303,8 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
                 "schema_version": 7,
             },
             options={k: v for k, v in import_data.items()
-                     if k not in (CONF_API_KEY, "groq_api_key", "schema_version")},
+                     if k not in ha_secrets.CREDENTIAL_KEYS
+                     and k not in (CONF_API_KEY, "schema_version")},
         )
 
     @staticmethod
@@ -241,55 +357,157 @@ class JarvisOptionsFlow(OptionsFlow):
         )
 
     async def async_step_llm(self, user_input: dict[str, Any] | None = None) -> dict:
-        """LLM — change the cloud API key / local endpoint entered at setup.
+        """LLM — submenu: add/rotate any provider's key, or set which
+        configured provider drives the Main Agent. Each provider has its own
+        dedicated credential field, so configuring one never overwrites
+        another's key (e.g. Groq for the Main Agent, Gemini for Observer)."""
+        configured = [p for p in _PROVIDER_STEPS if self._provider_configured(p)]
+        if configured:
+            note = "Configured: " + ", ".join(configured) + ". Add/rotate another, or set the Main Agent."
+        else:
+            note = "No provider configured yet. Pick one to add its API key (or URL for Ollama/Custom)."
+        return self.async_show_menu(
+            step_id="llm",
+            menu_options=list(_PROVIDER_STEPS) + ["llm_main"],
+            description_placeholders={"note": note},
+        )
 
-        This is the only section that needs live validation before saving:
-        a bad key or endpoint here breaks every conversation, so it's tested
-        the same way as the initial setup step before being written."""
-        from .llm_provider import test_connection, list_providers
+    def _provider_configured(self, provider: str) -> bool:
+        """Whether `provider` currently has a usable key/endpoint."""
+        if provider == "ollama":
+            return True   # no key needed; has a working default endpoint
+        return bool(self._cur_secret(provider))
+
+    def _cur_secret(self, provider: str) -> str:
+        """Current API key for `provider`, read straight from secrets.yaml —
+        the only place credentials live (never config.json/entry data)."""
+        try:
+            from . import ha_secrets
+            return ha_secrets.get_provider_key_sync(provider)
+        except Exception:
+            return ""
+
+    async def _async_step_simple_key(self, provider: str, user_input: dict[str, Any] | None) -> dict:
+        """Shared body for the single-API-key-field provider steps."""
+        from .llm_provider import test_connection
+        from . import ha_secrets
 
         errors: dict[str, str] = {}
         if user_input is not None:
-            api_key = user_input.get(CONF_API_KEY, "").strip()
-            base_url = user_input.get("llm_base_url", "").strip()
-            provider = user_input.get("llm_provider", "groq")
-            model = user_input.get(CONF_MODEL, DEFAULT_MODEL)
-            if not api_key and provider not in ("ollama", "custom") and not base_url:
+            api_key = (user_input.get(CONF_API_KEY) or "").strip()
+            if not api_key:
                 errors["base"] = "need_llm"
             else:
-                conn_err = await test_connection(
-                    self.hass, provider, api_key, model, base_url or None)
+                conn_err = await test_connection(self.hass, provider, api_key, DEFAULT_MODEL, None)
                 if conn_err:
                     errors["base"] = conn_err
                 else:
-                    return await self._save_section({
-                        CONF_API_KEY: api_key,
-                        "llm_base_url": base_url,
-                        "llm_provider": provider,
-                        CONF_MODEL: model,
-                    })
+                    await ha_secrets.async_set_provider_key(self.hass, provider, api_key)
+                    return await self.async_step_llm()
         schema = vol.Schema({
-            vol.Optional(CONF_API_KEY, description=self._sv(CONF_API_KEY, "")):
+            vol.Required(CONF_API_KEY, description={"suggested_value": self._cur_secret(provider)}):
                 selector.TextSelector(selector.TextSelectorConfig(
                     type=selector.TextSelectorType.PASSWORD)),
-            vol.Optional("llm_provider", description=self._sv("llm_provider", "groq")):
+        })
+        return self.async_show_form(step_id=provider, data_schema=schema, errors=errors)
+
+    async def async_step_groq(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_simple_key("groq", user_input)
+
+    async def async_step_openai(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_simple_key("openai", user_input)
+
+    async def async_step_anthropic(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_simple_key("anthropic", user_input)
+
+    async def async_step_gemini(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_simple_key("gemini", user_input)
+
+    async def async_step_custom(self, user_input: dict[str, Any] | None = None) -> dict:
+        """Any OpenAI-compatible endpoint — needs a URL; the key is optional."""
+        from .llm_provider import test_connection
+        from . import ha_secrets
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            api_key = (user_input.get(CONF_API_KEY) or "").strip()
+            base_url = (user_input.get("llm_base_url") or "").strip()
+            if not base_url:
+                errors["base"] = "need_llm"
+            else:
+                conn_err = await test_connection(self.hass, "custom", api_key, DEFAULT_MODEL, base_url)
+                if conn_err:
+                    errors["base"] = conn_err
+                else:
+                    if api_key:
+                        await ha_secrets.async_set_provider_key(self.hass, "custom", api_key)
+                    await self._persist({"llm_base_url": base_url})
+                    return await self.async_step_llm()
+        schema = vol.Schema({
+            vol.Required("llm_base_url", description=self._sv("llm_base_url", "")): str,
+            vol.Optional(CONF_API_KEY, description={"suggested_value": self._cur_secret("custom")}):
+                selector.TextSelector(selector.TextSelectorConfig(
+                    type=selector.TextSelectorType.PASSWORD)),
+        })
+        return self.async_show_form(step_id="custom", data_schema=schema, errors=errors)
+
+    async def async_step_ollama(self, user_input: dict[str, Any] | None = None) -> dict:
+        """Local Ollama server — no key needed; a blank URL uses the default."""
+        from .llm_provider import test_connection
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            base_url = (user_input.get("llm_base_url") or "").strip()
+            conn_err = await test_connection(self.hass, "ollama", "", DEFAULT_MODEL, base_url or None)
+            if conn_err:
+                errors["base"] = conn_err
+            else:
+                await self._persist({"llm_base_url": base_url})
+                return await self.async_step_llm()
+        schema = vol.Schema({
+            vol.Optional("llm_base_url", description=self._sv("llm_base_url", "")): str,
+        })
+        return self.async_show_form(step_id="ollama", data_schema=schema, errors=errors)
+
+    async def async_step_llm_main(self, user_input: dict[str, Any] | None = None) -> dict:
+        """Pick which configured provider drives the Main Agent, and its model."""
+        configured = [p for p in _PROVIDER_STEPS if self._provider_configured(p)]
+        if not configured:
+            return await self.async_step_llm()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            provider = user_input.get("llm_provider", configured[0])
+            if provider not in configured:
+                errors["base"] = "need_llm"
+            else:
+                return await self._save_section({
+                    "llm_provider": provider,
+                    CONF_MODEL: user_input.get(CONF_MODEL, DEFAULT_MODEL),
+                })
+        schema = vol.Schema({
+            vol.Optional("llm_provider", description=self._sv("llm_provider", configured[0])):
                 selector.SelectSelector(selector.SelectSelectorConfig(
-                    options=list_providers(),
-                    mode=selector.SelectSelectorMode.DROPDOWN)),
-            vol.Optional("llm_base_url", description=self._sv("llm_base_url", "")):
-                selector.TextSelector(),
+                    options=configured, mode=selector.SelectSelectorMode.DROPDOWN)),
             vol.Optional(CONF_MODEL, description=self._sv(CONF_MODEL, DEFAULT_MODEL)):
                 selector.TextSelector(),
         })
-        return self.async_show_form(
-            step_id="llm",
-            data_schema=schema,
-            errors=errors,
-            description_placeholders={
-                "note": "Enter a cloud API key (e.g. Groq) to rotate/change it, OR "
-                        "leave it blank and set a local LLM URL to run Ollama instead.",
-            },
-        )
+        return self.async_show_form(step_id="llm_main", data_schema=schema, errors=errors)
+
+    async def _persist(self, updates: dict[str, Any]) -> None:
+        """Write a non-credential value (llm_base_url) straight to jarvis_config
+        without ending the options flow — used by the LLM submenu's provider
+        steps so adding a key loops back to the menu instead of closing the
+        dialog. Credentials never go through this — see ha_secrets.
+        (Contrast with _save_section, which ends the flow and reloads the
+        entry — appropriate only when something reload-worthy changes, like
+        the Main Agent's provider/model.) Runs off the event loop — jarvis_config
+        does blocking file I/O."""
+        try:
+            from . import jarvis_config
+            await self.hass.async_add_executor_job(jarvis_config.set_many, updates)
+        except Exception as exc:
+            _LOGGER.warning("JARVIS options: jarvis_config write failed: %s", exc)
+        self._data.update(updates)
 
     async def async_step_core(self, user_input: dict[str, Any] | None = None) -> dict:
         """Core — persona, directive, conversation model, home control."""
@@ -329,11 +547,15 @@ class JarvisOptionsFlow(OptionsFlow):
     async def async_step_observer(self, user_input: dict[str, Any] | None = None) -> dict:
         """Observer — proactive awareness (Gemini key + model tiers + quiet hours)."""
         if user_input is not None:
+            gemini_key = (user_input.pop(CONF_GEMINI_API_KEY, "") or "").strip()
+            if gemini_key:
+                from . import ha_secrets
+                await ha_secrets.async_set_provider_key(self.hass, "gemini", gemini_key)
             return await self._save_section(user_input)
         schema = vol.Schema({
             vol.Optional(CONF_OBSERVER_ENABLED, description=self._sv(CONF_OBSERVER_ENABLED, False)):
                 selector.BooleanSelector(),
-            vol.Optional(CONF_GEMINI_API_KEY, description=self._sv(CONF_GEMINI_API_KEY, "")):
+            vol.Optional(CONF_GEMINI_API_KEY, description={"suggested_value": self._cur_secret("gemini")}):
                 selector.TextSelector(selector.TextSelectorConfig(
                     type=selector.TextSelectorType.PASSWORD)),
             vol.Optional(CONF_CLASSIFIER_MODEL,

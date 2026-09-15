@@ -11,15 +11,64 @@
       "unknown": "Nie udało się zweryfikować połączenia z LLM. Sprawdź ustawienia i spróbuj ponownie."
     },
     "step": {
-      "user": {
-        "data": {
-          "api_key": "Klucz API chmurowego LLM (np. Groq)",
-          "honorific": "Zwracaj się do mnie",
-          "llm_base_url": "Bazowy adres URL lokalnego LLM — dla Ollama użyj hosta homeassistant.local, portu 11434, ścieżki /v1",
-          "model": "Model konwersacji"
-        },
+      "provider_menu": {
+        "title": "JARVIS — Dodaj dostawcę",
         "description": "{note}",
-        "title": "Konfiguracja JARVIS"
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Niestandardowy (zgodny z OpenAI)",
+          "ollama": "Ollama (lokalny)",
+          "finish": "Zakończ konfigurację"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Klucz API Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "Klucz API OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Klucz API Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Klucz API Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Niestandardowy dostawca",
+        "data": {
+          "llm_base_url": "Podstawowy URL API (zgodny z OpenAI)",
+          "api_key": "Klucz API (opcjonalny, jeśli endpoint go wymaga)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Podstawowy URL (puste użyje http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Zakończ konfigurację",
+        "description": "{note}",
+        "data": {
+          "llm_provider": "Dostawca Głównego agenta",
+          "model": "Model konwersacji",
+          "honorific": "Zwracaj się do mnie"
+        }
       }
     }
   },
@@ -30,6 +79,12 @@
     }
   },
   "options": {
+    "error": {
+      "cannot_connect": "Nie można połączyć się z LLM. Sprawdź, czy adres URL/punkt końcowy jest poprawny, a serwer (np. Ollama) działa.",
+      "invalid_auth": "Klucz API został odrzucony. Sprawdź klucz i spróbuj ponownie.",
+      "need_llm": "Wprowadź klucz API chmury albo adres URL lokalnego LLM.",
+      "unknown": "Nie udało się zweryfikować połączenia z LLM. Sprawdź ustawienia i spróbuj ponownie."
+    },
     "step": {
       "core": {
         "data": {
@@ -76,10 +131,68 @@
           "core": "Rdzeń — osobowość, dyrektywa, model konwersacji",
           "email": "E-mail — skrzynka tylko do odczytu (hasło przez secrets.yaml)",
           "identity": "Tożsamość — rozpoznawanie poszczególnych osób",
+          "llm": "LLM — zarządzaj kluczami dostawców",
           "observer": "Obserwator — proaktywna świadomość (wymaga klucza Gemini)",
           "routing": "Trasowanie — obszary sypialni, grupa rozgłaszania, usługa powiadomień"
         },
         "title": "JARVIS — Konfiguracja"
+      },
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Niestandardowy (zgodny z OpenAI)",
+          "ollama": "Ollama (lokalny)",
+          "llm_main": "Ustaw dostawcę i model Głównego agenta"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Klucz API Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "Klucz API OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Klucz API Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Klucz API Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Niestandardowy dostawca",
+        "data": {
+          "llm_base_url": "Podstawowy URL API (zgodny z OpenAI)",
+          "api_key": "Klucz API (opcjonalny, jeśli endpoint go wymaga)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Podstawowy URL (puste użyje http://homeassistant.local:11434/v1)"
+        }
+      },
+      "llm_main": {
+        "title": "JARVIS — Główny agent",
+        "data": {
+          "llm_provider": "Dostawca Głównego agenta",
+          "model": "Model konwersacji"
+        }
       },
       "observer": {
         "data": {

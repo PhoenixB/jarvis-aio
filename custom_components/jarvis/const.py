@@ -40,12 +40,28 @@ CONF_BROADCAST_GROUP          = "broadcast_group"          # media_player entity
 
 # Per-tier LLM provider selection. Each tier can use a different provider.
 CONF_GEMINI_API_KEY           = "gemini_api_key"
+CONF_OPENAI_API_KEY           = "openai_api_key"
+CONF_ANTHROPIC_API_KEY        = "anthropic_api_key"
+CONF_CUSTOM_API_KEY           = "custom_api_key"
 CONF_CLASSIFIER_PROVIDER      = "classifier_provider"
 CONF_CLASSIFIER_MODEL         = "classifier_model"
 CONF_REASONING_PROVIDER       = "reasoning_provider"
 CONF_REASONING_MODEL          = "reasoning_model"
 CONF_REVIEW_PROVIDER          = "review_provider"
 CONF_REVIEW_MODEL             = "review_model"
+
+# Every cloud/self-hosted provider gets its own credential field, so keys for
+# multiple providers can coexist (e.g. Groq for the Main Agent, Gemini for the
+# Observer tiers) instead of one shared field clobbering whichever was there.
+# ollama has no key — only a reachable llm_base_url.
+PROVIDER_API_KEY_FIELDS = {
+    "groq":      CONF_API_KEY,
+    "openai":    CONF_OPENAI_API_KEY,
+    "anthropic": CONF_ANTHROPIC_API_KEY,
+    "gemini":    CONF_GEMINI_API_KEY,
+    "custom":    CONF_CUSTOM_API_KEY,
+    "ollama":    None,
+}
 
 CONF_NOTIFY_SERVICE           = "notify_service"
 

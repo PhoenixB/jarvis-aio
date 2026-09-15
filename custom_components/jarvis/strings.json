@@ -1,13 +1,61 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "JARVIS Setup",
+      "provider_menu": {
+        "title": "JARVIS — Add a Provider",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Custom (OpenAI-compatible)",
+          "ollama": "Ollama (local)",
+          "finish": "Finish setup"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq API key"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API key"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API key"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API key"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Custom Provider",
+        "data": {
+          "llm_base_url": "API base URL (OpenAI-compatible)",
+          "api_key": "API key (optional, if the endpoint requires one)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Base URL (blank uses http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Finish Setup",
         "description": "{note}",
         "data": {
-          "llm_provider": "Provider",
-          "api_key": "Cloud LLM API key (e.g. Groq)",
-          "llm_base_url": "Local LLM base URL — for Ollama use host homeassistant.local, port 11434, path /v1",
+          "llm_provider": "Main Agent provider",
           "model": "Conversation model",
           "honorific": "Address me as"
         }
@@ -29,7 +77,7 @@
       "init": {
         "title": "JARVIS — Configure",
         "menu_options": {
-          "llm": "LLM — change API key / local endpoint",
+          "llm": "LLM — manage provider keys",
           "core": "Core — persona, directive, conversation model",
           "routing": "Routing — bedroom areas, broadcast group, notify service",
           "observer": "Observer — proactive awareness (needs a Gemini key)",
@@ -40,10 +88,57 @@
       "llm": {
         "title": "JARVIS — LLM",
         "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Custom (OpenAI-compatible)",
+          "ollama": "Ollama (local)",
+          "llm_main": "Set Main Agent provider & model"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
         "data": {
-          "api_key": "Cloud LLM API key (e.g. Groq)",
-          "llm_provider": "Provider",
-          "llm_base_url": "Local LLM base URL — for Ollama use host homeassistant.local, port 11434, path /v1",
+          "api_key": "Groq API key"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API key"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API key"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API key"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Custom Provider",
+        "data": {
+          "llm_base_url": "API base URL (OpenAI-compatible)",
+          "api_key": "API key (optional, if the endpoint requires one)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Base URL (blank uses http://homeassistant.local:11434/v1)"
+        }
+      },
+      "llm_main": {
+        "title": "JARVIS — Main Agent",
+        "data": {
+          "llm_provider": "Main Agent provider",
           "model": "Conversation model"
         }
       },

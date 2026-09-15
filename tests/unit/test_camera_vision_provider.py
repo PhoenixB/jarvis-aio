@@ -48,6 +48,8 @@ def test_make_client_caches_provider(cam, monkeypatch):
     import importlib
     lp = importlib.import_module(cam.__name__.rsplit(".", 1)[0] + ".llm_provider")
     monkeypatch.setattr(lp, "create_provider", fake_create)
+    hs = importlib.import_module(cam.__name__.rsplit(".", 1)[0] + ".ha_secrets")
+    monkeypatch.setattr(hs, "get_provider_key_sync", lambda provider: "k")
 
     hass = _Hass()
     c1 = cam._make_client(hass, "groq", "some/vision-model", fallback="FB")

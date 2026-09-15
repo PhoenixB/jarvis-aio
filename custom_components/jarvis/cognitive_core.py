@@ -2523,6 +2523,13 @@ async def _tick():
         await _emit_action(hass, config, action, sleeping)
 
 
+def _provider_api_key(config: dict, provider_name: str) -> str:
+    """Each provider has its own credential field, read straight from
+    secrets.yaml — the only place they live now."""
+    from . import ha_secrets
+    return ha_secrets.get_provider_key_sync(provider_name)
+
+
 def _make_followup_runner(hass, config):
     """A headless agent invocation for self-scheduled follow-ups: same brain,
     same tools, no user turn. The persona tells the model it queued this work
@@ -2547,7 +2554,8 @@ def _make_followup_runner(hass, config):
             messages=[{"role": "user", "content": instruction}],
             persona=persona,
             provider_name=config.get("llm_provider", "groq"),
-            api_key=config.get("api_key", ""),
+            api_key=await hass.async_add_executor_job(
+                _provider_api_key, config, config.get("llm_provider", "groq")),
             model=model,
             base_url=config.get("llm_base_url") or None,
             temperature=0.4,

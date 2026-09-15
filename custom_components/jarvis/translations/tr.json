@@ -11,15 +11,64 @@
       "unknown": "LLM bağlantısı doğrulanamadı. Ayarları kontrol edip tekrar deneyin."
     },
     "step": {
-      "user": {
-        "data": {
-          "api_key": "Bulut LLM API anahtarı (ör. Groq)",
-          "honorific": "Bana şöyle hitap et",
-          "llm_base_url": "Yerel LLM temel URL'si — Ollama için ana bilgisayar homeassistant.local, bağlantı noktası 11434, yol /v1 kullanın",
-          "model": "Sohbet modeli"
-        },
+      "provider_menu": {
+        "title": "JARVIS — Sağlayıcı Ekle",
         "description": "{note}",
-        "title": "JARVIS Kurulumu"
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Özel (OpenAI uyumlu)",
+          "ollama": "Ollama (yerel)",
+          "finish": "Kurulumu tamamla"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq API anahtarı"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API anahtarı"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API anahtarı"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API anahtarı"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Özel Sağlayıcı",
+        "data": {
+          "llm_base_url": "API temel URL'si (OpenAI uyumlu)",
+          "api_key": "API anahtarı (isteğe bağlı, uç nokta gerektiriyorsa)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Temel URL (boş bırakılırsa http://homeassistant.local:11434/v1 kullanılır)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Kurulumu Tamamla",
+        "description": "{note}",
+        "data": {
+          "llm_provider": "Ana Ajan sağlayıcısı",
+          "model": "Sohbet modeli",
+          "honorific": "Bana şöyle hitap et"
+        }
       }
     }
   },
@@ -30,6 +79,12 @@
     }
   },
   "options": {
+    "error": {
+      "cannot_connect": "LLM'ye ulaşılamadı. URL/uç noktanın doğru olduğunu ve sunucunun (ör. Ollama) çalıştığını kontrol edin.",
+      "invalid_auth": "API anahtarı reddedildi. Anahtarı kontrol edip tekrar deneyin.",
+      "need_llm": "Bir bulut API anahtarı ya da yerel bir LLM URL'si girin.",
+      "unknown": "LLM bağlantısı doğrulanamadı. Ayarları kontrol edip tekrar deneyin."
+    },
     "step": {
       "core": {
         "data": {
@@ -76,10 +131,68 @@
           "core": "Çekirdek — kişilik, direktif, sohbet modeli",
           "email": "E-posta — salt okunur gelen kutusu (parola secrets.yaml üzerinden)",
           "identity": "Kimlik — kişi bazlı tanıma",
+          "llm": "LLM — sağlayıcı anahtarlarını yönet",
           "observer": "Gözlemci — proaktif farkındalık (bir Gemini anahtarı gerektirir)",
           "routing": "Yönlendirme — yatak odası alanları, yayın grubu, bildirim servisi"
         },
         "title": "JARVIS — Yapılandır"
+      },
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Özel (OpenAI uyumlu)",
+          "ollama": "Ollama (yerel)",
+          "llm_main": "Ana Ajan sağlayıcısını ve modelini ayarla"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq API anahtarı"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API anahtarı"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API anahtarı"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API anahtarı"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Özel Sağlayıcı",
+        "data": {
+          "llm_base_url": "API temel URL'si (OpenAI uyumlu)",
+          "api_key": "API anahtarı (isteğe bağlı, uç nokta gerektiriyorsa)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Temel URL (boş bırakılırsa http://homeassistant.local:11434/v1 kullanılır)"
+        }
+      },
+      "llm_main": {
+        "title": "JARVIS — Ana Ajan",
+        "data": {
+          "llm_provider": "Ana Ajan sağlayıcısı",
+          "model": "Sohbet modeli"
+        }
       },
       "observer": {
         "data": {

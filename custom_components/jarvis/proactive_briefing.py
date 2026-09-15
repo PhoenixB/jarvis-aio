@@ -279,10 +279,12 @@ async def _trigger_briefing(
                 create_tier_provider, config, "reasoning",
             )
         except Exception:
+            from . import ha_secrets as _hs
+            _provider_name = config.get("llm_provider", "groq")
             provider = await hass.async_add_executor_job(
                 create_provider,
-                config.get("llm_provider", "groq"),
-                config.get("api_key", ""),
+                _provider_name,
+                await _hs.async_get_provider_key(hass, _provider_name),
                 config.get("model", "openai/gpt-oss-120b"),
                 config.get("llm_base_url"),
             )

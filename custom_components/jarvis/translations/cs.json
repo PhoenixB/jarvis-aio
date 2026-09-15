@@ -11,15 +11,64 @@
       "unknown": "Připojení k LLM se nepodařilo ověřit. Zkontrolujte nastavení a zkuste to znovu."
     },
     "step": {
-      "user": {
-        "data": {
-          "api_key": "API klíč cloudového LLM (např. Groq)",
-          "honorific": "Oslovuj mě jako",
-          "llm_base_url": "Základní URL lokálního LLM — pro Ollama použijte hostitele homeassistant.local, port 11434, cestu /v1",
-          "model": "Konverzační model"
-        },
+      "provider_menu": {
+        "title": "JARVIS — Přidat poskytovatele",
         "description": "{note}",
-        "title": "Nastavení JARVIS"
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Vlastní (kompatibilní s OpenAI)",
+          "ollama": "Ollama (lokální)",
+          "finish": "Dokončit nastavení"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "API klíč Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "API klíč OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "API klíč Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "API klíč Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Vlastní poskytovatel",
+        "data": {
+          "llm_base_url": "Základní URL API (kompatibilní s OpenAI)",
+          "api_key": "API klíč (volitelné, pokud jej koncový bod vyžaduje)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Základní URL (prázdné použije http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Dokončit nastavení",
+        "description": "{note}",
+        "data": {
+          "llm_provider": "Poskytovatel Hlavního agenta",
+          "model": "Konverzační model",
+          "honorific": "Oslovuj mě jako"
+        }
       }
     }
   },
@@ -30,6 +79,12 @@
     }
   },
   "options": {
+    "error": {
+      "cannot_connect": "LLM není dostupný. Zkontrolujte, že URL/endpoint je správný a server (např. Ollama) běží.",
+      "invalid_auth": "API klíč byl odmítnut. Zkontrolujte klíč a zkuste to znovu.",
+      "need_llm": "Zadejte buď cloudový API klíč, nebo URL lokálního LLM.",
+      "unknown": "Připojení k LLM se nepodařilo ověřit. Zkontrolujte nastavení a zkuste to znovu."
+    },
     "step": {
       "core": {
         "data": {
@@ -76,10 +131,68 @@
           "core": "Jádro — osobnost, direktiva, konverzační model",
           "email": "E-mail — schránka pouze pro čtení (heslo přes secrets.yaml)",
           "identity": "Identita — rozpoznávání jednotlivých osob",
+          "llm": "LLM — správa klíčů poskytovatelů",
           "observer": "Pozorovatel — proaktivní vnímání (vyžaduje klíč Gemini)",
           "routing": "Směrování — ložnicové oblasti, skupina pro vysílání, oznamovací služba"
         },
         "title": "JARVIS — Konfigurace"
+      },
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Vlastní (kompatibilní s OpenAI)",
+          "ollama": "Ollama (lokální)",
+          "llm_main": "Nastavit poskytovatele a model Hlavního agenta"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "API klíč Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "API klíč OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "API klíč Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "API klíč Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Vlastní poskytovatel",
+        "data": {
+          "llm_base_url": "Základní URL API (kompatibilní s OpenAI)",
+          "api_key": "API klíč (volitelné, pokud jej koncový bod vyžaduje)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Základní URL (prázdné použije http://homeassistant.local:11434/v1)"
+        }
+      },
+      "llm_main": {
+        "title": "JARVIS — Hlavní agent",
+        "data": {
+          "llm_provider": "Poskytovatel Hlavního agenta",
+          "model": "Konverzační model"
+        }
       },
       "observer": {
         "data": {

@@ -11,15 +11,64 @@
       "unknown": "無法驗證 LLM 連線。請檢查設定後重試。"
     },
     "step": {
-      "user": {
-        "data": {
-          "api_key": "雲端 LLM API 金鑰（例如 Groq）",
-          "honorific": "稱呼我為",
-          "llm_base_url": "本地 LLM 基礎 URL——Ollama 請使用主機 homeassistant.local、埠 11434、路徑 /v1",
-          "model": "對話模型"
-        },
+      "provider_menu": {
+        "title": "JARVIS — 新增提供商",
         "description": "{note}",
-        "title": "JARVIS 設定"
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "自訂（相容 OpenAI）",
+          "ollama": "Ollama（本地）",
+          "finish": "完成設定"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq API 金鑰"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API 金鑰"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API 金鑰"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API 金鑰"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — 自訂提供商",
+        "data": {
+          "llm_base_url": "API 基礎 URL（相容 OpenAI）",
+          "api_key": "API 金鑰（可選，若端點需要）"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "基礎 URL（留空使用 http://homeassistant.local:11434/v1）"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — 完成設定",
+        "description": "{note}",
+        "data": {
+          "llm_provider": "主代理提供商",
+          "model": "對話模型",
+          "honorific": "稱呼我為"
+        }
       }
     }
   },
@@ -30,6 +79,12 @@
     }
   },
   "options": {
+    "error": {
+      "cannot_connect": "無法連線到 LLM。請檢查 URL/端點是否正確，以及伺服器（例如 Ollama）是否正在執行。",
+      "invalid_auth": "API 金鑰被拒絕。請檢查金鑰後重試。",
+      "need_llm": "請輸入雲端 API 金鑰或本地 LLM URL。",
+      "unknown": "無法驗證 LLM 連線。請檢查設定後重試。"
+    },
     "step": {
       "core": {
         "data": {
@@ -76,10 +131,68 @@
           "core": "核心——人格、指令、對話模型",
           "email": "電子郵件——只讀收件箱（密碼透過 secrets.yaml 提供）",
           "identity": "身份——按人識別",
+          "llm": "LLM——管理提供商金鑰",
           "observer": "觀察者——主動感知（需要 Gemini 金鑰）",
           "routing": "路由——臥室區域、廣播群組、通知服務"
         },
         "title": "JARVIS — 配置"
+      },
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "自訂（相容 OpenAI）",
+          "ollama": "Ollama（本地）",
+          "llm_main": "設定主代理的提供商與模型"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq API 金鑰"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API 金鑰"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API 金鑰"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API 金鑰"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — 自訂提供商",
+        "data": {
+          "llm_base_url": "API 基礎 URL（相容 OpenAI）",
+          "api_key": "API 金鑰（可選，若端點需要）"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "基礎 URL（留空使用 http://homeassistant.local:11434/v1）"
+        }
+      },
+      "llm_main": {
+        "title": "JARVIS — 主代理",
+        "data": {
+          "llm_provider": "主代理提供商",
+          "model": "對話模型"
+        }
       },
       "observer": {
         "data": {

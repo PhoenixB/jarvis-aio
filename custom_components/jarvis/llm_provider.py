@@ -463,10 +463,12 @@ def create_tier_provider(
     Build a provider for a specific observer tier.
 
     tier must be one of: 'classifier', 'reasoning', 'review', 'conversation'.
-    For Gemini tiers, uses gemini_api_key if set, else falls back to api_key.
+    Every provider has its own dedicated credential field (see
+    const.PROVIDER_API_KEY_FIELDS) so a tier can use a different provider than
+    the Main Agent without clobbering or losing either key.
     """
     from .const import (
-        CONF_API_KEY, CONF_MODEL, CONF_GEMINI_API_KEY,
+        CONF_API_KEY, CONF_MODEL, PROVIDER_API_KEY_FIELDS,
         DEFAULT_CLASSIFIER_PROVIDER, DEFAULT_CLASSIFIER_MODEL,
         DEFAULT_REASONING_PROVIDER, DEFAULT_REASONING_MODEL,
         DEFAULT_REVIEW_PROVIDER, DEFAULT_REVIEW_MODEL,
@@ -490,13 +492,10 @@ def create_tier_provider(
     provider_name = config.get(f"{tier}_provider", default_provider)
     model         = config.get(f"{tier}_model", default_model)
 
-    # Pick the right API key based on provider
-    if provider_name == "gemini":
-        api_key = config.get(CONF_GEMINI_API_KEY) or config.get(CONF_API_KEY, "")
-    elif provider_name == "groq":
-        api_key = config.get(CONF_API_KEY, "")
-    else:
-        api_key = config.get(f"{tier}_api_key") or config.get(CONF_API_KEY, "")
+    # Each provider's own field; ollama needs none. Falls back to the shared
+    # api_key for an unrecognised provider name rather than raising.
+    key_field = PROVIDER_API_KEY_FIELDS.get(provider_name, CONF_API_KEY)
+    api_key = config.get(key_field, "") if key_field else ""
 
     # Per-tier base_url wins; otherwise the shared llm_base_url applies for
     # local/self-hosted backends (Ollama on the GPU server, any OpenAI-compatible
@@ -528,25 +527,39 @@ def _classify_conn_error(exc) -> str:
     return "unknown"
 
 
+def _is_model_not_found(exc) -> bool:
+    """Whether `exc` looks like a "model doesn't exist" response rather than a
+    connection/auth failure. Every provider validates the key before checking
+    the model, so this actually proves the key and endpoint are good — it
+    just means the probe model (a fixed placeholder, since test_connection
+    runs before the user picks a real model) isn't one this provider offers."""
+    msg = str(exc).lower()
+    if "model" not in msg:
+        return False
+    return any(t in msg for t in (
+        "does not exist", "not found", "not_found", "no such model",
+        "unknown model", "invalid model", "unsupported model",
+    ))
+
+
 async def test_connection(hass, provider, api_key, model, base_url):
     """Verify the LLM is reachable and the credentials work with a tiny chat
     call, so setup can fail fast on a bad URL or key instead of installing into
     a broken state. Returns None on success, else a config-flow error key
-    ('cannot_connect' | 'invalid_auth' | 'unknown'). Runs the blocking client in
-    the executor; never raises.
+    ('cannot_connect' | 'invalid_auth' | 'unknown'). Client construction (which
+    does blocking SSL cert loading) and the ping both run in the executor;
+    never raises.
     """
-    try:
-        client = create_provider(provider, api_key, model, base_url or None)
-    except Exception as exc:
-        return _classify_conn_error(exc)
-    if client is None:
-        return "cannot_connect"
-
     def _ping():
+        client = create_provider(provider, api_key, model, base_url or None)
+        if client is None:
+            raise RuntimeError("cannot_connect")
         return client.chat([{"role": "user", "content": "ping"}],
                            tools=None, max_tokens=5)
     try:
         await hass.async_add_executor_job(_ping)
         return None
     except Exception as exc:
+        if _is_model_not_found(exc):
+            return None
         return _classify_conn_error(exc)

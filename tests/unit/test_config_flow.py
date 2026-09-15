@@ -32,6 +32,9 @@ def _install_stubs():
         def async_show_form(self, **kw):
             return {"type": "form", **kw}
 
+        def async_show_menu(self, **kw):
+            return {"type": "menu", **kw}
+
         def async_create_entry(self, **kw):
             return {"type": "create_entry", **kw}
 
@@ -98,15 +101,19 @@ def config_flow(load):
 
 # ── v6.45.0: legacy add-on split removed ─────────────────────────────────────
 
-def test_find_config_reads_runtime_path_only(config_flow, tmp_path, monkeypatch):
+def test_find_config_reads_runtime_path_only(config_flow, tmp_path, monkeypatch, load):
     """Auto-import reads /config/jarvis/config.json (the panel's runtime
-    store, for zero-touch re-installs). The legacy add-on path is gone."""
+    store, for zero-touch re-installs). The legacy add-on path is gone.
+    Credentials live in secrets.yaml now, so "usable" is judged from there."""
     assert not hasattr(config_flow, "_CONFIG_PATHS")   # legacy list removed
+    ha_secrets = load("ha_secrets")
+    monkeypatch.setattr(ha_secrets, "get_secret_sync",
+                        lambda key, default="", *a, **k: "gsk_test" if key == "jarvis_api_key" else default)
     runtime = tmp_path / "config.json"
-    runtime.write_text('{"api_key": "gsk_test", "model": "llama"}')
+    runtime.write_text('{"model": "llama"}')
     monkeypatch.setattr(config_flow, "_RUNTIME_CONFIG_PATH", str(runtime))
     cfg = config_flow._find_config()
-    assert cfg and cfg["api_key"] == "gsk_test"
+    assert cfg and cfg["model"] == "llama"
 
 
 def test_find_config_requires_usable_llm(config_flow, tmp_path, monkeypatch):
@@ -131,13 +138,15 @@ def _user_flow(config_flow, fake_hass, monkeypatch, tmp_path):
     return flow
 
 
-async def test_user_step_renders_provider_field(config_flow, fake_hass, monkeypatch, tmp_path):
+async def test_user_step_shows_provider_menu(config_flow, fake_hass, monkeypatch, tmp_path):
     res = await _user_flow(config_flow, fake_hass, monkeypatch, tmp_path).async_step_user(None)
-    assert res["type"] == "form" and res["step_id"] == "user"
-    assert "llm_provider" in res["data_schema"].schema
+    assert res["type"] == "menu" and res["step_id"] == "provider_menu"
+    assert set(res["menu_options"]) == {
+        "groq", "openai", "anthropic", "gemini", "custom", "ollama", "finish",
+    }
 
 
-async def test_user_step_honors_explicit_provider_choice(
+async def test_groq_step_saves_key_and_loops_back_to_menu(
     config_flow, fake_hass, monkeypatch, tmp_path, load,
 ):
     llm_provider = load("llm_provider")
@@ -147,12 +156,59 @@ async def test_user_step_honors_explicit_provider_choice(
     monkeypatch.setattr(llm_provider, "test_connection", _ok)
 
     flow = _user_flow(config_flow, fake_hass, monkeypatch, tmp_path)
-    res = await flow.async_step_user({
-        "llm_provider": "custom", "llm_base_url": "http://x/v1",
-        "api_key": "", "model": "m", "honorific": "sir",
+    res = await flow.async_step_groq({"api_key": "gsk_new"})
+    assert res["type"] == "menu" and res["step_id"] == "provider_menu"
+    assert flow._provider_keys["groq"]["api_key"] == "gsk_new"
+
+
+async def test_groq_step_shows_error_on_bad_key(
+    config_flow, fake_hass, monkeypatch, tmp_path, load,
+):
+    llm_provider = load("llm_provider")
+
+    async def _bad(hass, provider, api_key, model, base_url):
+        return "invalid_auth"
+    monkeypatch.setattr(llm_provider, "test_connection", _bad)
+
+    flow = _user_flow(config_flow, fake_hass, monkeypatch, tmp_path)
+    res = await flow.async_step_groq({"api_key": "wrong"})
+    assert res["type"] == "form" and res["errors"]["base"] == "invalid_auth"
+    assert "groq" not in flow._provider_keys
+
+
+async def test_custom_step_requires_base_url(config_flow, fake_hass, monkeypatch, tmp_path):
+    flow = _user_flow(config_flow, fake_hass, monkeypatch, tmp_path)
+    res = await flow.async_step_custom({"api_key": "", "llm_base_url": ""})
+    assert res["type"] == "form" and res["errors"]["base"] == "need_llm"
+
+
+async def test_finish_redirects_to_menu_when_nothing_configured(
+    config_flow, fake_hass, monkeypatch, tmp_path,
+):
+    flow = _user_flow(config_flow, fake_hass, monkeypatch, tmp_path)
+    res = await flow.async_step_finish(None)
+    assert res["type"] == "menu" and res["step_id"] == "provider_menu"
+
+
+async def test_finish_creates_entry_from_configured_provider(
+    config_flow, fake_hass, monkeypatch, tmp_path, load,
+):
+    ha_secrets = load("ha_secrets")
+    set_calls = []
+
+    async def _fake_set(hass, provider, value):
+        set_calls.append((provider, value))
+    monkeypatch.setattr(ha_secrets, "async_set_provider_key", _fake_set)
+    flow = _user_flow(config_flow, fake_hass, monkeypatch, tmp_path)
+    flow._provider_keys["groq"] = {"api_key": "gsk_x"}
+    res = await flow.async_step_finish({
+        "llm_provider": "groq", "model": "m", "honorific": "sir",
     })
     assert res["type"] == "create_entry"
-    assert res["data"]["llm_provider"] == "custom"
+    assert res["data"]["llm_provider"] == "groq"
+    # the key goes to secrets.yaml only — never into the entry itself
+    assert res["data"]["api_key"] == ""
+    assert set_calls == [("groq", "gsk_x")]
 
 
 def _flow(config_flow, fake_hass):
@@ -209,31 +265,58 @@ async def test_section_saves_independently(config_flow, fake_hass):
     assert flow._data == {"honorific": "boss", "model": "x"}
 
 
-async def test_step_llm_renders_fields(config_flow, fake_hass):
+async def test_llm_menu_lists_providers_and_main(config_flow, fake_hass):
     res = await _flow(config_flow, fake_hass).async_step_llm(None)
-    assert res["type"] == "form" and res["step_id"] == "llm"
-    assert len(res["data_schema"].schema) == 4   # api_key, provider, base_url, model
+    assert res["type"] == "menu" and res["step_id"] == "llm"
+    assert set(res["menu_options"]) == {
+        "groq", "openai", "anthropic", "gemini", "custom", "ollama", "llm_main",
+    }
 
 
-async def test_step_llm_saves_new_api_key_after_validating(config_flow, fake_hass, monkeypatch, load):
+async def test_llm_groq_step_saves_and_loops_back_to_menu(
+    config_flow, fake_hass, monkeypatch, load,
+):
     llm_provider = load("llm_provider")
+    jarvis_config = load("jarvis_config")
 
     async def _ok(hass, provider, api_key, model, base_url):
         return None
     monkeypatch.setattr(llm_provider, "test_connection", _ok)
+    monkeypatch.setattr(jarvis_config, "set_many", lambda updates: None)
+
     flow = _flow(config_flow, fake_hass)
-    res = await flow.async_step_llm({"api_key": "gsk_new", "llm_provider": "groq", "model": "x"})
-    assert res["type"] == "create_entry"
-    assert flow._data["api_key"] == "gsk_new"
+    res = await flow.async_step_groq({"api_key": "gsk_new"})
+    assert res["type"] == "menu" and res["step_id"] == "llm"
 
 
-async def test_step_llm_shows_error_on_bad_key(config_flow, fake_hass, monkeypatch, load):
+async def test_llm_groq_step_shows_error_on_bad_key(config_flow, fake_hass, monkeypatch, load):
     llm_provider = load("llm_provider")
 
     async def _bad(hass, provider, api_key, model, base_url):
         return "invalid_auth"
     monkeypatch.setattr(llm_provider, "test_connection", _bad)
+
     flow = _flow(config_flow, fake_hass)
-    res = await flow.async_step_llm({"api_key": "wrong", "llm_provider": "groq", "model": "x"})
+    res = await flow.async_step_groq({"api_key": "wrong"})
     assert res["type"] == "form" and res["errors"]["base"] == "invalid_auth"
+
+
+async def test_llm_main_always_offers_ollama_by_default(config_flow, fake_hass):
+    # ollama needs no key and has a working default endpoint, so it's always
+    # a selectable Main Agent provider even with nothing else configured.
+    flow = _flow(config_flow, fake_hass)
+    res = await flow.async_step_llm_main(None)
+    assert res["type"] == "form" and res["step_id"] == "llm_main"
+
+
+async def test_llm_main_saves_selected_provider(config_flow, fake_hass, monkeypatch, load):
+    jarvis_config = load("jarvis_config")
+    monkeypatch.setattr(jarvis_config, "set_many", lambda updates: None)
+    flow = _flow(config_flow, fake_hass)
+    monkeypatch.setattr(flow, "_provider_configured", lambda p: p == "groq")
+    res = await flow.async_step_llm_main({"llm_provider": "groq", "model": "m"})
+    assert res["type"] == "create_entry"
+    assert flow._data["llm_provider"] == "groq"
+
+
 

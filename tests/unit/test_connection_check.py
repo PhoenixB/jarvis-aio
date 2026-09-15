@@ -68,3 +68,32 @@ async def test_connection_build_failure(lp, fake_hass, monkeypatch):
         raise Exception("could not connect to endpoint")
     monkeypatch.setattr(lp, "create_provider", _boom)
     assert await lp.test_connection(fake_hass, "ollama", "", "m", "http://x") == "cannot_connect"
+
+
+# ── model-not-found: a valid key probed with a placeholder model must not
+# be mistaken for a bad key/endpoint (regression: OpenAI/Anthropic/Gemini all
+# failed setup because the config-flow probe uses a Groq-style model id) ────
+
+def test_classify_model_not_found_is_not_auth_or_connect(lp):
+    # these must NOT be misrouted to invalid_auth/cannot_connect by the
+    # generic classifier — test_connection intercepts them before that
+    assert lp._is_model_not_found(Exception("The model `openai/gpt-oss-120b` does not exist"))
+    assert lp._is_model_not_found(Exception("404 model_not_found: no such model"))
+    assert lp._is_model_not_found(Exception("models/gpt-oss-120b is not found for API version"))
+    assert not lp._is_model_not_found(Exception("401 Unauthorized: invalid api key"))
+    assert not lp._is_model_not_found(Exception("Connection refused"))
+
+
+async def test_connection_succeeds_when_probe_model_is_unknown_to_provider(lp, fake_hass, monkeypatch):
+    monkeypatch.setattr(lp, "create_provider",
+                        lambda p, k, m, b=None: _RaiseClient(
+                            Exception("The model `openai/gpt-oss-120b` does not exist")))
+    # a real key against the wrong provider's model proves the key/endpoint work
+    assert await lp.test_connection(fake_hass, "openai", "sk-real", "openai/gpt-oss-120b", None) is None
+
+
+async def test_connection_still_fails_on_real_auth_error_with_model_in_message(lp, fake_hass, monkeypatch):
+    monkeypatch.setattr(lp, "create_provider",
+                        lambda p, k, m, b=None: _RaiseClient(
+                            Exception("401 Unauthorized: invalid api key for model access")))
+    assert await lp.test_connection(fake_hass, "openai", "bad", "m", None) == "invalid_auth"

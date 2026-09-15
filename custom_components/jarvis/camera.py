@@ -85,11 +85,9 @@ def _make_client(hass: HomeAssistant, provider: str, model: str, fallback):
     try:
         if not provider or not model:
             return fallback
-        if provider == "gemini":
-            api_key = _cfg_opt(hass, "gemini_api_key", "") or ""
-        else:
-            api_key = _cfg_opt(hass, "api_key", "") or _cfg_opt(hass, "groq_api_key", "") or ""
-        if not api_key:
+        from . import ha_secrets
+        api_key = ha_secrets.get_provider_key_sync(provider)
+        if not api_key and provider != "ollama":
             return fallback
         base_url = _cfg_opt(hass, "llm_base_url", "") or None
         key = (provider, model, api_key, base_url or "")

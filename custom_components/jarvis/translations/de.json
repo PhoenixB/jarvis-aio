@@ -1,13 +1,61 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "JARVIS-Einrichtung",
+      "provider_menu": {
+        "title": "JARVIS — Anbieter hinzufügen",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Benutzerdefiniert (OpenAI-kompatibel)",
+          "ollama": "Ollama (lokal)",
+          "finish": "Einrichtung abschließen"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq-API-Schlüssel"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI-API-Schlüssel"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic-API-Schlüssel"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini-API-Schlüssel"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Benutzerdefinierter Anbieter",
+        "data": {
+          "llm_base_url": "API-Basis-URL (OpenAI-kompatibel)",
+          "api_key": "API-Schlüssel (optional, falls der Endpunkt einen benötigt)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Basis-URL (leer = http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Einrichtung abschließen",
         "description": "{note}",
         "data": {
-          "llm_provider": "Anbieter",
-          "api_key": "Cloud-LLM-API-Schlüssel (z. B. Groq)",
-          "llm_base_url": "Basis-URL des lokalen LLM — für Ollama Host homeassistant.local, Port 11434, Pfad /v1",
+          "llm_provider": "Anbieter des Hauptagenten",
           "model": "Konversationsmodell",
           "honorific": "Sprich mich an mit"
         }
@@ -29,7 +77,7 @@
       "init": {
         "title": "JARVIS — Konfigurieren",
         "menu_options": {
-          "llm": "LLM — API-Schlüssel / lokalen Endpunkt ändern",
+          "llm": "LLM — Anbieter-Schlüssel verwalten",
           "core": "Kern — Persona, Direktive, Konversationsmodell",
           "routing": "Routing — Schlafzimmerbereiche, Broadcast-Gruppe, Benachrichtigungsdienst",
           "observer": "Beobachter — proaktive Wahrnehmung (benötigt einen Gemini-Schlüssel)",
@@ -40,10 +88,57 @@
       "llm": {
         "title": "JARVIS — LLM",
         "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Benutzerdefiniert (OpenAI-kompatibel)",
+          "ollama": "Ollama (lokal)",
+          "llm_main": "Anbieter & Modell des Hauptagenten festlegen"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
         "data": {
-          "api_key": "Cloud-LLM-API-Schlüssel (z. B. Groq)",
-          "llm_provider": "Anbieter",
-          "llm_base_url": "Basis-URL des lokalen LLM — für Ollama Host homeassistant.local, Port 11434, Pfad /v1",
+          "api_key": "Groq-API-Schlüssel"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI-API-Schlüssel"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic-API-Schlüssel"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini-API-Schlüssel"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Benutzerdefinierter Anbieter",
+        "data": {
+          "llm_base_url": "API-Basis-URL (OpenAI-kompatibel)",
+          "api_key": "API-Schlüssel (optional, falls der Endpunkt einen benötigt)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "llm_base_url": "Basis-URL (leer = http://homeassistant.local:11434/v1)"
+        }
+      },
+      "llm_main": {
+        "title": "JARVIS — Hauptagent",
+        "data": {
+          "llm_provider": "Anbieter des Hauptagenten",
           "model": "Konversationsmodell"
         }
       },
