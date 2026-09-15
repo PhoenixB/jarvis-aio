@@ -301,7 +301,19 @@ class AnthropicProvider(LLMProvider):
                 for t in tools
             ]
 
-        resp = self._client.messages.create(**kwargs)
+        try:
+            resp = self._client.messages.create(**kwargs)
+        except Exception as exc:
+            # Newer Claude models (e.g. claude-sonnet-5) reject `temperature`
+            # outright ("temperature is deprecated for this model") rather
+            # than just clamping it — retry once without it instead of
+            # hardcoding a model list that will always be out of date.
+            msg = str(exc).lower()
+            if "temperature" in kwargs and "temperature" in msg and "deprecated" in msg:
+                kwargs.pop("temperature", None)
+                resp = self._client.messages.create(**kwargs)
+            else:
+                raise
 
         text_parts = []
         tool_calls = []
