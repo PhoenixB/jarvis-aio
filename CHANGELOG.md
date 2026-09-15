@@ -1,3 +1,9 @@
+## [7.87.0] — Simplified Chinese, and every language now selectable
+
+Added a Simplified Chinese (中文) translation of the JARVIS panel — all 336 interface strings — the first non-Latin-script language. It's picked up automatically when Home Assistant is set to Chinese (zh-Hans / zh-CN), and can be chosen manually under Settings → General → Language.
+
+Also fixed the manual Language dropdown, which only listed 7 of the shipped languages: it now offers all of them — English, Simplified Chinese, Czech, Danish, German, Spanish, French, Italian, Dutch, Norwegian, Polish, Portuguese, Brazilian Portuguese, Romanian, Russian, Slovak, Finnish, Swedish, Turkish, Ukrainian — plus Auto. Traditional Chinese can follow the same way if there's interest.
+
 ## [7.86.3] — fix missing settings panels on desktop + JARVIS voice not found
 
 Two reported bugs fixed.
