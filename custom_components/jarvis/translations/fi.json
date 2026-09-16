@@ -1,15 +1,5 @@
 {
   "config": {
-    "abort": {
-      "already_configured": "JARVIS on jo määritetty.",
-      "import_failed": "Löytyi JARVIS-määritys, mutta ei käyttökelpoista LLM:ää (ei API-avainta eikä paikallista päätepistettä)."
-    },
-    "error": {
-      "cannot_connect": "LLM:ää ei tavoitettu. Tarkista, että URL/päätepiste on oikein ja palvelin (esim. Ollama) on käynnissä.",
-      "invalid_auth": "API-avain hylättiin. Tarkista avain ja yritä uudelleen.",
-      "need_llm": "Anna joko pilven API-avain tai paikallisen LLM:n URL.",
-      "unknown": "LLM-yhteyttä ei voitu vahvistaa. Tarkista asetukset ja yritä uudelleen."
-    },
     "step": {
       "provider_menu": {
         "title": "JARVIS — Lisää palveluntarjoaja",
@@ -66,76 +56,39 @@
         "description": "{note}",
         "data": {
           "llm_provider": "Pääagentin palveluntarjoaja",
-          "model": "Keskustelumalli",
           "honorific": "Puhuttele minua"
         }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       }
-    }
-  },
-  "issues": {
-    "llm_unavailable": {
-      "description": "JARVIS ei tavoittanut päättelymalliaan, joten se toimii rajoitetussa tilassa — laitteiden ohjaus, tila ja tilanteet toimivat edelleen. Syy: {detail}\n\nAvaa JARVIS-paneeli → Asetukset ja tarkista palveluntarjoaja, malli ja API-avain. Jos palveluntarjoaja on poistanut mallin, valitse se uudelleen luettelosta. Tämä ilmoitus poistuu automaattisesti, kun päättely toimii taas.",
-      "title": "JARVISin päättelytausta ei ole käytettävissä"
+    },
+    "error": {
+      "need_llm": "Anna joko pilven API-avain tai paikallisen LLM:n URL.",
+      "cannot_connect": "LLM:ää ei tavoitettu. Tarkista, että URL/päätepiste on oikein ja palvelin (esim. Ollama) on käynnissä.",
+      "invalid_auth": "API-avain hylättiin. Tarkista avain ja yritä uudelleen.",
+      "unknown": "LLM-yhteyttä ei voitu vahvistaa. Tarkista asetukset ja yritä uudelleen."
+    },
+    "abort": {
+      "already_configured": "JARVIS on jo määritetty.",
+      "import_failed": "Löytyi JARVIS-määritys, mutta ei käyttökelpoista LLM:ää (ei API-avainta eikä paikallista päätepistettä)."
     }
   },
   "options": {
-    "error": {
-      "cannot_connect": "LLM:ää ei tavoitettu. Tarkista, että URL/päätepiste on oikein ja palvelin (esim. Ollama) on käynnissä.",
-      "invalid_auth": "API-avain hylättiin. Tarkista avain ja yritä uudelleen.",
-      "need_llm": "Anna joko pilven API-avain tai paikallisen LLM:n URL.",
-      "unknown": "LLM-yhteyttä ei voitu vahvistaa. Tarkista asetukset ja yritä uudelleen."
-    },
     "step": {
-      "core": {
-        "data": {
-          "directive": "Mukautettu ohje (valinnainen, ohittaa esiasetuksen)",
-          "directive_preset": "Ohjeen esiasetus",
-          "honorific": "Puhuttele minua",
-          "model": "Keskustelumalli",
-          "use_hass_api": "Ota kodin ohjaus käyttöön (valot, ilmasto, lukot jne.)"
-        },
-        "description": "Persoona, ohje ja keskustelumalli.",
-        "title": "JARVIS — Ydin"
-      },
-      "email": {
-        "data": {
-          "imap_enabled": "Ota sähköpostin luku käyttöön",
-          "imap_folder": "Postilaatikon kansio (oletus INBOX)",
-          "imap_host": "IMAP-isäntä (esim. imap.gmail.com)",
-          "imap_port": "IMAP-portti (SSL: 993)",
-          "imap_secret_key": "secrets.yaml-avain, joka sisältää salasanan",
-          "imap_ssl": "Käytä SSL:ää (suositeltu)",
-          "imap_user": "IMAP-käyttäjänimi / sähköpostiosoite"
-        },
-        "description": "Vain luku -oikeus postilaatikkoon. IMAP-salasana luetaan Home Assistantin secrets.yaml-tiedostosta — lisää se sinne alla olevan avaimen alle (oletus jarvis_imap_password); sitä ei koskaan tallenneta paneelin määrityksiin.",
-        "title": "JARVIS — Sähköposti"
-      },
-      "identity": {
-        "data": {
-          "identity_enabled": "Tunnista kuka puhuu",
-          "identity_min_confidence": "Vähimmäisvarmuus ennen henkilöön sitoutumista",
-          "identity_voice_fingerprint": "Äänisormenjälki (vaatii paikallisen GPU:n)",
-          "voice_recognition_auto_enroll": "Merkitse äänet automaattisesti rekisteröitäviksi ihmisten puhuessa",
-          "voice_recognition_source": "Äänentunnistuksen lähde (entiteetti puhujantunnistuspalvelusta, esim. binary_sensor.*_voice)"
-        },
-        "data_description": {
-          "identity_enabled": "Käyttää tietoa siitä, kuka on kotona, + viimeaikaista kameran kasvontunnistusta. GPU:ta ei tarvita.",
-          "identity_min_confidence": "Suurempi = varovaisempi; pysyy neutraalina epävarmuuden vallitessa.",
-          "identity_voice_fingerprint": "Jätä pois päältä, ellei sinulla ole GPU-palvelinta, jossa on äänitunnistusmalli."
-        },
-        "description": "henkilökohtainen tunnistus, jotta JARVIS mukautuu puhujan mukaan. Toimii ilman erityislaitteistoa läsnäolon ja (jos määritetty) kameran kasvontunnistuksen avulla. Äänisormenjälki on tarkin, mutta vaatii paikallisen GPU:n, joten se on oletuksena pois päältä.",
-        "title": "JARVIS — Henkilöllisyys"
-      },
       "init": {
+        "title": "JARVIS — Määritä",
         "menu_options": {
-          "core": "Ydin — persoona, ohje, keskustelumalli",
-          "email": "Sähköposti — vain luettava postilaatikko (salasana secrets.yaml:n kautta)",
-          "identity": "Henkilöllisyys — henkilökohtainen tunnistus",
           "llm": "LLM — hallitse palveluntarjoajien avaimia",
+          "core": "Ydin — persoona, ohje, keskustelumalli",
+          "routing": "Reititys — makuuhuonealueet, kuulutusryhmä, ilmoituspalvelu",
           "observer": "Tarkkailija — ennakoiva tietoisuus (vaatii Gemini-avaimen)",
-          "routing": "Reititys — makuuhuonealueet, kuulutusryhmä, ilmoituspalvelu"
-        },
-        "title": "JARVIS — Määritä"
+          "identity": "Henkilöllisyys — henkilökohtainen tunnistus",
+          "email": "Sähköposti — vain luettava postilaatikko (salasana secrets.yaml:n kautta)"
+        }
       },
       "llm": {
         "title": "JARVIS — LLM",
@@ -146,8 +99,7 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Mukautettu (OpenAI-yhteensopiva)",
-          "ollama": "Ollama (paikallinen)",
-          "llm_main": "Aseta Pääagentin palveluntarjoaja ja malli"
+          "ollama": "Ollama (paikallinen)"
         }
       },
       "groq": {
@@ -194,20 +146,26 @@
           "model": "Keskustelumalli"
         }
       },
-      "observer": {
+      "core": {
+        "title": "JARVIS — Ydin",
+        "description": "Persoona, ohje ja keskustelumalli.",
         "data": {
-          "classifier_model": "Luokittelumalli (taso 1 — halpa)",
-          "gemini_api_key": "Gemini API-avain",
-          "observer_enabled": "Ota tarkkailutila käyttöön",
-          "observer_quiet_end": "Hiljaisten tuntien loppu (TT:MM)",
-          "observer_quiet_start": "Hiljaisten tuntien alku (TT:MM)",
-          "reasoning_model": "Päättelymalli (taso 2 — pää)",
-          "review_model": "Tarkistusmalli (taso 3 — ajoittainen)"
-        },
-        "description": "ennakoiva tietoisuus. JARVIS tarkkailee kotiasi ja ilmoittaa, kun jokin on huomionarvoista. Vaatii Gemini API-avaimen (laskutus suositellaan käyttöön).",
-        "title": "JARVIS — Tarkkailutila"
+          "honorific": "Puhuttele minua",
+          "directive_preset": "Ohjeen esiasetus",
+          "directive": "Mukautettu ohje (valinnainen, ohittaa esiasetuksen)",
+          "llm_provider": "Conversation model provider",
+          "use_hass_api": "Ota kodin ohjaus käyttöön (valot, ilmasto, lukot jne.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       },
       "routing": {
+        "title": "JARVIS — Reititys",
+        "description": "valitse, mitkä HA-alueet ovat makuuhuoneita (unen tunnistusta varten), mitä media_player-ryhmää käytetään kuulutuksiin ja puhelimesi ilmoituspalvelu.",
         "data": {
           "bedroom_areas": "Makuuhuonealueet (unen tunnistukseen hiljaisina tunteina)",
           "broadcast_group": "Kuulutuskaiutinryhmä (yleensä kodin Cast-ryhmä)",
@@ -217,10 +175,103 @@
           "bedroom_areas": "Mikä tahansa läsnäoloanturi näillä alueilla laukaisee unitilan hiljaisina tunteina.",
           "broadcast_group": "Käytetään kriittisiin ja erittäin kiireellisiin ilmoituksiin.",
           "notify_service": "Käytetään, kun olet poissa kotoa tai nukut."
+        }
+      },
+      "observer": {
+        "title": "JARVIS — Tarkkailutila",
+        "description": "ennakoiva tietoisuus. JARVIS tarkkailee kotiasi ja ilmoittaa, kun jokin on huomionarvoista. Vaatii Gemini API-avaimen (laskutus suositellaan käyttöön).",
+        "menu_options": {
+          "classifier": "Classifier model",
+          "reasoning": "Reasoning model",
+          "review": "Review model",
+          "observer_settings": "Observer settings"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
+        "data": {
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
+        "data": {
+          "observer_enabled": "Enable observer mode",
+          "observer_quiet_start": "Quiet hours start (HH:MM)",
+          "observer_quiet_end": "Quiet hours end (HH:MM)"
+        }
+      },
+      "identity": {
+        "title": "JARVIS — Henkilöllisyys",
+        "description": "henkilökohtainen tunnistus, jotta JARVIS mukautuu puhujan mukaan. Toimii ilman erityislaitteistoa läsnäolon ja (jos määritetty) kameran kasvontunnistuksen avulla. Äänisormenjälki on tarkin, mutta vaatii paikallisen GPU:n, joten se on oletuksena pois päältä.",
+        "data": {
+          "identity_enabled": "Tunnista kuka puhuu",
+          "identity_voice_fingerprint": "Äänisormenjälki (vaatii paikallisen GPU:n)",
+          "identity_min_confidence": "Vähimmäisvarmuus ennen henkilöön sitoutumista",
+          "voice_recognition_source": "Äänentunnistuksen lähde (entiteetti puhujantunnistuspalvelusta, esim. binary_sensor.*_voice)",
+          "voice_recognition_auto_enroll": "Merkitse äänet automaattisesti rekisteröitäviksi ihmisten puhuessa"
         },
-        "description": "valitse, mitkä HA-alueet ovat makuuhuoneita (unen tunnistusta varten), mitä media_player-ryhmää käytetään kuulutuksiin ja puhelimesi ilmoituspalvelu.",
-        "title": "JARVIS — Reititys"
+        "data_description": {
+          "identity_enabled": "Käyttää tietoa siitä, kuka on kotona, + viimeaikaista kameran kasvontunnistusta. GPU:ta ei tarvita.",
+          "identity_voice_fingerprint": "Jätä pois päältä, ellei sinulla ole GPU-palvelinta, jossa on äänitunnistusmalli.",
+          "identity_min_confidence": "Suurempi = varovaisempi; pysyy neutraalina epävarmuuden vallitessa."
+        }
+      },
+      "email": {
+        "title": "JARVIS — Sähköposti",
+        "description": "Vain luku -oikeus postilaatikkoon. IMAP-salasana luetaan Home Assistantin secrets.yaml-tiedostosta — lisää se sinne alla olevan avaimen alle (oletus jarvis_imap_password); sitä ei koskaan tallenneta paneelin määrityksiin.",
+        "data": {
+          "imap_enabled": "Ota sähköpostin luku käyttöön",
+          "imap_host": "IMAP-isäntä (esim. imap.gmail.com)",
+          "imap_port": "IMAP-portti (SSL: 993)",
+          "imap_user": "IMAP-käyttäjänimi / sähköpostiosoite",
+          "imap_folder": "Postilaatikon kansio (oletus INBOX)",
+          "imap_ssl": "Käytä SSL:ää (suositeltu)",
+          "imap_secret_key": "secrets.yaml-avain, joka sisältää salasanan"
+        }
       }
+    },
+    "error": {
+      "need_llm": "Anna joko pilven API-avain tai paikallisen LLM:n URL.",
+      "cannot_connect": "LLM:ää ei tavoitettu. Tarkista, että URL/päätepiste on oikein ja palvelin (esim. Ollama) on käynnissä.",
+      "invalid_auth": "API-avain hylättiin. Tarkista avain ja yritä uudelleen.",
+      "unknown": "LLM-yhteyttä ei voitu vahvistaa. Tarkista asetukset ja yritä uudelleen."
+    }
+  },
+  "issues": {
+    "llm_unavailable": {
+      "title": "JARVISin päättelytausta ei ole käytettävissä",
+      "description": "JARVIS ei tavoittanut päättelymalliaan, joten se toimii rajoitetussa tilassa — laitteiden ohjaus, tila ja tilanteet toimivat edelleen. Syy: {detail}\n\nAvaa JARVIS-paneeli → Asetukset ja tarkista palveluntarjoaja, malli ja API-avain. Jos palveluntarjoaja on poistanut mallin, valitse se uudelleen luettelosta. Tämä ilmoitus poistuu automaattisesti, kun päättely toimii taas."
     }
   }
 }

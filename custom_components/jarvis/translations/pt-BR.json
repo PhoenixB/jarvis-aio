@@ -1,15 +1,5 @@
 {
   "config": {
-    "abort": {
-      "already_configured": "O JARVIS já está configurado.",
-      "import_failed": "Foi encontrada uma configuração do JARVIS, mas nenhum LLM utilizável (sem chave de API e sem endpoint local)."
-    },
-    "error": {
-      "cannot_connect": "Não foi possível acessar o LLM. Verifique se a URL/endpoint está correta e se o servidor (ex.: Ollama) está em execução.",
-      "invalid_auth": "A chave de API foi rejeitada. Verifique a chave e tente novamente.",
-      "need_llm": "Informe uma chave de API na nuvem ou uma URL de LLM local.",
-      "unknown": "Não foi possível validar a conexão com o LLM. Verifique as configurações e tente novamente."
-    },
     "step": {
       "provider_menu": {
         "title": "JARVIS — Adicionar um Provedor",
@@ -66,76 +56,39 @@
         "description": "{note}",
         "data": {
           "llm_provider": "Provedor do Agente Principal",
-          "model": "Modelo de conversa",
           "honorific": "Dirija-se a mim como"
         }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       }
-    }
-  },
-  "issues": {
-    "llm_unavailable": {
-      "description": "O JARVIS não conseguiu acessar seu modelo de raciocínio, então está em modo limitado — controle de dispositivos, status e cenas continuam funcionando. Motivo: {detail}\n\nAbra o painel do JARVIS → Configurações e verifique seu provedor, modelo e chave de API. Se o provedor descontinuou o modelo, selecione-o novamente na lista. Este aviso desaparece automaticamente assim que o raciocínio voltar a funcionar.",
-      "title": "Backend de raciocínio do JARVIS indisponível"
+    },
+    "error": {
+      "need_llm": "Informe uma chave de API na nuvem ou uma URL de LLM local.",
+      "cannot_connect": "Não foi possível acessar o LLM. Verifique se a URL/endpoint está correta e se o servidor (ex.: Ollama) está em execução.",
+      "invalid_auth": "A chave de API foi rejeitada. Verifique a chave e tente novamente.",
+      "unknown": "Não foi possível validar a conexão com o LLM. Verifique as configurações e tente novamente."
+    },
+    "abort": {
+      "already_configured": "O JARVIS já está configurado.",
+      "import_failed": "Foi encontrada uma configuração do JARVIS, mas nenhum LLM utilizável (sem chave de API e sem endpoint local)."
     }
   },
   "options": {
-    "error": {
-      "cannot_connect": "Não foi possível acessar o LLM. Verifique se a URL/endpoint está correta e se o servidor (ex.: Ollama) está em execução.",
-      "invalid_auth": "A chave de API foi rejeitada. Verifique a chave e tente novamente.",
-      "need_llm": "Informe uma chave de API na nuvem ou uma URL de LLM local.",
-      "unknown": "Não foi possível validar a conexão com o LLM. Verifique as configurações e tente novamente."
-    },
     "step": {
-      "core": {
-        "data": {
-          "directive": "Diretriz personalizada (opcional, substitui a predefinição)",
-          "directive_preset": "Predefinição de diretriz",
-          "honorific": "Dirija-se a mim como",
-          "model": "Modelo de conversa",
-          "use_hass_api": "Ativar controle da casa (luzes, climatização, fechaduras etc.)"
-        },
-        "description": "Persona, diretriz e modelo de conversa.",
-        "title": "JARVIS — Núcleo"
-      },
-      "email": {
-        "data": {
-          "imap_enabled": "Ativar leitura de e-mail",
-          "imap_folder": "Pasta da caixa de correio (padrão INBOX)",
-          "imap_host": "Host IMAP (ex.: imap.gmail.com)",
-          "imap_port": "Porta IMAP (SSL: 993)",
-          "imap_secret_key": "Chave no secrets.yaml que contém a senha",
-          "imap_ssl": "Usar SSL (recomendado)",
-          "imap_user": "Usuário IMAP / endereço de e-mail"
-        },
-        "description": "Acesso à caixa de entrada somente leitura. A senha IMAP é lida do secrets.yaml do Home Assistant — adicione-a lá sob a chave abaixo (padrão jarvis_imap_password); ela nunca é armazenada na configuração do painel.",
-        "title": "JARVIS — E-mail"
-      },
-      "identity": {
-        "data": {
-          "identity_enabled": "Reconhecer quem está falando",
-          "identity_min_confidence": "Confiança mínima antes de atribuir a uma pessoa",
-          "identity_voice_fingerprint": "Impressão digital de voz (requer uma GPU local)",
-          "voice_recognition_auto_enroll": "Sinalizar automaticamente vozes para cadastro conforme as pessoas falam",
-          "voice_recognition_source": "Fonte de reconhecimento de voz (entidade de um serviço de reconhecimento de locutor, ex.: binary_sensor.*_voice)"
-        },
-        "data_description": {
-          "identity_enabled": "Usa quem está em casa + reconhecimento facial recente da câmera. Não requer GPU.",
-          "identity_min_confidence": "Maior = mais cauteloso; permanece neutro em caso de dúvida.",
-          "identity_voice_fingerprint": "Deixe desativado, a menos que você tenha um servidor GPU rodando um modelo de identificação de voz."
-        },
-        "description": "reconhecimento por pessoa, para que o JARVIS se adapte a quem está falando. Funciona sem hardware especial, usando presença e (se configurado) reconhecimento facial por câmera. A impressão digital de voz é a mais precisa, mas precisa de uma GPU local, por isso vem desativada por padrão.",
-        "title": "JARVIS — Identidade"
-      },
       "init": {
+        "title": "JARVIS — Configurar",
         "menu_options": {
-          "core": "Núcleo — persona, diretriz, modelo de conversa",
-          "email": "E-mail — caixa de entrada somente leitura (senha via secrets.yaml)",
-          "identity": "Identidade — reconhecimento por pessoa",
           "llm": "LLM — gerenciar chaves de provedores",
+          "core": "Núcleo — persona, diretriz, modelo de conversa",
+          "routing": "Roteamento — áreas de quarto, grupo de transmissão, serviço de notificação",
           "observer": "Observador — percepção proativa (precisa de uma chave Gemini)",
-          "routing": "Roteamento — áreas de quarto, grupo de transmissão, serviço de notificação"
-        },
-        "title": "JARVIS — Configurar"
+          "identity": "Identidade — reconhecimento por pessoa",
+          "email": "E-mail — caixa de entrada somente leitura (senha via secrets.yaml)"
+        }
       },
       "llm": {
         "title": "JARVIS — LLM",
@@ -146,8 +99,7 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Personalizado (compatível com OpenAI)",
-          "ollama": "Ollama (local)",
-          "llm_main": "Definir provedor e modelo do Agente Principal"
+          "ollama": "Ollama (local)"
         }
       },
       "groq": {
@@ -194,20 +146,26 @@
           "model": "Modelo de conversa"
         }
       },
-      "observer": {
+      "core": {
+        "title": "JARVIS — Núcleo",
+        "description": "Persona, diretriz e modelo de conversa.",
         "data": {
-          "classifier_model": "Modelo classificador (Nível 1 — barato)",
-          "gemini_api_key": "Chave de API Gemini",
-          "observer_enabled": "Ativar modo observador",
-          "observer_quiet_end": "Fim do horário silencioso (HH:MM)",
-          "observer_quiet_start": "Início do horário silencioso (HH:MM)",
-          "reasoning_model": "Modelo de raciocínio (Nível 2 — principal)",
-          "review_model": "Modelo de revisão (Nível 3 — periódico)"
-        },
-        "description": "percepção proativa. O JARVIS observa sua casa e se manifesta quando algo merece atenção. Requer uma chave de API Gemini (recomenda-se com faturamento ativado).",
-        "title": "JARVIS — Modo Observador"
+          "honorific": "Dirija-se a mim como",
+          "directive_preset": "Predefinição de diretriz",
+          "directive": "Diretriz personalizada (opcional, substitui a predefinição)",
+          "llm_provider": "Conversation model provider",
+          "use_hass_api": "Ativar controle da casa (luzes, climatização, fechaduras etc.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       },
       "routing": {
+        "title": "JARVIS — Roteamento",
+        "description": "escolha quais áreas do HA são quartos (para detecção de sono), qual grupo media_player usar para transmissões e o serviço de notificação do seu celular.",
         "data": {
           "bedroom_areas": "Áreas de quarto (para detecção de sono durante o horário silencioso)",
           "broadcast_group": "Grupo de alto-falantes para transmissão (normalmente seu grupo Cast doméstico)",
@@ -217,10 +175,103 @@
           "bedroom_areas": "Qualquer sensor de presença nessas áreas ativa o modo de sono durante o horário silencioso.",
           "broadcast_group": "Usado para avisos críticos e de alta urgência.",
           "notify_service": "Usado quando você está fora de casa ou dormindo."
+        }
+      },
+      "observer": {
+        "title": "JARVIS — Modo Observador",
+        "description": "percepção proativa. O JARVIS observa sua casa e se manifesta quando algo merece atenção. Requer uma chave de API Gemini (recomenda-se com faturamento ativado).",
+        "menu_options": {
+          "classifier": "Classifier model",
+          "reasoning": "Reasoning model",
+          "review": "Review model",
+          "observer_settings": "Observer settings"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
+        "data": {
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
+        "data": {
+          "observer_enabled": "Enable observer mode",
+          "observer_quiet_start": "Quiet hours start (HH:MM)",
+          "observer_quiet_end": "Quiet hours end (HH:MM)"
+        }
+      },
+      "identity": {
+        "title": "JARVIS — Identidade",
+        "description": "reconhecimento por pessoa, para que o JARVIS se adapte a quem está falando. Funciona sem hardware especial, usando presença e (se configurado) reconhecimento facial por câmera. A impressão digital de voz é a mais precisa, mas precisa de uma GPU local, por isso vem desativada por padrão.",
+        "data": {
+          "identity_enabled": "Reconhecer quem está falando",
+          "identity_voice_fingerprint": "Impressão digital de voz (requer uma GPU local)",
+          "identity_min_confidence": "Confiança mínima antes de atribuir a uma pessoa",
+          "voice_recognition_source": "Fonte de reconhecimento de voz (entidade de um serviço de reconhecimento de locutor, ex.: binary_sensor.*_voice)",
+          "voice_recognition_auto_enroll": "Sinalizar automaticamente vozes para cadastro conforme as pessoas falam"
         },
-        "description": "escolha quais áreas do HA são quartos (para detecção de sono), qual grupo media_player usar para transmissões e o serviço de notificação do seu celular.",
-        "title": "JARVIS — Roteamento"
+        "data_description": {
+          "identity_enabled": "Usa quem está em casa + reconhecimento facial recente da câmera. Não requer GPU.",
+          "identity_voice_fingerprint": "Deixe desativado, a menos que você tenha um servidor GPU rodando um modelo de identificação de voz.",
+          "identity_min_confidence": "Maior = mais cauteloso; permanece neutro em caso de dúvida."
+        }
+      },
+      "email": {
+        "title": "JARVIS — E-mail",
+        "description": "Acesso à caixa de entrada somente leitura. A senha IMAP é lida do secrets.yaml do Home Assistant — adicione-a lá sob a chave abaixo (padrão jarvis_imap_password); ela nunca é armazenada na configuração do painel.",
+        "data": {
+          "imap_enabled": "Ativar leitura de e-mail",
+          "imap_host": "Host IMAP (ex.: imap.gmail.com)",
+          "imap_port": "Porta IMAP (SSL: 993)",
+          "imap_user": "Usuário IMAP / endereço de e-mail",
+          "imap_folder": "Pasta da caixa de correio (padrão INBOX)",
+          "imap_ssl": "Usar SSL (recomendado)",
+          "imap_secret_key": "Chave no secrets.yaml que contém a senha"
+        }
       }
+    },
+    "error": {
+      "need_llm": "Informe uma chave de API na nuvem ou uma URL de LLM local.",
+      "cannot_connect": "Não foi possível acessar o LLM. Verifique se a URL/endpoint está correta e se o servidor (ex.: Ollama) está em execução.",
+      "invalid_auth": "A chave de API foi rejeitada. Verifique a chave e tente novamente.",
+      "unknown": "Não foi possível validar a conexão com o LLM. Verifique as configurações e tente novamente."
+    }
+  },
+  "issues": {
+    "llm_unavailable": {
+      "title": "Backend de raciocínio do JARVIS indisponível",
+      "description": "O JARVIS não conseguiu acessar seu modelo de raciocínio, então está em modo limitado — controle de dispositivos, status e cenas continuam funcionando. Motivo: {detail}\n\nAbra o painel do JARVIS → Configurações e verifique seu provedor, modelo e chave de API. Se o provedor descontinuou o modelo, selecione-o novamente na lista. Este aviso desaparece automaticamente assim que o raciocínio voltar a funcionar."
     }
   }
 }

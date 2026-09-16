@@ -1,15 +1,5 @@
 {
   "config": {
-    "abort": {
-      "already_configured": "JARVIS zaten yapılandırılmış.",
-      "import_failed": "Bir JARVIS yapılandırması bulundu ancak kullanılabilir bir LLM yok (API anahtarı ve yerel uç nokta yok)."
-    },
-    "error": {
-      "cannot_connect": "LLM'ye ulaşılamadı. URL/uç noktanın doğru olduğunu ve sunucunun (ör. Ollama) çalıştığını kontrol edin.",
-      "invalid_auth": "API anahtarı reddedildi. Anahtarı kontrol edip tekrar deneyin.",
-      "need_llm": "Bir bulut API anahtarı ya da yerel bir LLM URL'si girin.",
-      "unknown": "LLM bağlantısı doğrulanamadı. Ayarları kontrol edip tekrar deneyin."
-    },
     "step": {
       "provider_menu": {
         "title": "JARVIS — Sağlayıcı Ekle",
@@ -66,76 +56,39 @@
         "description": "{note}",
         "data": {
           "llm_provider": "Ana Ajan sağlayıcısı",
-          "model": "Sohbet modeli",
           "honorific": "Bana şöyle hitap et"
         }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       }
-    }
-  },
-  "issues": {
-    "llm_unavailable": {
-      "description": "JARVIS akıl yürütme modeline ulaşamadı, bu yüzden sınırlı modda çalışıyor — cihaz kontrolü, durum ve sahneler hâlâ çalışıyor. Neden: {detail}\n\nJARVIS panelini açın → Ayarlar ve sağlayıcınızı, modelinizi ve API anahtarınızı kontrol edin. Sağlayıcınız modeli kaldırdıysa listeden yeniden seçin. Bu bildirim, akıl yürütme yeniden çalıştığında otomatik olarak kaybolur.",
-      "title": "JARVIS akıl yürütme arka ucu kullanılamıyor"
+    },
+    "error": {
+      "need_llm": "Bir bulut API anahtarı ya da yerel bir LLM URL'si girin.",
+      "cannot_connect": "LLM'ye ulaşılamadı. URL/uç noktanın doğru olduğunu ve sunucunun (ör. Ollama) çalıştığını kontrol edin.",
+      "invalid_auth": "API anahtarı reddedildi. Anahtarı kontrol edip tekrar deneyin.",
+      "unknown": "LLM bağlantısı doğrulanamadı. Ayarları kontrol edip tekrar deneyin."
+    },
+    "abort": {
+      "already_configured": "JARVIS zaten yapılandırılmış.",
+      "import_failed": "Bir JARVIS yapılandırması bulundu ancak kullanılabilir bir LLM yok (API anahtarı ve yerel uç nokta yok)."
     }
   },
   "options": {
-    "error": {
-      "cannot_connect": "LLM'ye ulaşılamadı. URL/uç noktanın doğru olduğunu ve sunucunun (ör. Ollama) çalıştığını kontrol edin.",
-      "invalid_auth": "API anahtarı reddedildi. Anahtarı kontrol edip tekrar deneyin.",
-      "need_llm": "Bir bulut API anahtarı ya da yerel bir LLM URL'si girin.",
-      "unknown": "LLM bağlantısı doğrulanamadı. Ayarları kontrol edip tekrar deneyin."
-    },
     "step": {
-      "core": {
-        "data": {
-          "directive": "Özel direktif (isteğe bağlı, ön ayarı geçersiz kılar)",
-          "directive_preset": "Direktif ön ayarı",
-          "honorific": "Bana şöyle hitap et",
-          "model": "Sohbet modeli",
-          "use_hass_api": "Ev kontrolünü etkinleştir (ışıklar, iklim, kilitler vb.)"
-        },
-        "description": "Kişilik, direktif ve sohbet modeli.",
-        "title": "JARVIS — Çekirdek"
-      },
-      "email": {
-        "data": {
-          "imap_enabled": "E-posta okumayı etkinleştir",
-          "imap_folder": "Posta kutusu klasörü (varsayılan INBOX)",
-          "imap_host": "IMAP ana bilgisayarı (ör. imap.gmail.com)",
-          "imap_port": "IMAP bağlantı noktası (SSL: 993)",
-          "imap_secret_key": "Parolayı tutan secrets.yaml anahtarı",
-          "imap_ssl": "SSL kullan (önerilir)",
-          "imap_user": "IMAP kullanıcı adı / e-posta adresi"
-        },
-        "description": "Salt okunur gelen kutusu erişimi. IMAP parolası Home Assistant'ın secrets.yaml dosyasından okunur — aşağıdaki anahtarın altına oraya ekleyin (varsayılan jarvis_imap_password); panel yapılandırmasında asla saklanmaz.",
-        "title": "JARVIS — E-posta"
-      },
-      "identity": {
-        "data": {
-          "identity_enabled": "Kimin konuştuğunu tanı",
-          "identity_min_confidence": "Bir kişiye atamadan önce minimum güven",
-          "identity_voice_fingerprint": "Ses parmak izi (yerel bir GPU gerektirir)",
-          "voice_recognition_auto_enroll": "İnsanlar konuştukça kaydedilecek sesleri otomatik işaretle",
-          "voice_recognition_source": "Ses tanıma kaynağı (konuşmacı tanıma servisinden bir varlık, ör. binary_sensor.*_voice)"
-        },
-        "data_description": {
-          "identity_enabled": "Kimin evde olduğunu + son kamera yüz tanımasını kullanır. GPU gerekmez.",
-          "identity_min_confidence": "Yüksek = daha temkinli; emin olunmadığında tarafsız kalır.",
-          "identity_voice_fingerprint": "Ses kimliği modeli çalıştıran bir GPU sunucunuz yoksa kapalı bırakın."
-        },
-        "description": "kişi bazlı tanıma, böylece JARVIS kendini kimin konuştuğuna göre uyarlar. Özel donanım olmadan, varlık ve (ayarlanmışsa) kamera yüz tanıma kullanarak çalışır. Ses parmak izi en doğru olanıdır ancak yerel bir GPU gerektirir, bu yüzden varsayılan olarak kapalıdır.",
-        "title": "JARVIS — Kimlik"
-      },
       "init": {
+        "title": "JARVIS — Yapılandır",
         "menu_options": {
-          "core": "Çekirdek — kişilik, direktif, sohbet modeli",
-          "email": "E-posta — salt okunur gelen kutusu (parola secrets.yaml üzerinden)",
-          "identity": "Kimlik — kişi bazlı tanıma",
           "llm": "LLM — sağlayıcı anahtarlarını yönet",
+          "core": "Çekirdek — kişilik, direktif, sohbet modeli",
+          "routing": "Yönlendirme — yatak odası alanları, yayın grubu, bildirim servisi",
           "observer": "Gözlemci — proaktif farkındalık (bir Gemini anahtarı gerektirir)",
-          "routing": "Yönlendirme — yatak odası alanları, yayın grubu, bildirim servisi"
-        },
-        "title": "JARVIS — Yapılandır"
+          "identity": "Kimlik — kişi bazlı tanıma",
+          "email": "E-posta — salt okunur gelen kutusu (parola secrets.yaml üzerinden)"
+        }
       },
       "llm": {
         "title": "JARVIS — LLM",
@@ -146,8 +99,7 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Özel (OpenAI uyumlu)",
-          "ollama": "Ollama (yerel)",
-          "llm_main": "Ana Ajan sağlayıcısını ve modelini ayarla"
+          "ollama": "Ollama (yerel)"
         }
       },
       "groq": {
@@ -194,20 +146,26 @@
           "model": "Sohbet modeli"
         }
       },
-      "observer": {
+      "core": {
+        "title": "JARVIS — Çekirdek",
+        "description": "Kişilik, direktif ve sohbet modeli.",
         "data": {
-          "classifier_model": "Sınıflandırıcı model (Kademe 1 — ucuz)",
-          "gemini_api_key": "Gemini API anahtarı",
-          "observer_enabled": "Gözlemci modunu etkinleştir",
-          "observer_quiet_end": "Sessiz saatler bitişi (SS:DD)",
-          "observer_quiet_start": "Sessiz saatler başlangıcı (SS:DD)",
-          "reasoning_model": "Akıl yürütme modeli (Kademe 2 — ana)",
-          "review_model": "İnceleme modeli (Kademe 3 — periyodik)"
-        },
-        "description": "proaktif farkındalık. JARVIS evinizi izler ve kayda değer bir şey olduğunda söz alır. Bir Gemini API anahtarı gerektirir (faturalandırma etkin önerilir).",
-        "title": "JARVIS — Gözlemci Modu"
+          "honorific": "Bana şöyle hitap et",
+          "directive_preset": "Direktif ön ayarı",
+          "directive": "Özel direktif (isteğe bağlı, ön ayarı geçersiz kılar)",
+          "llm_provider": "Conversation model provider",
+          "use_hass_api": "Ev kontrolünü etkinleştir (ışıklar, iklim, kilitler vb.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       },
       "routing": {
+        "title": "JARVIS — Yönlendirme",
+        "description": "hangi HA alanlarının yatak odası olduğunu (uyku algılama için), yayınlar için hangi media_player grubunun kullanılacağını ve telefon bildirim servisinizi seçin.",
         "data": {
           "bedroom_areas": "Yatak odası alanları (sessiz saatlerde uyku algılama için)",
           "broadcast_group": "Yayın hoparlör grubu (genellikle ev Cast grubunuz)",
@@ -217,10 +175,103 @@
           "bedroom_areas": "Bu alanlardaki herhangi bir varlık sensörü, sessiz saatlerde uyku modunu tetikler.",
           "broadcast_group": "Kritik ve çok acil duyurular için kullanılır.",
           "notify_service": "Evden uzaktayken veya uyurken kullanılır."
+        }
+      },
+      "observer": {
+        "title": "JARVIS — Gözlemci Modu",
+        "description": "proaktif farkındalık. JARVIS evinizi izler ve kayda değer bir şey olduğunda söz alır. Bir Gemini API anahtarı gerektirir (faturalandırma etkin önerilir).",
+        "menu_options": {
+          "classifier": "Classifier model",
+          "reasoning": "Reasoning model",
+          "review": "Review model",
+          "observer_settings": "Observer settings"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
+        "data": {
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
+        "data": {
+          "observer_enabled": "Enable observer mode",
+          "observer_quiet_start": "Quiet hours start (HH:MM)",
+          "observer_quiet_end": "Quiet hours end (HH:MM)"
+        }
+      },
+      "identity": {
+        "title": "JARVIS — Kimlik",
+        "description": "kişi bazlı tanıma, böylece JARVIS kendini kimin konuştuğuna göre uyarlar. Özel donanım olmadan, varlık ve (ayarlanmışsa) kamera yüz tanıma kullanarak çalışır. Ses parmak izi en doğru olanıdır ancak yerel bir GPU gerektirir, bu yüzden varsayılan olarak kapalıdır.",
+        "data": {
+          "identity_enabled": "Kimin konuştuğunu tanı",
+          "identity_voice_fingerprint": "Ses parmak izi (yerel bir GPU gerektirir)",
+          "identity_min_confidence": "Bir kişiye atamadan önce minimum güven",
+          "voice_recognition_source": "Ses tanıma kaynağı (konuşmacı tanıma servisinden bir varlık, ör. binary_sensor.*_voice)",
+          "voice_recognition_auto_enroll": "İnsanlar konuştukça kaydedilecek sesleri otomatik işaretle"
         },
-        "description": "hangi HA alanlarının yatak odası olduğunu (uyku algılama için), yayınlar için hangi media_player grubunun kullanılacağını ve telefon bildirim servisinizi seçin.",
-        "title": "JARVIS — Yönlendirme"
+        "data_description": {
+          "identity_enabled": "Kimin evde olduğunu + son kamera yüz tanımasını kullanır. GPU gerekmez.",
+          "identity_voice_fingerprint": "Ses kimliği modeli çalıştıran bir GPU sunucunuz yoksa kapalı bırakın.",
+          "identity_min_confidence": "Yüksek = daha temkinli; emin olunmadığında tarafsız kalır."
+        }
+      },
+      "email": {
+        "title": "JARVIS — E-posta",
+        "description": "Salt okunur gelen kutusu erişimi. IMAP parolası Home Assistant'ın secrets.yaml dosyasından okunur — aşağıdaki anahtarın altına oraya ekleyin (varsayılan jarvis_imap_password); panel yapılandırmasında asla saklanmaz.",
+        "data": {
+          "imap_enabled": "E-posta okumayı etkinleştir",
+          "imap_host": "IMAP ana bilgisayarı (ör. imap.gmail.com)",
+          "imap_port": "IMAP bağlantı noktası (SSL: 993)",
+          "imap_user": "IMAP kullanıcı adı / e-posta adresi",
+          "imap_folder": "Posta kutusu klasörü (varsayılan INBOX)",
+          "imap_ssl": "SSL kullan (önerilir)",
+          "imap_secret_key": "Parolayı tutan secrets.yaml anahtarı"
+        }
       }
+    },
+    "error": {
+      "need_llm": "Bir bulut API anahtarı ya da yerel bir LLM URL'si girin.",
+      "cannot_connect": "LLM'ye ulaşılamadı. URL/uç noktanın doğru olduğunu ve sunucunun (ör. Ollama) çalıştığını kontrol edin.",
+      "invalid_auth": "API anahtarı reddedildi. Anahtarı kontrol edip tekrar deneyin.",
+      "unknown": "LLM bağlantısı doğrulanamadı. Ayarları kontrol edip tekrar deneyin."
+    }
+  },
+  "issues": {
+    "llm_unavailable": {
+      "title": "JARVIS akıl yürütme arka ucu kullanılamıyor",
+      "description": "JARVIS akıl yürütme modeline ulaşamadı, bu yüzden sınırlı modda çalışıyor — cihaz kontrolü, durum ve sahneler hâlâ çalışıyor. Neden: {detail}\n\nJARVIS panelini açın → Ayarlar ve sağlayıcınızı, modelinizi ve API anahtarınızı kontrol edin. Sağlayıcınız modeli kaldırdıysa listeden yeniden seçin. Bu bildirim, akıl yürütme yeniden çalıştığında otomatik olarak kaybolur."
     }
   }
 }

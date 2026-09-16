@@ -56,8 +56,13 @@
         "description": "{note}",
         "data": {
           "llm_provider": "Provider van de Hoofdagent",
-          "model": "Conversatiemodel",
           "honorific": "Spreek mij aan met"
+        }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
         }
       }
     },
@@ -94,8 +99,7 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Aangepast (OpenAI-compatibel)",
-          "ollama": "Ollama (lokaal)",
-          "llm_main": "Provider & model van de Hoofdagent instellen"
+          "ollama": "Ollama (lokaal)"
         }
       },
       "groq": {
@@ -149,8 +153,14 @@
           "honorific": "Spreek mij aan met",
           "directive_preset": "Richtlijn-voorinstelling",
           "directive": "Aangepaste richtlijn (optioneel, overschrijft voorinstelling)",
-          "model": "Conversatiemodel",
+          "llm_provider": "Conversation model provider",
           "use_hass_api": "Huisbediening inschakelen (verlichting, klimaat, sloten, enz.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
         }
       },
       "routing": {
@@ -170,14 +180,55 @@
       "observer": {
         "title": "JARVIS — Waarnemermodus",
         "description": "proactief bewustzijn. JARVIS houdt je huis in de gaten en laat van zich horen als er iets vermeldenswaardig is. Vereist een Gemini-API-sleutel (facturering ingeschakeld aanbevolen).",
+        "menu_options": {
+          "classifier": "Classifier model",
+          "reasoning": "Reasoning model",
+          "review": "Review model",
+          "observer_settings": "Observer settings"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
         "data": {
-          "observer_enabled": "Waarnemermodus inschakelen",
-          "gemini_api_key": "Gemini-API-sleutel",
-          "classifier_model": "Classificatiemodel (Niveau 1 — goedkoop)",
-          "reasoning_model": "Redeneermodel (Niveau 2 — hoofd)",
-          "review_model": "Beoordelingsmodel (Niveau 3 — periodiek)",
-          "observer_quiet_start": "Begin stille uren (UU:MM)",
-          "observer_quiet_end": "Einde stille uren (UU:MM)"
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
+        "data": {
+          "observer_enabled": "Enable observer mode",
+          "observer_quiet_start": "Quiet hours start (HH:MM)",
+          "observer_quiet_end": "Quiet hours end (HH:MM)"
         }
       },
       "identity": {

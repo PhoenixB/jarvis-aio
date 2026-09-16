@@ -1,15 +1,5 @@
 {
   "config": {
-    "abort": {
-      "already_configured": "JARVIS je už nakonfigurován.",
-      "import_failed": "Byla nalezena konfigurace JARVIS, ale žádné použitelné LLM (bez API klíče a bez lokálního endpointu)."
-    },
-    "error": {
-      "cannot_connect": "LLM není dostupný. Zkontrolujte, že URL/endpoint je správný a server (např. Ollama) běží.",
-      "invalid_auth": "API klíč byl odmítnut. Zkontrolujte klíč a zkuste to znovu.",
-      "need_llm": "Zadejte buď cloudový API klíč, nebo URL lokálního LLM.",
-      "unknown": "Připojení k LLM se nepodařilo ověřit. Zkontrolujte nastavení a zkuste to znovu."
-    },
     "step": {
       "provider_menu": {
         "title": "JARVIS — Přidat poskytovatele",
@@ -66,76 +56,39 @@
         "description": "{note}",
         "data": {
           "llm_provider": "Poskytovatel Hlavního agenta",
-          "model": "Konverzační model",
           "honorific": "Oslovuj mě jako"
         }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       }
-    }
-  },
-  "issues": {
-    "llm_unavailable": {
-      "description": "JARVIS nemohl kontaktovat svůj uvažovací model, proto běží v omezeném režimu — ovládání zařízení, stav a scény stále fungují. Důvod: {detail}\n\nOtevřete panel JARVIS → Nastavení a zkontrolujte poskytovatele, model a API klíč. Pokud poskytovatel model vyřadil, vyberte jej znovu ze seznamu. Toto upozornění zmizí automaticky, jakmile uvažování opět funguje.",
-      "title": "Uvažovací backend JARVIS není dostupný"
+    },
+    "error": {
+      "need_llm": "Zadejte buď cloudový API klíč, nebo URL lokálního LLM.",
+      "cannot_connect": "LLM není dostupný. Zkontrolujte, že URL/endpoint je správný a server (např. Ollama) běží.",
+      "invalid_auth": "API klíč byl odmítnut. Zkontrolujte klíč a zkuste to znovu.",
+      "unknown": "Připojení k LLM se nepodařilo ověřit. Zkontrolujte nastavení a zkuste to znovu."
+    },
+    "abort": {
+      "already_configured": "JARVIS je už nakonfigurován.",
+      "import_failed": "Byla nalezena konfigurace JARVIS, ale žádné použitelné LLM (bez API klíče a bez lokálního endpointu)."
     }
   },
   "options": {
-    "error": {
-      "cannot_connect": "LLM není dostupný. Zkontrolujte, že URL/endpoint je správný a server (např. Ollama) běží.",
-      "invalid_auth": "API klíč byl odmítnut. Zkontrolujte klíč a zkuste to znovu.",
-      "need_llm": "Zadejte buď cloudový API klíč, nebo URL lokálního LLM.",
-      "unknown": "Připojení k LLM se nepodařilo ověřit. Zkontrolujte nastavení a zkuste to znovu."
-    },
     "step": {
-      "core": {
-        "data": {
-          "directive": "Vlastní direktiva (volitelné, přepíše přednastavení)",
-          "directive_preset": "Přednastavení direktivy",
-          "honorific": "Oslovuj mě jako",
-          "model": "Konverzační model",
-          "use_hass_api": "Povolit ovládání domácnosti (světla, klima, zámky atd.)"
-        },
-        "description": "Osobnost, direktiva a konverzační model.",
-        "title": "JARVIS — Jádro"
-      },
-      "email": {
-        "data": {
-          "imap_enabled": "Povolit čtení e-mailů",
-          "imap_folder": "Složka schránky (výchozí INBOX)",
-          "imap_host": "IMAP hostitel (např. imap.gmail.com)",
-          "imap_port": "IMAP port (SSL: 993)",
-          "imap_secret_key": "Klíč v secrets.yaml obsahující heslo",
-          "imap_ssl": "Použít SSL (doporučeno)",
-          "imap_user": "IMAP uživatelské jméno / e-mailová adresa"
-        },
-        "description": "Přístup ke schránce pouze pro čtení. Heslo IMAP se načítá ze souboru secrets.yaml v Home Assistant — přidejte ho tam pod níže uvedený klíč (výchozí jarvis_imap_password); v konfiguraci panelu se nikdy neukládá.",
-        "title": "JARVIS — E-mail"
-      },
-      "identity": {
-        "data": {
-          "identity_enabled": "Rozpoznat, kdo mluví",
-          "identity_min_confidence": "Minimální jistota před přiřazením k osobě",
-          "identity_voice_fingerprint": "Hlasový otisk (vyžaduje lokální GPU)",
-          "voice_recognition_auto_enroll": "Automaticky označovat hlasy k zápisu, jak lidé mluví",
-          "voice_recognition_source": "Zdroj rozpoznávání hlasu (entita ze služby rozpoznávání mluvčího, např. binary_sensor.*_voice)"
-        },
-        "data_description": {
-          "identity_enabled": "Využívá, kdo je doma, + nedávné rozpoznání obličeje z kamery. GPU není potřeba.",
-          "identity_min_confidence": "Vyšší = opatrnější; při nejistotě zůstává neutrální.",
-          "identity_voice_fingerprint": "Nechte vypnuté, pokud nemáte GPU server s modelem pro identifikaci hlasu."
-        },
-        "description": "rozpoznávání jednotlivých osob, takže se JARVIS přizpůsobí tomu, kdo mluví. Funguje bez zvláštního hardwaru pomocí přítomnosti a (je-li nastaveno) rozpoznávání obličeje z kamery. Hlasový otisk je nejpřesnější, ale vyžaduje lokální GPU, proto je ve výchozím stavu vypnutý.",
-        "title": "JARVIS — Identita"
-      },
       "init": {
+        "title": "JARVIS — Konfigurace",
         "menu_options": {
-          "core": "Jádro — osobnost, direktiva, konverzační model",
-          "email": "E-mail — schránka pouze pro čtení (heslo přes secrets.yaml)",
-          "identity": "Identita — rozpoznávání jednotlivých osob",
           "llm": "LLM — správa klíčů poskytovatelů",
+          "core": "Jádro — osobnost, direktiva, konverzační model",
+          "routing": "Směrování — ložnicové oblasti, skupina pro vysílání, oznamovací služba",
           "observer": "Pozorovatel — proaktivní vnímání (vyžaduje klíč Gemini)",
-          "routing": "Směrování — ložnicové oblasti, skupina pro vysílání, oznamovací služba"
-        },
-        "title": "JARVIS — Konfigurace"
+          "identity": "Identita — rozpoznávání jednotlivých osob",
+          "email": "E-mail — schránka pouze pro čtení (heslo přes secrets.yaml)"
+        }
       },
       "llm": {
         "title": "JARVIS — LLM",
@@ -146,8 +99,7 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Vlastní (kompatibilní s OpenAI)",
-          "ollama": "Ollama (lokální)",
-          "llm_main": "Nastavit poskytovatele a model Hlavního agenta"
+          "ollama": "Ollama (lokální)"
         }
       },
       "groq": {
@@ -194,20 +146,26 @@
           "model": "Konverzační model"
         }
       },
-      "observer": {
+      "core": {
+        "title": "JARVIS — Jádro",
+        "description": "Osobnost, direktiva a konverzační model.",
         "data": {
-          "classifier_model": "Klasifikační model (úroveň 1 — levný)",
-          "gemini_api_key": "API klíč Gemini",
-          "observer_enabled": "Povolit režim pozorovatele",
-          "observer_quiet_end": "Konec tichých hodin (HH:MM)",
-          "observer_quiet_start": "Začátek tichých hodin (HH:MM)",
-          "reasoning_model": "Uvažovací model (úroveň 2 — hlavní)",
-          "review_model": "Kontrolní model (úroveň 3 — periodický)"
-        },
-        "description": "proaktivní vnímání. JARVIS sleduje váš domov a ozve se, když stojí něco za zmínku. Vyžaduje API klíč Gemini (doporučeno s povoleným účtováním).",
-        "title": "JARVIS — Režim pozorovatele"
+          "honorific": "Oslovuj mě jako",
+          "directive_preset": "Přednastavení direktivy",
+          "directive": "Vlastní direktiva (volitelné, přepíše přednastavení)",
+          "llm_provider": "Conversation model provider",
+          "use_hass_api": "Povolit ovládání domácnosti (světla, klima, zámky atd.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       },
       "routing": {
+        "title": "JARVIS — Směrování",
+        "description": "vyberte, které oblasti HA jsou ložnice (pro detekci spánku), kterou skupinu media_player použít pro vysílání a vaši telefonní oznamovací službu.",
         "data": {
           "bedroom_areas": "Ložnicové oblasti (pro detekci spánku během tichých hodin)",
           "broadcast_group": "Skupina reproduktorů pro vysílání (obvykle vaše domácí skupina Cast)",
@@ -217,10 +175,103 @@
           "bedroom_areas": "Jakýkoli senzor přítomnosti v těchto oblastech spustí režim spánku během tichých hodin.",
           "broadcast_group": "Používá se pro kritická a velmi naléhavá oznámení.",
           "notify_service": "Používá se, když jste mimo domov nebo spíte."
+        }
+      },
+      "observer": {
+        "title": "JARVIS — Režim pozorovatele",
+        "description": "proaktivní vnímání. JARVIS sleduje váš domov a ozve se, když stojí něco za zmínku. Vyžaduje API klíč Gemini (doporučeno s povoleným účtováním).",
+        "menu_options": {
+          "classifier": "Classifier model",
+          "reasoning": "Reasoning model",
+          "review": "Review model",
+          "observer_settings": "Observer settings"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
+        "data": {
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
+        "data": {
+          "observer_enabled": "Enable observer mode",
+          "observer_quiet_start": "Quiet hours start (HH:MM)",
+          "observer_quiet_end": "Quiet hours end (HH:MM)"
+        }
+      },
+      "identity": {
+        "title": "JARVIS — Identita",
+        "description": "rozpoznávání jednotlivých osob, takže se JARVIS přizpůsobí tomu, kdo mluví. Funguje bez zvláštního hardwaru pomocí přítomnosti a (je-li nastaveno) rozpoznávání obličeje z kamery. Hlasový otisk je nejpřesnější, ale vyžaduje lokální GPU, proto je ve výchozím stavu vypnutý.",
+        "data": {
+          "identity_enabled": "Rozpoznat, kdo mluví",
+          "identity_voice_fingerprint": "Hlasový otisk (vyžaduje lokální GPU)",
+          "identity_min_confidence": "Minimální jistota před přiřazením k osobě",
+          "voice_recognition_source": "Zdroj rozpoznávání hlasu (entita ze služby rozpoznávání mluvčího, např. binary_sensor.*_voice)",
+          "voice_recognition_auto_enroll": "Automaticky označovat hlasy k zápisu, jak lidé mluví"
         },
-        "description": "vyberte, které oblasti HA jsou ložnice (pro detekci spánku), kterou skupinu media_player použít pro vysílání a vaši telefonní oznamovací službu.",
-        "title": "JARVIS — Směrování"
+        "data_description": {
+          "identity_enabled": "Využívá, kdo je doma, + nedávné rozpoznání obličeje z kamery. GPU není potřeba.",
+          "identity_voice_fingerprint": "Nechte vypnuté, pokud nemáte GPU server s modelem pro identifikaci hlasu.",
+          "identity_min_confidence": "Vyšší = opatrnější; při nejistotě zůstává neutrální."
+        }
+      },
+      "email": {
+        "title": "JARVIS — E-mail",
+        "description": "Přístup ke schránce pouze pro čtení. Heslo IMAP se načítá ze souboru secrets.yaml v Home Assistant — přidejte ho tam pod níže uvedený klíč (výchozí jarvis_imap_password); v konfiguraci panelu se nikdy neukládá.",
+        "data": {
+          "imap_enabled": "Povolit čtení e-mailů",
+          "imap_host": "IMAP hostitel (např. imap.gmail.com)",
+          "imap_port": "IMAP port (SSL: 993)",
+          "imap_user": "IMAP uživatelské jméno / e-mailová adresa",
+          "imap_folder": "Složka schránky (výchozí INBOX)",
+          "imap_ssl": "Použít SSL (doporučeno)",
+          "imap_secret_key": "Klíč v secrets.yaml obsahující heslo"
+        }
       }
+    },
+    "error": {
+      "need_llm": "Zadejte buď cloudový API klíč, nebo URL lokálního LLM.",
+      "cannot_connect": "LLM není dostupný. Zkontrolujte, že URL/endpoint je správný a server (např. Ollama) běží.",
+      "invalid_auth": "API klíč byl odmítnut. Zkontrolujte klíč a zkuste to znovu.",
+      "unknown": "Připojení k LLM se nepodařilo ověřit. Zkontrolujte nastavení a zkuste to znovu."
+    }
+  },
+  "issues": {
+    "llm_unavailable": {
+      "title": "Uvažovací backend JARVIS není dostupný",
+      "description": "JARVIS nemohl kontaktovat svůj uvažovací model, proto běží v omezeném režimu — ovládání zařízení, stav a scény stále fungují. Důvod: {detail}\n\nOtevřete panel JARVIS → Nastavení a zkontrolujte poskytovatele, model a API klíč. Pokud poskytovatel model vyřadil, vyberte jej znovu ze seznamu. Toto upozornění zmizí automaticky, jakmile uvažování opět funguje."
     }
   }
 }

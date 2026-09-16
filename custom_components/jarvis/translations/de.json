@@ -56,8 +56,13 @@
         "description": "{note}",
         "data": {
           "llm_provider": "Anbieter des Hauptagenten",
-          "model": "Konversationsmodell",
           "honorific": "Sprich mich an mit"
+        }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
         }
       }
     },
@@ -94,8 +99,7 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Benutzerdefiniert (OpenAI-kompatibel)",
-          "ollama": "Ollama (lokal)",
-          "llm_main": "Anbieter & Modell des Hauptagenten festlegen"
+          "ollama": "Ollama (lokal)"
         }
       },
       "groq": {
@@ -149,8 +153,14 @@
           "honorific": "Sprich mich an mit",
           "directive_preset": "Direktiven-Vorlage",
           "directive": "Eigene Direktive (optional, überschreibt Vorlage)",
-          "model": "Konversationsmodell",
+          "llm_provider": "Conversation model provider",
           "use_hass_api": "Haussteuerung aktivieren (Licht, Klima, Schlösser usw.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
         }
       },
       "routing": {
@@ -170,14 +180,55 @@
       "observer": {
         "title": "JARVIS — Beobachter-Modus",
         "description": "proaktive Wahrnehmung. JARVIS beobachtet dein Zuhause und meldet sich, wenn etwas erwähnenswert ist. Benötigt einen Gemini-API-Schlüssel (Abrechnung aktiviert empfohlen).",
+        "menu_options": {
+          "classifier": "Classifier model",
+          "reasoning": "Reasoning model",
+          "review": "Review model",
+          "observer_settings": "Observer settings"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
         "data": {
-          "observer_enabled": "Beobachter-Modus aktivieren",
-          "gemini_api_key": "Gemini-API-Schlüssel",
-          "classifier_model": "Klassifizierer-Modell (Stufe 1 — günstig)",
-          "reasoning_model": "Reasoning-Modell (Stufe 2 — Haupt)",
-          "review_model": "Review-Modell (Stufe 3 — periodisch)",
-          "observer_quiet_start": "Beginn der Ruhezeiten (HH:MM)",
-          "observer_quiet_end": "Ende der Ruhezeiten (HH:MM)"
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
+        "data": {
+          "observer_enabled": "Enable observer mode",
+          "observer_quiet_start": "Quiet hours start (HH:MM)",
+          "observer_quiet_end": "Quiet hours end (HH:MM)"
         }
       },
       "identity": {

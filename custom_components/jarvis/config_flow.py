@@ -79,6 +79,16 @@ def _legacy_provider_key(data: dict[str, Any], provider: str) -> str:
     return ha_secrets.get_legacy_provider_key(data, provider)
 
 
+async def _fetch_available_models(hass, provider: str, api_key: str = "", base_url: str = "") -> list[str]:
+    """Fetch live model IDs for a provider, returning [] on any lookup error."""
+    try:
+        from .websocket import _fetch_models
+        return await _fetch_models(hass, provider, api_key, base_url)
+    except Exception as exc:
+        _LOGGER.warning("JARVIS config flow: model list for %s failed: %s", provider, exc)
+        return []
+
+
 def _find_config() -> dict | None:
     """Read an existing runtime config, if one with a usable LLM exists.
     Credentials live only in secrets.yaml (never config.json), so "usable"
@@ -233,50 +243,17 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         if user_input is not None:
             provider = user_input.get("llm_provider", providers[0])
-            model = user_input.get(CONF_MODEL, DEFAULT_MODEL)
             honorific = user_input.get(CONF_HONORIFIC, DEFAULT_HONORIFIC)
             if provider not in self._provider_keys:
                 errors["base"] = "need_llm"
             else:
-                await self.async_set_unique_id(DOMAIN)
-                self._abort_if_unique_id_configured()
-
-                from . import ha_secrets, jarvis_config
-                base_url = ""
-                endpoint_updates: dict[str, str] = {}
-                for prov, fields in self._provider_keys.items():
-                    if fields.get("api_key"):
-                        ok = await ha_secrets.async_set_provider_key(
-                            self.hass, prov, fields["api_key"])
-                        if not ok:
-                            errors["base"] = "unknown"
-                            break
-                    if fields.get(CONF_CUSTOM_BASE_URL) or fields.get(CONF_OLLAMA_BASE_URL):
-                        endpoint = fields.get(CONF_CUSTOM_BASE_URL) or fields.get(CONF_OLLAMA_BASE_URL)
-                        endpoint_key = CONF_CUSTOM_BASE_URL if prov == "custom" else CONF_OLLAMA_BASE_URL
-                        endpoint_updates[endpoint_key] = endpoint
-                        if prov == provider:
-                            base_url = endpoint
-                if not errors:
-                    if endpoint_updates:
-                        await self.hass.async_add_executor_job(jarvis_config.set_many, endpoint_updates)
-
-                    return self.async_create_entry(
-                        title="JARVIS",
-                        data={
-                            CONF_API_KEY: "",
-                            CONF_MODEL: model,
-                            CONF_HONORIFIC: honorific,
-                            "llm_provider": provider,
-                            "llm_base_url": base_url,
-                            "schema_version": 7,
-                        },
-                    )
+                self._finish_provider = provider
+                self._finish_honorific = honorific
+                return await self.async_step_finish_model()
         schema = vol.Schema({
             vol.Required("llm_provider", default=providers[0]):
                 selector.SelectSelector(selector.SelectSelectorConfig(
                     options=providers, mode=selector.SelectSelectorMode.DROPDOWN)),
-            vol.Optional(CONF_MODEL, default=DEFAULT_MODEL): str,
             vol.Optional(CONF_HONORIFIC, default=DEFAULT_HONORIFIC): str,
         })
         return self.async_show_form(
@@ -287,6 +264,51 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
                 "note": "Choose which configured provider runs the Main Agent. "
                         "Everything else is configured later in the JARVIS panel → Settings.",
             },
+        )
+
+    async def async_step_finish_model(self, user_input: dict[str, Any] | None = None) -> dict:
+        """Choose the initial Main Agent model from the provider's live list."""
+        provider = self._finish_provider
+        fields = self._provider_keys[provider]
+        models = await _fetch_available_models(
+            self.hass, provider, fields.get("api_key", ""), fields.get("llm_base_url", ""),
+        )
+        if not models:
+            return self.async_show_form(
+                step_id="finish_model", data_schema=vol.Schema({}), errors={"base": "no_models"},
+            )
+        if user_input is not None:
+            await self.async_set_unique_id(DOMAIN)
+            self._abort_if_unique_id_configured()
+            from . import ha_secrets, jarvis_config
+            base_url = ""
+            for prov, fields in self._provider_keys.items():
+                if fields.get("api_key"):
+                    await ha_secrets.async_set_provider_key(self.hass, prov, fields["api_key"])
+                if fields.get("llm_base_url"):
+                    base_url = fields["llm_base_url"]
+            if base_url:
+                await self.hass.async_add_executor_job(jarvis_config.set, "llm_base_url", base_url)
+            return self.async_create_entry(
+                title="JARVIS",
+                data={
+                    CONF_API_KEY: "",
+                    CONF_MODEL: user_input[CONF_MODEL],
+                    CONF_HONORIFIC: self._finish_honorific,
+                    "llm_provider": provider,
+                    "llm_base_url": base_url,
+                    "schema_version": 7,
+                },
+            )
+        return self.async_show_form(
+            step_id="finish_model",
+            data_schema=vol.Schema({
+                vol.Required(CONF_MODEL): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=models, mode=selector.SelectSelectorMode.DROPDOWN,
+                    ),
+                ),
+            }),
         )
 
     async def async_step_import(
@@ -386,6 +408,19 @@ class JarvisOptionsFlow(OptionsFlow):
         """suggested_value wrapper to pre-fill a field with its current value."""
         return {"suggested_value": self._cur(key, default)}
 
+    async def _available_models(self, provider: str) -> list[str]:
+        """Fetch models for a configured provider for a HA selector."""
+        from . import ha_secrets
+        api_key = await ha_secrets.async_get_provider_key(self.hass, provider)
+        base_url = str(self._cur("llm_base_url", "") or "")
+        return await _fetch_available_models(self.hass, provider, api_key, base_url)
+
+    def _model_selector(self, models: list[str], current: str = ""):
+        return selector.SelectSelector(selector.SelectSelectorConfig(
+            options=list(models),
+            mode=selector.SelectSelectorMode.DROPDOWN,
+        ))
+
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> dict:
         """Landing menu — jump to any section directly."""
         return self.async_show_menu(
@@ -405,7 +440,7 @@ class JarvisOptionsFlow(OptionsFlow):
             note = "No provider configured yet. Pick one to add its API key (or URL for Ollama/Custom)."
         return self.async_show_menu(
             step_id="llm",
-            menu_options=list(_PROVIDER_STEPS) + ["llm_main"],
+            menu_options=list(_PROVIDER_STEPS),
             description_placeholders={"note": note},
         )
 
@@ -520,30 +555,6 @@ class JarvisOptionsFlow(OptionsFlow):
         })
         return self.async_show_form(step_id="ollama", data_schema=schema, errors=errors)
 
-    async def async_step_llm_main(self, user_input: dict[str, Any] | None = None) -> dict:
-        """Pick which configured provider drives the Main Agent, and its model."""
-        configured = [p for p in _PROVIDER_STEPS if await self._provider_configured(p)]
-        if not configured:
-            return await self.async_step_llm()
-        errors: dict[str, str] = {}
-        if user_input is not None:
-            provider = user_input.get("llm_provider", configured[0])
-            if provider not in configured:
-                errors["base"] = "need_llm"
-            else:
-                return await self._save_section({
-                    "llm_provider": provider,
-                    CONF_MODEL: user_input.get(CONF_MODEL, DEFAULT_MODEL),
-                })
-        schema = vol.Schema({
-            vol.Optional("llm_provider", description=self._sv("llm_provider", configured[0])):
-                selector.SelectSelector(selector.SelectSelectorConfig(
-                    options=configured, mode=selector.SelectSelectorMode.DROPDOWN)),
-            vol.Optional(CONF_MODEL, description=self._sv(CONF_MODEL, DEFAULT_MODEL)):
-                selector.TextSelector(),
-        })
-        return self.async_show_form(step_id="llm_main", data_schema=schema, errors=errors)
-
     async def _persist(self, updates: dict[str, Any]) -> None:
         """Write a non-credential value (llm_base_url) straight to jarvis_config
         without ending the options flow — used by the LLM submenu's provider
@@ -563,7 +574,10 @@ class JarvisOptionsFlow(OptionsFlow):
     async def async_step_core(self, user_input: dict[str, Any] | None = None) -> dict:
         """Core — persona, directive, conversation model, home control."""
         if user_input is not None:
-            return await self._save_section(user_input)
+            provider = user_input.pop("llm_provider", self._cur("llm_provider", "groq"))
+            self._data.update(user_input)
+            self._data["llm_provider"] = provider
+            return await self.async_step_core_model()
         schema = vol.Schema({
             vol.Optional(CONF_HONORIFIC, description=self._sv(CONF_HONORIFIC, DEFAULT_HONORIFIC)):
                 selector.TextSelector(),
@@ -574,12 +588,36 @@ class JarvisOptionsFlow(OptionsFlow):
                     mode=selector.SelectSelectorMode.DROPDOWN)),
             vol.Optional(CONF_DIRECTIVE, description=self._sv(CONF_DIRECTIVE, "")):
                 selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
-            vol.Optional(CONF_MODEL, description=self._sv(CONF_MODEL, DEFAULT_MODEL)):
-                selector.TextSelector(),
+            vol.Optional("llm_provider", description=self._sv("llm_provider", "groq")):
+                selector.SelectSelector(selector.SelectSelectorConfig(
+                    options=[p for p in _PROVIDER_STEPS if self._provider_configured(p)],
+                    mode=selector.SelectSelectorMode.DROPDOWN)),
             vol.Optional(CONF_USE_HASS_API, description=self._sv(CONF_USE_HASS_API, True)):
                 selector.BooleanSelector(),
         })
         return self.async_show_form(step_id="core", data_schema=schema)
+
+    async def async_step_core_model(self, user_input: dict[str, Any] | None = None) -> dict:
+        """Choose the conversation model from the selected provider's list."""
+        provider = self._data.get("llm_provider", self._cur("llm_provider", "groq"))
+        models = await self._available_models(provider)
+        if user_input is not None:
+            self._data.update(user_input)
+            return await self._save_section(dict(self._data))
+        current = self._cur(CONF_MODEL, DEFAULT_MODEL)
+        selected = current if current in models else models[0]
+        if not models:
+            return self.async_show_form(
+                step_id="core_model",
+                data_schema=vol.Schema({}),
+                errors={"base": "no_models"},
+            )
+        return self.async_show_form(
+            step_id="core_model",
+            data_schema=vol.Schema({
+                vol.Required(CONF_MODEL, default=selected): self._model_selector(models),
+            }),
+        )
 
     async def async_step_routing(self, user_input: dict[str, Any] | None = None) -> dict:
         """Routing — bedroom areas, broadcast group, phone notify service."""
@@ -596,28 +634,83 @@ class JarvisOptionsFlow(OptionsFlow):
         return self.async_show_form(step_id="routing", data_schema=schema)
 
     async def async_step_observer(self, user_input: dict[str, Any] | None = None) -> dict:
-        """Observer — proactive awareness (Gemini key + model tiers + quiet hours)."""
+        """Observer — configure each model tier and observer settings."""
         if user_input is not None:
-            gemini_key = (user_input.pop(CONF_GEMINI_API_KEY, "") or "").strip()
-            if gemini_key:
-                from . import ha_secrets
-                await ha_secrets.async_set_provider_key(self.hass, "gemini", gemini_key)
+            return await self._save_section(user_input)
+        return self.async_show_menu(
+            step_id="observer",
+            menu_options=["classifier", "reasoning", "review", "observer_settings"],
+        )
+
+    async def _async_step_observer_tier(
+        self, tier: str, user_input: dict[str, Any] | None,
+    ) -> dict:
+        provider_key = f"{tier}_provider"
+        if user_input is not None:
+            self._data[provider_key] = user_input[provider_key]
+            await self._persist({provider_key: user_input[provider_key]})
+            return await self._async_step_observer_model(tier)
+        providers = [p for p in _PROVIDER_STEPS if self._provider_configured(p)]
+        return self.async_show_form(
+            step_id=tier,
+            data_schema=vol.Schema({
+                vol.Required(provider_key, default=self._cur(provider_key, "groq")):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=providers, mode=selector.SelectSelectorMode.DROPDOWN)),
+            }),
+        )
+
+    async def _async_step_observer_model(self, tier: str, user_input: dict[str, Any] | None = None) -> dict:
+        provider = self._data.get(f"{tier}_provider", self._cur(f"{tier}_provider", "groq"))
+        models = await self._available_models(provider)
+        model_key = f"{tier}_model"
+        if user_input is not None:
+            self._data[model_key] = user_input[model_key]
+            await self._persist({model_key: user_input[model_key]})
+            return await self.async_step_observer()
+        current = self._cur(model_key, {
+            "classifier": DEFAULT_CLASSIFIER_MODEL,
+            "reasoning": DEFAULT_REASONING_MODEL,
+            "review": DEFAULT_REVIEW_MODEL,
+        }[tier])
+        if not models:
+            return self.async_show_form(
+                step_id=f"{tier}_model",
+                data_schema=vol.Schema({}),
+                errors={"base": "no_models"},
+            )
+        return self.async_show_form(
+            step_id=f"{tier}_model",
+            data_schema=vol.Schema({
+                vol.Required(model_key, default=current if current in models else models[0]):
+                    self._model_selector(models),
+            }),
+        )
+
+    async def async_step_classifier(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_observer_tier("classifier", user_input)
+
+    async def async_step_classifier_model(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_observer_model("classifier", user_input)
+
+    async def async_step_reasoning(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_observer_tier("reasoning", user_input)
+
+    async def async_step_reasoning_model(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_observer_model("reasoning", user_input)
+
+    async def async_step_review(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_observer_tier("review", user_input)
+
+    async def async_step_review_model(self, user_input: dict[str, Any] | None = None) -> dict:
+        return await self._async_step_observer_model("review", user_input)
+
+    async def async_step_observer_settings(self, user_input: dict[str, Any] | None = None) -> dict:
+        if user_input is not None:
             return await self._save_section(user_input)
         schema = vol.Schema({
             vol.Optional(CONF_OBSERVER_ENABLED, description=self._sv(CONF_OBSERVER_ENABLED, False)):
                 selector.BooleanSelector(),
-            vol.Optional(CONF_GEMINI_API_KEY, description={"suggested_value": await self._cur_secret("gemini")}):
-                selector.TextSelector(selector.TextSelectorConfig(
-                    type=selector.TextSelectorType.PASSWORD)),
-            vol.Optional(CONF_CLASSIFIER_MODEL,
-                         description=self._sv(CONF_CLASSIFIER_MODEL, DEFAULT_CLASSIFIER_MODEL)):
-                selector.TextSelector(),
-            vol.Optional(CONF_REASONING_MODEL,
-                         description=self._sv(CONF_REASONING_MODEL, DEFAULT_REASONING_MODEL)):
-                selector.TextSelector(),
-            vol.Optional(CONF_REVIEW_MODEL,
-                         description=self._sv(CONF_REVIEW_MODEL, DEFAULT_REVIEW_MODEL)):
-                selector.TextSelector(),
             vol.Optional(CONF_OBSERVER_QUIET_START,
                          description=self._sv(CONF_OBSERVER_QUIET_START, DEFAULT_OBSERVER_QUIET_START)):
                 selector.TextSelector(),
@@ -625,7 +718,7 @@ class JarvisOptionsFlow(OptionsFlow):
                          description=self._sv(CONF_OBSERVER_QUIET_END, DEFAULT_OBSERVER_QUIET_END)):
                 selector.TextSelector(),
         })
-        return self.async_show_form(step_id="observer", data_schema=schema)
+        return self.async_show_form(step_id="observer_settings", data_schema=schema)
 
     async def async_step_identity(self, user_input: dict[str, Any] | None = None) -> dict:
         """Identity — per-person recognition; voice fingerprint tier needs a GPU."""

@@ -1,15 +1,5 @@
 {
   "config": {
-    "abort": {
-      "already_configured": "JARVIS er allerede konfigurert.",
-      "import_failed": "Fant en JARVIS-konfigurasjon, men ingen brukbar LLM (ingen API-nøkkel og intet lokalt endepunkt)."
-    },
-    "error": {
-      "cannot_connect": "Kunne ikke nå LLM-en. Kontroller at URL/endepunkt er riktig og at serveren (f.eks. Ollama) kjører.",
-      "invalid_auth": "API-nøkkelen ble avvist. Kontroller nøkkelen og prøv igjen.",
-      "need_llm": "Skriv inn enten en sky-API-nøkkel eller en lokal LLM-URL.",
-      "unknown": "Kunne ikke validere LLM-tilkoblingen. Kontroller innstillingene og prøv igjen."
-    },
     "step": {
       "provider_menu": {
         "title": "JARVIS — Legg til leverandør",
@@ -66,76 +56,39 @@
         "description": "{note}",
         "data": {
           "llm_provider": "Hovedagentens leverandør",
-          "model": "Samtalemodell",
           "honorific": "Tiltal meg som"
         }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       }
-    }
-  },
-  "issues": {
-    "llm_unavailable": {
-      "description": "JARVIS kunne ikke nå resonneringsmodellen sin, så den kjører i begrenset modus — enhetsstyring, status og scener fungerer fortsatt. Årsak: {detail}\n\nÅpne JARVIS-panelet → Innstillinger og kontroller leverandøren, modellen og API-nøkkelen. Hvis leverandøren har faset ut modellen, velg den på nytt fra listen. Denne merknaden forsvinner automatisk når resonnering fungerer igjen.",
-      "title": "JARVIS' resonneringsbackend er utilgjengelig"
+    },
+    "error": {
+      "need_llm": "Skriv inn enten en sky-API-nøkkel eller en lokal LLM-URL.",
+      "cannot_connect": "Kunne ikke nå LLM-en. Kontroller at URL/endepunkt er riktig og at serveren (f.eks. Ollama) kjører.",
+      "invalid_auth": "API-nøkkelen ble avvist. Kontroller nøkkelen og prøv igjen.",
+      "unknown": "Kunne ikke validere LLM-tilkoblingen. Kontroller innstillingene og prøv igjen."
+    },
+    "abort": {
+      "already_configured": "JARVIS er allerede konfigurert.",
+      "import_failed": "Fant en JARVIS-konfigurasjon, men ingen brukbar LLM (ingen API-nøkkel og intet lokalt endepunkt)."
     }
   },
   "options": {
-    "error": {
-      "cannot_connect": "Kunne ikke nå LLM-en. Kontroller at URL/endepunkt er riktig og at serveren (f.eks. Ollama) kjører.",
-      "invalid_auth": "API-nøkkelen ble avvist. Kontroller nøkkelen og prøv igjen.",
-      "need_llm": "Skriv inn enten en sky-API-nøkkel eller en lokal LLM-URL.",
-      "unknown": "Kunne ikke validere LLM-tilkoblingen. Kontroller innstillingene og prøv igjen."
-    },
     "step": {
-      "core": {
-        "data": {
-          "directive": "Egendefinert direktiv (valgfritt, overstyrer forhåndsinnstilling)",
-          "directive_preset": "Direktiv-forhåndsinnstilling",
-          "honorific": "Tiltal meg som",
-          "model": "Samtalemodell",
-          "use_hass_api": "Aktiver hjemstyring (lys, klima, låser osv.)"
-        },
-        "description": "Persona, direktiv og samtalemodell.",
-        "title": "JARVIS — Kjerne"
-      },
-      "email": {
-        "data": {
-          "imap_enabled": "Aktiver e-postlesing",
-          "imap_folder": "Postkassemappe (standard INBOX)",
-          "imap_host": "IMAP-vert (f.eks. imap.gmail.com)",
-          "imap_port": "IMAP-port (SSL: 993)",
-          "imap_secret_key": "secrets.yaml-nøkkel som inneholder passordet",
-          "imap_ssl": "Bruk SSL (anbefales)",
-          "imap_user": "IMAP-brukernavn / e-postadresse"
-        },
-        "description": "Skrivebeskyttet tilgang til innboksen. IMAP-passordet leses fra Home Assistants secrets.yaml — legg det til der under nøkkelen nedenfor (standard jarvis_imap_password); det lagres aldri i panelkonfigurasjonen.",
-        "title": "JARVIS — E-post"
-      },
-      "identity": {
-        "data": {
-          "identity_enabled": "Gjenkjenn hvem som snakker",
-          "identity_min_confidence": "Minste sikkerhet før tilknytning til en person",
-          "identity_voice_fingerprint": "Stemmefingeravtrykk (krever en lokal GPU)",
-          "voice_recognition_auto_enroll": "Merk stemmer automatisk for registrering etter hvert som folk snakker",
-          "voice_recognition_source": "Kilde for stemmegjenkjenning (entitet fra en talergjenkjenningstjeneste, f.eks. binary_sensor.*_voice)"
-        },
-        "data_description": {
-          "identity_enabled": "Bruker hvem som er hjemme + nylig ansiktsgjenkjenning fra kamera. Ingen GPU kreves.",
-          "identity_min_confidence": "Høyere = mer forsiktig; forblir nøytral ved usikkerhet.",
-          "identity_voice_fingerprint": "La være avslått med mindre du har en GPU-server som kjører en stemme-ID-modell."
-        },
-        "description": "gjenkjenning per person, slik at JARVIS tilpasser seg hvem som snakker. Fungerer uten spesiell maskinvare ved hjelp av tilstedeværelse og (hvis konfigurert) ansiktsgjenkjenning fra kamera. Stemmefingeravtrykk er mest nøyaktig, men krever en lokal GPU, så det er av som standard.",
-        "title": "JARVIS — Identitet"
-      },
       "init": {
+        "title": "JARVIS — Konfigurer",
         "menu_options": {
-          "core": "Kjerne — persona, direktiv, samtalemodell",
-          "email": "E-post — skrivebeskyttet innboks (passord via secrets.yaml)",
-          "identity": "Identitet — gjenkjenning per person",
           "llm": "LLM — administrer leverandørnøkler",
+          "core": "Kjerne — persona, direktiv, samtalemodell",
+          "routing": "Ruting — soveromsområder, kringkastingsgruppe, varslingstjeneste",
           "observer": "Observatør — proaktiv bevissthet (krever en Gemini-nøkkel)",
-          "routing": "Ruting — soveromsområder, kringkastingsgruppe, varslingstjeneste"
-        },
-        "title": "JARVIS — Konfigurer"
+          "identity": "Identitet — gjenkjenning per person",
+          "email": "E-post — skrivebeskyttet innboks (passord via secrets.yaml)"
+        }
       },
       "llm": {
         "title": "JARVIS — LLM",
@@ -146,8 +99,7 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Tilpasset (OpenAI-kompatibel)",
-          "ollama": "Ollama (lokal)",
-          "llm_main": "Angi Hovedagentens leverandør og modell"
+          "ollama": "Ollama (lokal)"
         }
       },
       "groq": {
@@ -194,20 +146,26 @@
           "model": "Samtalemodell"
         }
       },
-      "observer": {
+      "core": {
+        "title": "JARVIS — Kjerne",
+        "description": "Persona, direktiv og samtalemodell.",
         "data": {
-          "classifier_model": "Klassifiseringsmodell (nivå 1 — rimelig)",
-          "gemini_api_key": "Gemini API-nøkkel",
-          "observer_enabled": "Aktiver observatørmodus",
-          "observer_quiet_end": "Stille timer slutter (TT:MM)",
-          "observer_quiet_start": "Stille timer starter (TT:MM)",
-          "reasoning_model": "Resonneringsmodell (nivå 2 — hoved)",
-          "review_model": "Gjennomgangsmodell (nivå 3 — periodisk)"
-        },
-        "description": "proaktiv bevissthet. JARVIS følger med på hjemmet ditt og sier fra når noe er verdt å merke seg. Krever en Gemini API-nøkkel (fakturering anbefales aktivert).",
-        "title": "JARVIS — Observatørmodus"
+          "honorific": "Tiltal meg som",
+          "directive_preset": "Direktiv-forhåndsinnstilling",
+          "directive": "Egendefinert direktiv (valgfritt, overstyrer forhåndsinnstilling)",
+          "llm_provider": "Conversation model provider",
+          "use_hass_api": "Aktiver hjemstyring (lys, klima, låser osv.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       },
       "routing": {
+        "title": "JARVIS — Ruting",
+        "description": "velg hvilke HA-områder som er soverom (for søvndeteksjon), hvilken media_player-gruppe som skal brukes til kringkastinger, og telefonens varslingstjeneste.",
         "data": {
           "bedroom_areas": "Soveromsområder (for søvndeteksjon i stille timer)",
           "broadcast_group": "Kringkastingshøyttalergruppe (vanligvis Cast-gruppen hjemme)",
@@ -217,10 +175,103 @@
           "bedroom_areas": "Enhver tilstedeværelsessensor i disse områdene utløser dvalemodus i stille timer.",
           "broadcast_group": "Brukes til kritiske og svært hastende kunngjøringer.",
           "notify_service": "Brukes når du er borte hjemmefra eller sover."
+        }
+      },
+      "observer": {
+        "title": "JARVIS — Observatørmodus",
+        "description": "proaktiv bevissthet. JARVIS følger med på hjemmet ditt og sier fra når noe er verdt å merke seg. Krever en Gemini API-nøkkel (fakturering anbefales aktivert).",
+        "menu_options": {
+          "classifier": "Classifier model",
+          "reasoning": "Reasoning model",
+          "review": "Review model",
+          "observer_settings": "Observer settings"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
+        "data": {
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
+        "data": {
+          "observer_enabled": "Enable observer mode",
+          "observer_quiet_start": "Quiet hours start (HH:MM)",
+          "observer_quiet_end": "Quiet hours end (HH:MM)"
+        }
+      },
+      "identity": {
+        "title": "JARVIS — Identitet",
+        "description": "gjenkjenning per person, slik at JARVIS tilpasser seg hvem som snakker. Fungerer uten spesiell maskinvare ved hjelp av tilstedeværelse og (hvis konfigurert) ansiktsgjenkjenning fra kamera. Stemmefingeravtrykk er mest nøyaktig, men krever en lokal GPU, så det er av som standard.",
+        "data": {
+          "identity_enabled": "Gjenkjenn hvem som snakker",
+          "identity_voice_fingerprint": "Stemmefingeravtrykk (krever en lokal GPU)",
+          "identity_min_confidence": "Minste sikkerhet før tilknytning til en person",
+          "voice_recognition_source": "Kilde for stemmegjenkjenning (entitet fra en talergjenkjenningstjeneste, f.eks. binary_sensor.*_voice)",
+          "voice_recognition_auto_enroll": "Merk stemmer automatisk for registrering etter hvert som folk snakker"
         },
-        "description": "velg hvilke HA-områder som er soverom (for søvndeteksjon), hvilken media_player-gruppe som skal brukes til kringkastinger, og telefonens varslingstjeneste.",
-        "title": "JARVIS — Ruting"
+        "data_description": {
+          "identity_enabled": "Bruker hvem som er hjemme + nylig ansiktsgjenkjenning fra kamera. Ingen GPU kreves.",
+          "identity_voice_fingerprint": "La være avslått med mindre du har en GPU-server som kjører en stemme-ID-modell.",
+          "identity_min_confidence": "Høyere = mer forsiktig; forblir nøytral ved usikkerhet."
+        }
+      },
+      "email": {
+        "title": "JARVIS — E-post",
+        "description": "Skrivebeskyttet tilgang til innboksen. IMAP-passordet leses fra Home Assistants secrets.yaml — legg det til der under nøkkelen nedenfor (standard jarvis_imap_password); det lagres aldri i panelkonfigurasjonen.",
+        "data": {
+          "imap_enabled": "Aktiver e-postlesing",
+          "imap_host": "IMAP-vert (f.eks. imap.gmail.com)",
+          "imap_port": "IMAP-port (SSL: 993)",
+          "imap_user": "IMAP-brukernavn / e-postadresse",
+          "imap_folder": "Postkassemappe (standard INBOX)",
+          "imap_ssl": "Bruk SSL (anbefales)",
+          "imap_secret_key": "secrets.yaml-nøkkel som inneholder passordet"
+        }
       }
+    },
+    "error": {
+      "need_llm": "Skriv inn enten en sky-API-nøkkel eller en lokal LLM-URL.",
+      "cannot_connect": "Kunne ikke nå LLM-en. Kontroller at URL/endepunkt er riktig og at serveren (f.eks. Ollama) kjører.",
+      "invalid_auth": "API-nøkkelen ble avvist. Kontroller nøkkelen og prøv igjen.",
+      "unknown": "Kunne ikke validere LLM-tilkoblingen. Kontroller innstillingene og prøv igjen."
+    }
+  },
+  "issues": {
+    "llm_unavailable": {
+      "title": "JARVIS' resonneringsbackend er utilgjengelig",
+      "description": "JARVIS kunne ikke nå resonneringsmodellen sin, så den kjører i begrenset modus — enhetsstyring, status og scener fungerer fortsatt. Årsak: {detail}\n\nÅpne JARVIS-panelet → Innstillinger og kontroller leverandøren, modellen og API-nøkkelen. Hvis leverandøren har faset ut modellen, velg den på nytt fra listen. Denne merknaden forsvinner automatisk når resonnering fungerer igjen."
     }
   }
 }

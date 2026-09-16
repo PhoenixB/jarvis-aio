@@ -56,8 +56,13 @@
         "description": "{note}",
         "data": {
           "llm_provider": "Main Agent provider",
-          "model": "Conversation model",
           "honorific": "Address me as"
+        }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
         }
       }
     },
@@ -94,8 +99,7 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Custom (OpenAI-compatible)",
-          "ollama": "Ollama (local)",
-          "llm_main": "Set Main Agent provider & model"
+          "ollama": "Ollama (local)"
         }
       },
       "groq": {
@@ -149,8 +153,14 @@
           "honorific": "Address me as",
           "directive_preset": "Directive preset",
           "directive": "Custom directive (optional, overrides preset)",
-          "model": "Conversation model",
+          "llm_provider": "Conversation model provider",
           "use_hass_api": "Enable home control (lights, climate, locks, etc.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
         }
       },
       "routing": {
@@ -160,17 +170,63 @@
           "bedroom_areas": "Bedroom areas (for sleep detection during quiet hours)",
           "broadcast_group": "Broadcast speaker group (typically your home Cast group)",
           "notify_service": "Phone notify service (e.g. notify.mobile_app_yourphone)"
+        },
+        "data_description": {
+          "bedroom_areas": "Any presence sensor in these areas fires sleep mode during quiet hours.",
+          "broadcast_group": "Used for critical and high-urgency announcements.",
+          "notify_service": "Used when you're away from home or asleep."
         }
       },
       "observer": {
         "title": "JARVIS — Observer Mode",
         "description": "Proactive awareness. Requires a Gemini API key.",
+        "menu_options": {
+          "classifier": "Classifier model",
+          "reasoning": "Reasoning model",
+          "review": "Review model",
+          "observer_settings": "Observer settings"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
+        "data": {
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
         "data": {
           "observer_enabled": "Enable observer mode",
-          "gemini_api_key": "Gemini API key",
-          "classifier_model": "Classifier model (Tier 1 — cheap)",
-          "reasoning_model": "Reasoning model (Tier 2 — main)",
-          "review_model": "Review model (Tier 3 — periodic)",
           "observer_quiet_start": "Quiet hours start (HH:MM)",
           "observer_quiet_end": "Quiet hours end (HH:MM)"
         }
@@ -184,6 +240,11 @@
           "identity_min_confidence": "Minimum confidence before committing to a person",
           "voice_recognition_source": "Voice recognition source (entity from a speaker-recognition service, e.g. binary_sensor.*_voice)",
           "voice_recognition_auto_enroll": "Auto-flag voices to enroll as people speak"
+        },
+        "data_description": {
+          "identity_enabled": "Uses who's home + recent camera face recognition. No GPU required.",
+          "identity_voice_fingerprint": "Leave off unless you have a GPU server running a voice-ID model.",
+          "identity_min_confidence": "Higher = more cautious; stays neutral when unsure."
         }
       },
       "email": {

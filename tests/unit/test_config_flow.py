@@ -210,9 +210,12 @@ async def test_finish_creates_entry_from_configured_provider(
     monkeypatch.setattr(ha_secrets, "async_set_provider_key", _fake_set)
     flow = _user_flow(config_flow, fake_hass, monkeypatch, tmp_path)
     flow._provider_keys["groq"] = {"api_key": "gsk_x"}
+    monkeypatch.setattr(config_flow, "_fetch_available_models", _models)
     res = await flow.async_step_finish({
-        "llm_provider": "groq", "model": "m", "honorific": "sir",
+        "llm_provider": "groq", "honorific": "sir",
     })
+    assert res["step_id"] == "finish_model"
+    res = await flow.async_step_finish_model({"model": "m"})
     assert res["type"] == "create_entry"
     assert res["data"]["llm_provider"] == "groq"
     # the key goes to secrets.yaml only — never into the entry itself
@@ -235,6 +238,10 @@ async def test_finish_stays_on_form_when_secret_write_fails(
     })
     assert res["type"] == "form"
     assert res["errors"]["base"] == "unknown"
+
+
+async def _models(*args, **kwargs):
+    return ["m", "n"]
 
 
 def _flow(config_flow, fake_hass):
@@ -263,23 +270,10 @@ async def test_step_routing_renders_fields(config_flow, fake_hass):
 
 async def test_step_observer_renders_fields(config_flow, fake_hass):
     res = await _flow(config_flow, fake_hass).async_step_observer(None)
-    assert len(res["data_schema"].schema) == 7
-
-
-async def test_step_observer_awaits_gemini_secret(config_flow, fake_hass, monkeypatch):
-    flow = _flow(config_flow, fake_hass)
-
-    async def _secret(provider):
-        assert provider == "gemini"
-        return "gkey"
-
-    monkeypatch.setattr(flow, "_cur_secret", _secret)
-    res = await flow.async_step_observer(None)
-    gemini_field = next(
-        marker for marker in res["data_schema"].schema
-        if getattr(marker, "schema", None) == "gemini_api_key"
-    )
-    assert gemini_field.description["suggested_value"] == "gkey"
+    assert res["type"] == "menu"
+    assert set(res["menu_options"]) == {
+        "classifier", "reasoning", "review", "observer_settings", "back",
+    }
 
 
 async def test_step_identity_renders_fields(config_flow, fake_hass):
@@ -291,7 +285,7 @@ async def test_no_section_step_is_an_empty_stub(config_flow, fake_hass):
     # init is a menu now; the four section steps must each render real fields
     flow = _flow(config_flow, fake_hass)
     for step in (flow.async_step_core, flow.async_step_routing,
-                 flow.async_step_observer, flow.async_step_identity):
+                 flow.async_step_identity):
         res = await step(None)
         assert res["type"] == "form"
         assert len(res["data_schema"].schema) > 0   # never an empty form
@@ -301,17 +295,20 @@ async def test_section_saves_independently(config_flow, fake_hass):
     # submitting a section creates the entry immediately (menu flow — each
     # section saves on its own rather than chaining to the next step)
     flow = _flow(config_flow, fake_hass)
-    res = await flow.async_step_core({"honorific": "boss", "model": "x"})
+    flow._available_models = _models
+    res = await flow.async_step_core({"honorific": "boss", "llm_provider": "groq"})
+    assert res["step_id"] == "core_model"
+    res = await flow.async_step_core_model({"model": "x"})
     assert res["type"] == "create_entry"
     # only the submitted keys are carried in _data (other sections untouched)
-    assert flow._data == {"honorific": "boss", "model": "x"}
+    assert flow._data == {"honorific": "boss", "llm_provider": "groq", "model": "x"}
 
 
 async def test_llm_menu_lists_providers_and_main(config_flow, fake_hass):
     res = await _flow(config_flow, fake_hass).async_step_llm(None)
     assert res["type"] == "menu" and res["step_id"] == "llm"
     assert set(res["menu_options"]) == {
-        "groq", "openai", "anthropic", "gemini", "custom", "ollama", "llm_main",
+        "groq", "openai", "anthropic", "gemini", "custom", "ollama",
     }
 
 
@@ -367,24 +364,15 @@ async def test_llm_groq_step_shows_error_on_bad_key(config_flow, fake_hass, monk
     assert res["type"] == "form" and res["errors"]["base"] == "invalid_auth"
 
 
-async def test_llm_main_always_offers_ollama_by_default(config_flow, fake_hass):
-    # ollama needs no key and has a working default endpoint, so it's always
-    # a selectable Main Agent provider even with nothing else configured.
+async def test_observer_tier_uses_provider_then_live_model(config_flow, fake_hass):
     flow = _flow(config_flow, fake_hass)
-    res = await flow.async_step_llm_main(None)
-    assert res["type"] == "form" and res["step_id"] == "llm_main"
-
-
-async def test_llm_main_saves_selected_provider(config_flow, fake_hass, monkeypatch, load):
-    jarvis_config = load("jarvis_config")
-    monkeypatch.setattr(jarvis_config, "set_many", lambda updates: None)
-    flow = _flow(config_flow, fake_hass)
-    async def _configured(provider):
-        return provider == "groq"
-    monkeypatch.setattr(flow, "_provider_configured", _configured)
-    res = await flow.async_step_llm_main({"llm_provider": "groq", "model": "m"})
-    assert res["type"] == "create_entry"
-    assert flow._data["llm_provider"] == "groq"
+    flow._available_models = _models
+    res = await flow.async_step_classifier(None)
+    assert res["type"] == "form"
+    res = await flow.async_step_classifier({"classifier_provider": "groq"})
+    assert res["step_id"] == "classifier_model"
+    res = await flow.async_step_classifier_model({"classifier_model": "m"})
+    assert res["type"] == "menu" and res["step_id"] == "observer"
 
 
 async def test_import_allows_blank_ollama_url(config_flow, fake_hass):
