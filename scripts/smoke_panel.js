@@ -808,6 +808,19 @@ setTimeout(async () => {
       !!el.shadowRoot.querySelector('[data-cfg-key="pattern_learn_buttons"][data-cfg-val]')],
     ["anticipation numeric config wired", !!el.shadowRoot.querySelector('[data-cfg-key="departure_lead_minutes"]')],
     ["anticipation toggles carry data-cfg-val", !!el.shadowRoot.querySelector('[data-cfg-key="routine_alerts_enabled"][data-cfg-val]')],
+    ["door/window/garage alert toggle present + wired",
+      !!el.shadowRoot.querySelector('button[data-cfg-key="door_window_alerts_enabled"][data-cfg-val]')],
+    ["driving mode master toggle present + wired",
+      !!el.shadowRoot.querySelector('button[data-cfg-key="driving_mode_enabled"][data-cfg-val]')],
+    ["driving mode category toggles present + wired",
+      !!el.shadowRoot.querySelector('button[data-cfg-key="driving_notify_travel"][data-cfg-val]') &&
+      !!el.shadowRoot.querySelector('button[data-cfg-key="driving_notify_briefings"][data-cfg-val]') &&
+      !!el.shadowRoot.querySelector('button[data-cfg-key="driving_notify_security"][data-cfg-val]')],
+    ["driving mode suppress toggle + car-sensor select present",
+      !!el.shadowRoot.querySelector('button[data-cfg-key="driving_suppress_home_audio"][data-cfg-val]') &&
+      !!el.shadowRoot.querySelector('select[data-cfg-key="driving_car_sensor"]')],
+    ["driving car-sensor builder tolerates a stale selected entity",
+      (() => { try { el._carSensorOptions("binary_sensor.gone_xyz"); return true; } catch (_e) { return false; } })()],
     ["hazard card has three feed toggles",
       !!el.shadowRoot.querySelector('[data-cfg-key="hazard_quakes_on"]') &&
       !!el.shadowRoot.querySelector('[data-cfg-key="hazard_weather_on"]') &&

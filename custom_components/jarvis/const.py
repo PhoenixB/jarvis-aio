@@ -49,6 +49,29 @@ CONF_REVIEW_MODEL             = "review_model"
 
 CONF_NOTIFY_SERVICE           = "notify_service"
 
+# ─── Driving Mode (v7.89.0) ──────────────────────────────────────────────────
+# When the phone is projecting to the car (Android Auto), route selected
+# proactive alerts to the car screen as mobile_app `car_ui` notifications
+# instead of speaking them to an empty house. General mechanism: driven by a
+# head-unit-connected binary_sensor (auto-detected when unset) + per-category
+# opt-in. No hard-coded entity IDs.
+CONF_DRIVING_MODE_ENABLED     = "driving_mode_enabled"        # master switch
+CONF_DRIVING_CAR_SENSOR       = "driving_car_sensor"          # binary_sensor entity_id; blank = auto-detect *_android_auto
+CONF_DRIVING_NOTIFY_BRIEFINGS = "driving_notify_briefings"    # route proactive briefings
+CONF_DRIVING_NOTIFY_TRAVEL    = "driving_notify_travel"       # route departure / leave-now heads-ups
+CONF_DRIVING_NOTIFY_SECURITY  = "driving_notify_security"     # route security / hazard / camera alerts
+CONF_DRIVING_SUPPRESS_HOME    = "driving_suppress_home_audio" # while driving, skip the home spoken announcement for routed alerts
+
+DEFAULT_DRIVING_MODE_ENABLED     = False
+DEFAULT_DRIVING_NOTIFY_BRIEFINGS = True
+DEFAULT_DRIVING_NOTIFY_TRAVEL    = True
+DEFAULT_DRIVING_NOTIFY_SECURITY  = True
+DEFAULT_DRIVING_SUPPRESS_HOME    = True
+
+# Android notification channel used for car-screen alerts. A dedicated,
+# high-importance channel is what lets the notification pop over the AA UI.
+DRIVING_CHANNEL = "JARVIS Driving"
+
 DEFAULT_OBSERVER_ENABLED      = False
 DEFAULT_OBSERVER_QUIET_START  = "22:00"
 DEFAULT_OBSERVER_QUIET_END    = "07:00"

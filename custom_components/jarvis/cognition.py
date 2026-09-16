@@ -82,6 +82,10 @@ Decision = namedtuple("Decision", ["escalate", "salience", "reason"])
 # ── Anticipation: occupancy / expected-state-by-hour ─────────────────────────
 OCCUPANCY_DOMAINS = {"lock", "cover", "alarm_control_panel"}
 OCCUPANCY_BINARY_CLASSES = {"door", "window", "garage_door", "opening", "garage", "lock"}
+# Opening classes (doors/windows/garage) whose "unusual for this hour"
+# anticipation can be silenced independently of awareness (v7.90.0). Excludes
+# "lock" deliberately — lock-state anticipations are governed separately.
+_OPENING_CLASSES = {"door", "window", "garage_door", "opening", "garage"}
 OCC_SAMPLE_INTERVAL = 900       # seconds between occupancy samples (≈15 min)
 OCC_MIN_SAMPLES_PER_HOUR = 20   # need ~5 days of samples before trusting an hour
 OCC_UNUSUAL_SHARE = 0.20        # current state < this share at this hour ⇒ unusual
@@ -449,6 +453,18 @@ def sample_occupancy(hass, now: float = None) -> int:
     return sampled
 
 
+def _opening_alerts_enabled() -> bool:
+    """Whether to announce door/window/garage 'unusual for this time' alerts.
+    On by default. When off, those entities stay fully in awareness (Sentinel,
+    intrusion, lockdown, status queries) — only the proactive spoken mention of
+    their open/closed state is suppressed."""
+    try:
+        from . import jarvis_config
+        return bool(jarvis_config.get("door_window_alerts_enabled", True))
+    except Exception:
+        return True
+
+
 def predict(hass, now: float = None) -> list:
     """
     Flag entities currently in a state that's unusual for this hour, held long
@@ -480,8 +496,13 @@ def predict(hass, now: float = None) -> list:
             dominant = max(bucket, key=bucket.get)
             if dominant == cur:
                 continue
-            _PREDICT_COOLDOWNS[eid] = now
             dclass = st.attributes.get("device_class")
+            # Door/window/garage "open at an unusual time" mentions are separately
+            # silenceable (v7.90.0). The entity is still sampled and stays visible
+            # to every other subsystem; only this proactive announcement is gated.
+            if dclass in _OPENING_CLASSES and not _opening_alerts_enabled():
+                continue
+            _PREDICT_COOLDOWNS[eid] = now
             name = st.attributes.get("friendly_name", eid)
             domain = eid.split(".", 1)[0]
             urgency = "medium" if domain in ("lock", "alarm_control_panel", "cover") else "low"
