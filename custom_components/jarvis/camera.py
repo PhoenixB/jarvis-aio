@@ -154,6 +154,7 @@ async def _reason_about_scene(
     camera_name: str,
     description: str,
     det_type: str,
+    covered: list | None = None,
 ) -> dict:
     """
     Camera-reasoning step: interpret a raw vision description into a judgment.
@@ -187,7 +188,8 @@ async def _reason_about_scene(
     )
     user = (
         f"Camera: {camera_name}\n"
-        f"Time: {now}\n"
+        + (f"Areas in view: {', '.join(str(c) for c in covered if c)}\n" if covered else "")
+        + f"Time: {now}\n"
         f"Detection: {det_type}\n"
         f"Vision description: {description}\n"
         + (f"\nRecent home activity:\n{context}" if context and context != "quiet — no notable recent activity" else "")
@@ -852,6 +854,51 @@ def _make_contact_sheet(frames: list[bytes], max_cols: int = 2,
 
 # ─── Main service ────────────────────────────────────────────────────────────
 
+def _parse_coverage_rooms(fpc_raw, entity_id: str) -> list:
+    """Floor-plan 'covered' area names for a camera entity, from a
+    floor_plan_cameras value (JSON string or dict of floor -> [camera,...]).
+    Returns [] when the camera has no coverage recorded. Pure/defensive."""
+    try:
+        data = fpc_raw
+        if isinstance(data, str):
+            import json
+            data = json.loads(data) if data.strip() else {}
+        if not isinstance(data, dict):
+            return []
+        for _floor, cams in data.items():
+            if not isinstance(cams, list):
+                continue
+            for cam in cams:
+                if isinstance(cam, dict) and cam.get("entity") == entity_id:
+                    cov = (cam.get("coverage") or {}).get("covered") or []
+                    return [str(r) for r in cov if r]
+    except Exception:
+        pass
+    return []
+
+
+def _camera_coverage_rooms(hass: HomeAssistant, entity_id: str) -> list:
+    """The areas this camera is known (from the floor plan) to see. Used to tell
+    the vision model which rooms are in frame, so it reports on every covered
+    area — not just the one the camera is named after."""
+    return _parse_coverage_rooms(_cfg_opt(hass, "floor_plan_cameras", "{}"), entity_id)
+
+
+def _coverage_hint(covered: list) -> str:
+    """A prompt fragment telling the model which floor-plan areas are in view."""
+    covered = [c for c in (covered or []) if c]
+    if not covered:
+        return ""
+    if len(covered) == 1:
+        return f" This camera's view covers the {covered[0]}."
+    areas = ", ".join(covered[:-1]) + f" and {covered[-1]}"
+    return (
+        f" This camera's view spans more than one area — {areas}. "
+        f"Report what is visible in EACH of those areas, and attribute any person "
+        f"or activity to the specific area it is in."
+    )
+
+
 async def async_analyze_camera(
     hass: HomeAssistant,
     call: ServiceCall,
@@ -936,12 +983,17 @@ async def async_analyze_camera(
             pass
 
     # ── Vision call ───────────────────────────────────────────────────────────
+    # Floor-plan coverage: tell the model which areas this camera actually sees,
+    # so it reports on EVERY covered area (e.g. the Living Room that a Dining
+    # Room camera also frames), not just the room it's named after (v7.91.0).
+    cov_rooms = _camera_coverage_rooms(hass, entity_id)
+    cov_hint = _coverage_hint(cov_rooms)
     if is_clip:
         seq = ("a single contact sheet whose tiles are labelled Frame 1, Frame 2, … "
                "in chronological order" if sheet is not None
                else f"{len(images_b64)} sequential frames in chronological order")
         task = (
-            f"You are analysing {seq} from the camera feed '{camera_name}', captured "
+            f"You are analysing {seq} from the camera feed '{camera_name}'.{cov_hint} Captured "
             f"about {clip_interval:.0f}s apart. Describe what HAPPENS across the frames "
             f"— motion, who or what appears or leaves, packages set down or removed, "
             f"direction of travel. If the scene is static, say so in a few words. "
@@ -949,7 +1001,7 @@ async def async_analyze_camera(
         )
     else:
         task = (
-            f"You are analysing the camera feed '{camera_name}'. "
+            f"You are analysing the camera feed '{camera_name}'.{cov_hint} "
             f"Describe what you see clearly and concisely — as JARVIS would. "
             f"Note specific details: people, vehicles, packages, unusual activity. "
             f"Under 80 words unless something truly warrants more detail."
@@ -1017,6 +1069,7 @@ async def async_analyze_camera(
         _make_client, hass, rsn_provider, rsn_model, groq_client)
     judgment = await _reason_about_scene(
         hass, rsn_client, rsn_model, camera_name, analysis, det_type,
+        covered=cov_rooms,
     )
     summary = judgment["summary"]
 

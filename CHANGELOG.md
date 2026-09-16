@@ -1,3 +1,7 @@
+## [7.91.0] — camera analysis now reports on every area a camera covers
+
+Camera analysis now uses your floor plan's camera coverage. When a camera's view spans more than one room — for example a Dining Room camera that also sees the Living Room — JARVIS is told which areas are in frame and reports on each of them, attributing people and activity to the specific area, instead of describing everything as just the room the camera is named after. Set a camera's covered areas on the floor plan (JARVIS does this automatically when you place a camera, or you can adjust it). Cameras with no coverage recorded behave exactly as before.
+
 ## [7.90.0] — silence door/window/garage "open at an unusual time" announcements
 
 Added a Door/window/garage alerts toggle under Settings → Anticipation & Memory. When off, JARVIS stops proactively announcing that a door, window, or garage is open at a time it's usually closed (the "around this time it's usually closed, so I thought I'd mention it" heads-up), while still keeping those sensors fully monitored — Sentinel rules, intrusion detection, lockdown, and "what's open right now" all continue to see them. This is separate from Sentinel's "left open too long" rules: those are governed in Sentinel Rules, and these time-of-day anticipations are the anticipation engine, so silencing the proactive chatter no longer means disabling awareness of your openings. On by default; lock-state anticipations are unaffected.
