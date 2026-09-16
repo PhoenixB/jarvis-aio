@@ -726,6 +726,7 @@ async def ws_get_panel_data(
                 "cognition_enabled": bool(_runtime_opt(hass, entry, "cognition_enabled", True)),
                 "camera_auto_analyze": bool(_runtime_opt(hass, entry, "camera_auto_analyze", True)),
                 "camera_auto_analyze_motion": bool(_runtime_opt(hass, entry, "camera_auto_analyze_motion", False)),
+                "camera_important_only": bool(_runtime_opt(hass, entry, "camera_important_only", True)),
                 "package_detection": bool(_runtime_opt(hass, entry, "package_detection", True)),
                 "visitor_learning": bool(_runtime_opt(hass, entry, "visitor_learning", True)),
                 "rich_reasoning": bool(_runtime_opt(hass, entry, "rich_reasoning", False)),
@@ -1431,6 +1432,7 @@ PANEL_WRITABLE_KEYS = {
     "appliance_announce_unknown",   # bool: announce loads matching no declared appliance
     "camera_auto_analyze",          # bool: auto-inspect doorbell/person camera events
     "camera_auto_analyze_motion",   # bool: also auto-inspect motion events (noisier)
+    "camera_important_only",         # bool: auto reviews announce only important events (person/delivery/etc.)
     "package_detection",            # bool: watch porch cameras for packages & mail
     "visitor_learning",             # bool: silent vision learning from person events
     "rich_reasoning",               # bool: cloud-first reasoning for medium+ events

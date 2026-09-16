@@ -174,22 +174,28 @@ async def _reason_about_scene(
         pass
 
     system = (
-        "You are JARVIS's camera-reasoning module. You are given a description of "
-        "what a camera saw. Decide whether it is notable enough to mention to the "
-        "resident. Routine or benign activity — a recognised resident arriving, an "
-        "empty scene, a car passing on the public street — is NOT notable. Notable: "
-        "an unrecognised person approaching or lingering, a delivery or package, "
-        "mail, someone at an unusual hour, property damage, an animal where it "
-        "shouldn't be, or anything that genuinely warrants attention. Be conservative "
-        "about what you flag. You may be given Frigate object-detector ground truth: "
-        "if the vision description claims a PERSON but Frigate reports NO person, treat "
-        "it as a likely false positive (a shadow, reflection, headlight, or object — "
-        "very common in night/infrared footage) and do NOT flag it as notable unless "
-        "there is other strong evidence. Respond with ONLY a JSON object: "
+        "You are JARVIS's camera-reasoning module. Given a description of what a "
+        "camera saw, decide whether it is worth interrupting the resident to say "
+        "aloud. Default to silence — most footage is not worth announcing.\n"
+        "ANNOUNCE (notable=true; category person, delivery, package, or mail) ONLY "
+        "for: an unrecognised person approaching, lingering at, or standing at a "
+        "door or entry; a delivery, package, or mail being dropped off or taken; a "
+        "person present at an unusual hour; or someone clearly attempting to enter "
+        "or tamper with something.\n"
+        "DO NOT ANNOUNCE (notable=false, speak empty) for everything else: a "
+        "recognised resident coming or going, an empty or unchanged scene, a car "
+        "parked or passing, a pet or wild animal, weather, shadows, lights, or any "
+        "other routine or benign activity. When in doubt, do NOT announce.\n"
+        "You may be given Frigate object-detector ground truth: if the description "
+        "claims a PERSON but Frigate reports NO person, treat it as a likely false "
+        "positive (a shadow, reflection, or headlight — very common in night or "
+        "infrared footage) and set notable=false unless there is strong other "
+        "evidence.\n"
+        "Respond with ONLY a JSON object: "
         '{"notable": true|false, '
         '"category": "delivery|package|mail|person|known_resident|vehicle|animal|empty|other", '
         '"summary": "<one concise factual sentence for the log>", '
-        '"speak": "<exactly what JARVIS should say aloud, in his voice, or empty string if not notable>"}'
+        '"speak": "<exactly what JARVIS should say aloud if and only if notable; otherwise an empty string>"}'
     )
     fg_line = ""
     if frigate_dets:
@@ -994,6 +1000,43 @@ def _frigate_ground_hint(dets: Optional[dict]) -> str:
     return ""
 
 
+# Mundane camera categories that should NOT be announced on an automatic review,
+# even if the (small, error-prone) reasoning model marks them notable. Analysis
+# and logging still happen — this only gates the spoken/pushed announcement so
+# JARVIS talks about people/deliveries/intrusions, not parked cars, pets, empty
+# scenes, or recognised residents. (v7.93.0)
+_MUTE_CATEGORIES = {"known_resident", "empty", "vehicle", "animal", "other"}
+
+
+def _important_only(hass: HomeAssistant) -> bool:
+    """Whether automatic camera reviews announce only important events."""
+    val = _cfg_opt(hass, "camera_important_only", True)
+    return bool(val) if val is not None else True
+
+
+def _announce_decision(judgment: dict, analysis: str, *, gate_announce: bool,
+                       important_only: bool) -> Optional[str]:
+    """Pure decision: what (if anything) to say for a camera judgment. Returns the
+    text to announce, or None to stay silent. Analysis/logging happen regardless
+    of this — only the announcement is gated.
+
+    - notable + speak → announce, UNLESS this is an automatic review in
+      important-only mode and the category is a mundane one (parked car, pet,
+      empty scene, recognised resident, unclassified).
+    - not notable → announce nothing on automatic reviews; on a manual analyze
+      request, report the full description (the user explicitly asked)."""
+    notable = bool(judgment.get("notable"))
+    speak = judgment.get("speak")
+    category = str(judgment.get("category", "") or "").strip().lower()
+    if notable and speak:
+        if gate_announce and important_only and category in _MUTE_CATEGORIES:
+            return None
+        return speak
+    if not gate_announce:
+        return analysis
+    return None
+
+
 async def async_analyze_camera(
     hass: HomeAssistant,
     call: ServiceCall,
@@ -1207,17 +1250,16 @@ async def async_analyze_camera(
     except Exception:
         pass
 
-    # ── Announce — gated by notability for auto/event reviews ─────────────────
+    # ── Announce — gated by notability + important-only for auto reviews ──────
     spoke = False
     if announce:
-        if judgment["notable"] and judgment.get("speak"):
-            await async_announce(hass, judgment["speak"], tts_entity, speakers)
+        _say = _announce_decision(
+            judgment, analysis,
+            gate_announce=gate_announce, important_only=_important_only(hass),
+        )
+        if _say:
+            await async_announce(hass, _say, tts_entity, speakers)
             spoke = True
-        elif not gate_announce:
-            # Manual analyze request on a non-notable scene — still report it.
-            await async_announce(hass, analysis, tts_entity, speakers)
-            spoke = True
-        # else: auto event + not notable → stay silent
 
     _LOGGER.info(
         "JARVIS: %s → notable=%s cat=%s | %s",

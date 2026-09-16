@@ -108,3 +108,51 @@ def test_frigate_ground_hint_person_absent(cam):
 
 def test_lowlight_hint_present(cam):
     assert "infrared" in cam._LOWLIGHT_HINT and "shadows" in cam._LOWLIGHT_HINT
+
+
+# ── Announce gating: important-only (v7.93.0) ────────────────────────────────
+def _j(notable, category, speak="Someone is at the door."):
+    return {"notable": notable, "category": category, "speak": speak, "summary": "x"}
+
+
+def test_auto_important_only_mutes_mundane(cam):
+    # Auto review, important-only ON: mundane categories stay silent even if the
+    # (weak) reasoning model flagged them notable.
+    for cat in ("vehicle", "animal", "empty", "known_resident", "other"):
+        assert cam._announce_decision(_j(True, cat), "desc",
+                                      gate_announce=True, important_only=True) is None
+
+
+def test_auto_important_only_announces_important(cam):
+    for cat in ("person", "delivery", "package", "mail"):
+        assert cam._announce_decision(_j(True, cat), "desc",
+                                      gate_announce=True, important_only=True) == "Someone is at the door."
+
+
+def test_important_only_off_announces_any_notable(cam):
+    # Verbose mode: a notable vehicle speaks.
+    assert cam._announce_decision(_j(True, "vehicle"), "desc",
+                                  gate_announce=True, important_only=False) == "Someone is at the door."
+
+
+def test_manual_request_bypasses_mute(cam):
+    # Manual analyze (gate_announce=False): user asked, so even a mundane category
+    # is reported, and a non-notable scene reports the full description.
+    assert cam._announce_decision(_j(True, "vehicle"), "desc",
+                                  gate_announce=False, important_only=True) == "Someone is at the door."
+    assert cam._announce_decision(_j(False, "empty"), "full analysis",
+                                  gate_announce=False, important_only=True) == "full analysis"
+
+
+def test_auto_not_notable_is_silent(cam):
+    assert cam._announce_decision(_j(False, "empty"), "desc",
+                                  gate_announce=True, important_only=True) is None
+    # notable but no speak text → nothing to say
+    assert cam._announce_decision(_j(True, "person", speak=""), "desc",
+                                  gate_announce=True, important_only=True) is None
+
+
+def test_mute_set_membership(cam):
+    assert {"vehicle", "animal", "empty", "known_resident", "other"} <= cam._MUTE_CATEGORIES
+    for keep in ("person", "delivery", "package", "mail"):
+        assert keep not in cam._MUTE_CATEGORIES

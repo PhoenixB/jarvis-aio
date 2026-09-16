@@ -1,3 +1,9 @@
+## [7.93.0] — quieter cameras: analyze everything, announce only what matters
+
+JARVIS no longer narrates routine camera activity. Automatic camera reviews now speak up only for things worth your attention — a person approaching or at a door, a delivery or package, mail, someone at an odd hour — while parked or passing cars, pets, empty scenes, and recognized residents are still analyzed and logged but kept silent. The scene-reasoning step was also tightened to default to silence and only flag genuinely notable events.
+
+A new "Announce Important Only" toggle (General → next to Camera Watch) controls this; it's on by default. Turn it off if you'd rather hear every notable review. Manual camera analyses always report their result, and this doesn't change intrusion alerts, which come through their own always-on path.
+
 ## [7.92.0] — automatic camera analysis on Frigate events, and fewer phantom people at night
 
 Camera analysis can now run on its own when Frigate detects a person or object — not just on doorbell presses. Turn on the new "Analyze Motion Events" toggle (General → alongside Camera Watch) and JARVIS inspects Frigate detections as they happen, throttled per camera, with the spoken alert still gated to things worth mentioning. No Home Assistant automation required.
