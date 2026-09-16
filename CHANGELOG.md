@@ -1,3 +1,9 @@
+## [7.92.0] — automatic camera analysis on Frigate events, and fewer phantom people at night
+
+Camera analysis can now run on its own when Frigate detects a person or object — not just on doorbell presses. Turn on the new "Analyze Motion Events" toggle (General → alongside Camera Watch) and JARVIS inspects Frigate detections as they happen, throttled per camera, with the spoken alert still gated to things worth mentioning. No Home Assistant automation required.
+
+Night-time false alarms are cut down too. Camera analysis is now grounded against what Frigate's detector actually sees and told to be cautious with dark/infrared images, so shadows, furniture, garden objects, and reflections are far less likely to be reported as "a person." If Frigate says there's no person on a camera, JARVIS weighs that heavily before mentioning one.
+
 ## [7.91.0] — camera analysis now reports on every area a camera covers
 
 Camera analysis now uses your floor plan's camera coverage. When a camera's view spans more than one room — for example a Dining Room camera that also sees the Living Room — JARVIS is told which areas are in frame and reports on each of them, attributing people and activity to the specific area, instead of describing everything as just the room the camera is named after. Set a camera's covered areas on the floor plan (JARVIS does this automatically when you place a camera, or you can adjust it). Cameras with no coverage recorded behave exactly as before.

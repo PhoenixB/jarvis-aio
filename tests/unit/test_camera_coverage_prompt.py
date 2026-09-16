@@ -75,3 +75,36 @@ def test_coverage_hint_wording(cam):
     multi = cam._coverage_hint(["Dining Room", "Living Room"])
     assert "Dining Room" in multi and "Living Room" in multi
     assert "EACH" in multi  # instructs the model to report on every covered area
+
+
+# ── Issue A: Frigate grounding + low-light hardening (v7.92.0) ────────────────
+def test_frigate_detections_reads_occupancy(cam, fake_hass):
+    fake_hass.states.set("binary_sensor.front_yard_person", "on")
+    fake_hass.states.set("binary_sensor.front_yard_car", "off")
+    dets = cam._frigate_detections(fake_hass, "camera.front_yard")
+    assert dets == {"person": True, "car": False}
+
+
+def test_frigate_detections_count_sensor(cam, fake_hass):
+    fake_hass.states.set("sensor.driveway_car", "2")
+    fake_hass.states.set("binary_sensor.driveway_person", "off")
+    dets = cam._frigate_detections(fake_hass, "camera.driveway")
+    assert dets["car"] is True and dets["person"] is False
+
+
+def test_frigate_detections_none_when_absent(cam, fake_hass):
+    # No Frigate object entities for this camera → None (grounding skipped, never
+    # a false "empty scene").
+    assert cam._frigate_detections(fake_hass, "camera.nonexistent") is None
+
+
+def test_frigate_ground_hint_person_absent(cam):
+    assert cam._frigate_ground_hint(None) == ""
+    hint = cam._frigate_ground_hint({"person": False, "car": True})
+    assert "NO person" in hint and "car" in hint
+    assert "person" in cam._frigate_ground_hint({"person": True})
+    assert "car" in cam._frigate_ground_hint({"car": True})
+
+
+def test_lowlight_hint_present(cam):
+    assert "infrared" in cam._LOWLIGHT_HINT and "shadows" in cam._LOWLIGHT_HINT

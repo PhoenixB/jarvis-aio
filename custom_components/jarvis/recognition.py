@@ -335,6 +335,18 @@ async def register_recognition_listener(hass: HomeAssistant) -> list:
                 camera = after.get("camera", "")
                 score = after.get("top_score", 0)
 
+                # Bridge Frigate's MQTT events onto the HA event bus so JARVIS's
+                # camera auto-analysis (_auto_frigate) and event-snapshot cache
+                # (_handle_frigate_event) work without a user automation — they
+                # listen for 'frigate_event', which the stock Frigate integration
+                # never emits. The bus consumers apply their own label filter,
+                # per-camera throttle, and notability gate. (v7.92.0)
+                if event_type == "new":
+                    try:
+                        hass.bus.async_fire("frigate_event", payload)
+                    except Exception:
+                        pass
+
                 # Only act on new person detections with high confidence
                 if event_type != "new" or label != "person" or score < 0.7:
                     return

@@ -477,6 +477,9 @@ setTimeout(async () => {
       el.shadowRoot.querySelector('[data-cfg-key="voice_confirm_enabled"]')?.classList.contains("on")
       && el.shadowRoot.querySelector('[data-cfg-key="voice_confirm_mode"]')?.value === "gated"],
     ["voice-confirm test button present", !!el.shadowRoot.getElementById("vc-test")],
+    ["camera auto-analyze motion toggle present + wired",
+      !!el.shadowRoot.querySelector('button[data-cfg-key="camera_auto_analyze"][data-cfg-val]') &&
+      !!el.shadowRoot.querySelector('button[data-cfg-key="camera_auto_analyze_motion"][data-cfg-val]')],
     ["name input placeholder is the HA name",
       el.shadowRoot.querySelector('.camset-name[data-cam="camera.front"]')?.getAttribute("placeholder") === "Front Door"],
     ["location chips render with resolved AUTO label",

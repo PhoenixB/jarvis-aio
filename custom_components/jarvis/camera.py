@@ -155,6 +155,7 @@ async def _reason_about_scene(
     description: str,
     det_type: str,
     covered: list | None = None,
+    frigate_dets: dict | None = None,
 ) -> dict:
     """
     Camera-reasoning step: interpret a raw vision description into a judgment.
@@ -180,18 +181,34 @@ async def _reason_about_scene(
         "an unrecognised person approaching or lingering, a delivery or package, "
         "mail, someone at an unusual hour, property damage, an animal where it "
         "shouldn't be, or anything that genuinely warrants attention. Be conservative "
-        "about what you flag. Respond with ONLY a JSON object: "
+        "about what you flag. You may be given Frigate object-detector ground truth: "
+        "if the vision description claims a PERSON but Frigate reports NO person, treat "
+        "it as a likely false positive (a shadow, reflection, headlight, or object — "
+        "very common in night/infrared footage) and do NOT flag it as notable unless "
+        "there is other strong evidence. Respond with ONLY a JSON object: "
         '{"notable": true|false, '
         '"category": "delivery|package|mail|person|known_resident|vehicle|animal|empty|other", '
         '"summary": "<one concise factual sentence for the log>", '
         '"speak": "<exactly what JARVIS should say aloud, in his voice, or empty string if not notable>"}'
     )
+    fg_line = ""
+    if frigate_dets:
+        _present = [l for l, v in frigate_dets.items() if v]
+        if "person" in frigate_dets and not frigate_dets["person"]:
+            fg_line = ("Frigate detector: NO person"
+                       + (f" (currently sees: {', '.join(_present)})" if _present else "")
+                       + "\n")
+        elif _present:
+            fg_line = f"Frigate detector currently sees: {', '.join(_present)}\n"
+        else:
+            fg_line = "Frigate detector: nothing detected\n"
     user = (
         f"Camera: {camera_name}\n"
         + (f"Areas in view: {', '.join(str(c) for c in covered if c)}\n" if covered else "")
         + f"Time: {now}\n"
         f"Detection: {det_type}\n"
-        f"Vision description: {description}\n"
+        + fg_line
+        + f"Vision description: {description}\n"
         + (f"\nRecent home activity:\n{context}" if context and context != "quiet — no notable recent activity" else "")
     )
     try:
@@ -899,6 +916,84 @@ def _coverage_hint(covered: list) -> str:
     )
 
 
+# Objects Frigate can report per camera; used to ground the vision pass so a
+# hallucinated night-time "person" can be discounted against what Frigate's
+# detector actually sees.
+_FRIGATE_LABELS = (
+    "person", "car", "truck", "dog", "cat", "bicycle", "motorcycle",
+    "package", "bird", "bear", "horse",
+)
+
+# Always-on caution for night / infrared frames (the leading cause of phantom
+# people): shadows and objects are not humans unless clearly so.
+_LOWLIGHT_HINT = (
+    " If this is a night or infrared (black-and-white) image, be especially "
+    "careful: shadows, furniture, garden objects, mannequins, statues, and "
+    "reflections are NOT people or animals. Only report a person or animal if a "
+    "living being is clearly and unambiguously visible; if you are unsure, say so "
+    "rather than guessing."
+)
+
+
+def _frigate_detections(hass: HomeAssistant, entity_id: str) -> Optional[dict]:
+    """Best-effort: what Frigate's object detector currently reports for this
+    camera, read from its per-object occupancy/count entities. Returns a
+    {label: present_bool} map, or None when no such entities exist (so grounding
+    is skipped rather than wrongly assuming an empty scene). Never raises."""
+    try:
+        cam = _frigate_camera_name(entity_id)
+        if not cam:
+            return None
+
+        def _state_present(eid: str):
+            st = hass.states.get(eid)
+            if st is None:
+                return None
+            s = str(getattr(st, "state", "")).strip().lower()
+            if s in ("", "unavailable", "unknown", "none"):
+                return None
+            if s in ("on", "true", "detected", "yes"):
+                return True
+            if s in ("off", "false", "clear", "no"):
+                return False
+            try:
+                return float(s) > 0
+            except (TypeError, ValueError):
+                return None
+
+        found: dict = {}
+        for label in _FRIGATE_LABELS:
+            for cand in (
+                f"binary_sensor.{cam}_{label}",
+                f"binary_sensor.{cam}_{label}_occupancy",
+                f"sensor.{cam}_{label}",
+                f"sensor.{cam}_{label}_count",
+            ):
+                v = _state_present(cand)
+                if v is not None:
+                    found[label] = bool(found.get(label)) or v
+        return found or None
+    except Exception:
+        return None
+
+
+def _frigate_ground_hint(dets: Optional[dict]) -> str:
+    """Prompt fragment stating Frigate's ground truth, emphasising the
+    person-absent case (the situation that causes false 'people at night')."""
+    if not dets:
+        return ""
+    present = [l for l, v in dets.items() if v]
+    if "person" in dets and not dets["person"]:
+        also = (" It does currently detect: " + ", ".join(present) + ".") if present else ""
+        return (
+            " Frigate's object detector currently reports NO person on this "
+            "camera." + also + " Weigh that heavily before reporting a person."
+        )
+    if present:
+        return " Frigate's object detector currently reports: " + ", ".join(present) + "."
+    return ""
+
+
 async def async_analyze_camera(
     hass: HomeAssistant,
     call: ServiceCall,
@@ -988,6 +1083,10 @@ async def async_analyze_camera(
     # Room camera also frames), not just the room it's named after (v7.91.0).
     cov_rooms = _camera_coverage_rooms(hass, entity_id)
     cov_hint = _coverage_hint(cov_rooms)
+    # Ground the vision pass against Frigate's actual detections + a low-light
+    # caution, so IR shadows/objects aren't reported as people (v7.92.0).
+    frigate_dets = _frigate_detections(hass, entity_id)
+    ground_hint = _frigate_ground_hint(frigate_dets)
     if is_clip:
         seq = ("a single contact sheet whose tiles are labelled Frame 1, Frame 2, … "
                "in chronological order" if sheet is not None
@@ -997,7 +1096,7 @@ async def async_analyze_camera(
             f"about {clip_interval:.0f}s apart. Describe what HAPPENS across the frames "
             f"— motion, who or what appears or leaves, packages set down or removed, "
             f"direction of travel. If the scene is static, say so in a few words. "
-            f"Under 90 words.{recognition_hint}"
+            f"Under 90 words.{ground_hint}{_LOWLIGHT_HINT}{recognition_hint}"
         )
     else:
         task = (
@@ -1005,7 +1104,7 @@ async def async_analyze_camera(
             f"Describe what you see clearly and concisely — as JARVIS would. "
             f"Note specific details: people, vehicles, packages, unusual activity. "
             f"Under 80 words unless something truly warrants more detail."
-            f"{recognition_hint}"
+            f"{ground_hint}{_LOWLIGHT_HINT}{recognition_hint}"
         )
     system = build_system_prompt(hass, honorific, task)
     vision_provider = _cfg_opt(hass, "vision_provider", "groq") or "groq"
@@ -1069,7 +1168,7 @@ async def async_analyze_camera(
         _make_client, hass, rsn_provider, rsn_model, groq_client)
     judgment = await _reason_about_scene(
         hass, rsn_client, rsn_model, camera_name, analysis, det_type,
-        covered=cov_rooms,
+        covered=cov_rooms, frigate_dets=frigate_dets,
     )
     summary = judgment["summary"]
 
