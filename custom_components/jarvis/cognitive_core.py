@@ -2569,26 +2569,6 @@ async def _emit_action(hass, config, action, sleeping):
         action_type, urgency, message[:100],
     )
 
-    # ── Driving Mode (v7.89.0) ──────────────────────────────────────────────
-    # If the phone is projecting to the car, a spoken heads-up to the (empty)
-    # house is useless — route this alert to the car screen as a car_ui push
-    # instead, and by default skip the home announcement. Only fires when the
-    # feature is on, this category is opted in, and a head-unit sensor is live.
-    _routed = False
-    try:
-        from . import driving_mode
-        if driving_mode.should_route(hass, config, driving_mode.category_for(action_type)):
-            _routed = True
-            _snap = action.get("snapshot_url")
-            if notify_all:
-                await _notify_all_devices(hass, config, message, action_type, _snap)
-            else:
-                await _push_notification(hass, config, message, action_type, _snap)
-            if driving_mode.suppress_home_audio(config):
-                return
-    except Exception as exc:
-        _LOGGER.debug("Driving mode routing skipped: %s", exc)
-
     # Route announcement
     try:
         from .tts_helper import resolve_tts_for_context, async_announce
@@ -2606,7 +2586,7 @@ async def _emit_action(hass, config, action, sleeping):
         except Exception:
             in_quiet = False
 
-        if (sleeping or in_quiet) and urgency != "critical" and not _routed:
+        if (sleeping or in_quiet) and urgency != "critical":
             # Push to phone only (no spoken announcement)
             _snap_url = action.get("snapshot_url")
             if notify_all:
@@ -2651,9 +2631,8 @@ async def _emit_action(hass, config, action, sleeping):
                         context="sentinel",
                     )
 
-            # Also push critical/high alerts to phones (unless Driving Mode
-            # already pushed this one to the car screen above).
-            if urgency in ("critical", "high") and not _routed:
+            # Also push critical/high alerts to phones
+            if urgency in ("critical", "high"):
                 _snap_url = action.get("snapshot_url")
                 if notify_all:
                     await _notify_all_devices(hass, config, message, action_type, _snap_url)
@@ -2893,13 +2872,8 @@ async def _push_notification(hass, config, message, action_type, snapshot_url=No
         data = {"message": message,
                 "title": _notify_i18n().title(action_type, _hass_lang(hass))}
         img_data = _notification_image_data(hass, snapshot_url)
-        try:
-            from . import driving_mode
-            merged = driving_mode.augment_data(hass, config, action_type, img_data)
-        except Exception:
-            merged = img_data
-        if merged:
-            data["data"] = merged
+        if img_data:
+            data["data"] = img_data
         await hass.services.async_call(svc_domain, svc_name, data, blocking=False)
     except Exception as exc:
         _LOGGER.debug("Cognitive: push notification failed: %s", exc)
@@ -2937,11 +2911,6 @@ async def _notify_all_devices(hass, config, message, action_type, snapshot_url=N
     the single configured service if no per-device services exist."""
     title = _notify_i18n().title(action_type, _hass_lang(hass))
     img_data = _notification_image_data(hass, snapshot_url)
-    try:
-        from . import driving_mode
-        merged = driving_mode.augment_data(hass, config, action_type, img_data)
-    except Exception:
-        merged = img_data
     sent = 0
     try:
         services = hass.services.async_services().get("notify", {})
@@ -2950,8 +2919,8 @@ async def _notify_all_devices(hass, config, message, action_type, snapshot_url=N
                 continue
             try:
                 payload = {"message": message, "title": title}
-                if merged:
-                    payload["data"] = merged
+                if img_data:
+                    payload["data"] = img_data
                 await hass.services.async_call("notify", name, payload, blocking=False)
                 sent += 1
             except Exception as exc:

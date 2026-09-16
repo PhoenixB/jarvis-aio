@@ -101,7 +101,6 @@ tools the agent invokes on its own; most also have a panel control.
 **Safety & security**
 - Proactive monitoring for freezing pipes, smoke/CO/water, unauthorized entry, and nighttime lockdown — occupancy-gated so enforcement only happens when it should.
 - Confirm or dismiss intrusion events and acknowledge alerts by voice (`dismiss_intrusion`, `acknowledge_alert`); optional voice-confirmation before sensitive actions like unlocking.
-- **Driving mode** — when your phone is connected to the car (Android Auto), route selected proactive alerts (departure/leave-now reminders, briefings, security & hazard alerts) to the car screen instead of speaking them to an empty house, and optionally silence home speakers while driving. Auto-detects the companion app's Android Auto sensor; off until enabled.
 
 **Modes, memory, goals & suggestions**
 - Set operational modes, including custom ones (`set_mode`), and tune how much JARVIS acts on its own (`manage_autonomy`).
@@ -225,7 +224,9 @@ This lives in `/config/jarvis/config.json` (merge it into the existing object �
 
 JARVIS follows your Home Assistant language automatically, and you can override it in **Settings → General → Language** (or leave it on *Auto*). The setup and configuration dialogs are localized through Home Assistant's own translation system; the in-panel HUD is localized by JARVIS. Anything not yet translated falls back cleanly to English, so nothing ever breaks.
 
-**Fully localized (panel + setup dialog):** French, German, Spanish, Italian, Portuguese, Brazilian Portuguese, Dutch, Simplified Chinese, Traditional Chinese, Czech, Danish, Finnish, Norwegian, Polish, Romanian, Russian, Slovak, Swedish, Turkish, Ukrainian — 20 languages, each covering both the in-panel HUD and the Home Assistant setup/configuration dialogs.
+**Fully translated (panel + setup dialog):** French, German, Spanish, Italian, Portuguese, Dutch.
+
+**Core UI translated (expanding):** Polish, Russian, Ukrainian, Czech, Slovak, Swedish, Danish, Norwegian, Finnish, Turkish, Romanian, Brazilian Portuguese.
 
 ### Help translate
 

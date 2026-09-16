@@ -896,17 +896,10 @@ async def _send_notification(message: str, *, urgency: str) -> None:
     try:
         domain, service = notify_service.split(".", 1)
         title = "JARVIS" if urgency != "critical" else "⚠ JARVIS URGENT"
-        payload = {"title": title, "message": message}
-        try:
-            from . import driving_mode
-            merged = driving_mode.augment_data_for_category(
-                _STATE.hass, _STATE.config or {}, driving_mode.CAT_SECURITY)
-            if merged:
-                payload["data"] = merged
-        except Exception:
-            pass
         await _STATE.hass.services.async_call(
-            domain, service, payload, blocking=False,
+            domain, service,
+            {"title": title, "message": message},
+            blocking=False,
         )
     except Exception as exc:
         _LOGGER.warning("notification failed: %s", exc)

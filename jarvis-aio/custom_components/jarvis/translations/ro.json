@@ -1,0 +1,113 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "JARVIS este deja configurat.",
+      "import_failed": "S-a găsit o configurație JARVIS, dar niciun LLM utilizabil (fără cheie API și fără endpoint local)."
+    },
+    "error": {
+      "cannot_connect": "Nu s-a putut contacta LLM-ul. Verifică dacă URL-ul/endpointul este corect și dacă serverul (de ex. Ollama) rulează.",
+      "invalid_auth": "Cheia API a fost respinsă. Verifică cheia și încearcă din nou.",
+      "need_llm": "Introdu fie o cheie API cloud, fie un URL LLM local.",
+      "unknown": "Nu s-a putut valida conexiunea LLM. Verifică setările și încearcă din nou."
+    },
+    "step": {
+      "user": {
+        "data": {
+          "api_key": "Cheie API LLM cloud (de ex. Groq)",
+          "honorific": "Adresează-mi-te cu",
+          "llm_base_url": "URL de bază LLM local — pentru Ollama folosește gazda homeassistant.local, portul 11434, calea /v1",
+          "model": "Model de conversație"
+        },
+        "description": "{note}",
+        "title": "Configurare JARVIS"
+      }
+    }
+  },
+  "issues": {
+    "llm_unavailable": {
+      "description": "JARVIS nu a putut contacta modelul său de raționament, așa că rulează în mod limitat — controlul dispozitivelor, starea și scenele funcționează în continuare. Motiv: {detail}\n\nDeschide panoul JARVIS → Setări și verifică furnizorul, modelul și cheia API. Dacă furnizorul a retras modelul, selectează-l din nou din listă. Această notificare dispare automat când raționamentul funcționează din nou.",
+      "title": "Backend-ul de raționament JARVIS este indisponibil"
+    }
+  },
+  "options": {
+    "step": {
+      "core": {
+        "data": {
+          "directive": "Directivă personalizată (opțional, suprascrie presetarea)",
+          "directive_preset": "Presetare directivă",
+          "honorific": "Adresează-mi-te cu",
+          "model": "Model de conversație",
+          "use_hass_api": "Activează controlul casei (lumini, climat, încuietori etc.)"
+        },
+        "description": "Personalitate, directivă și model de conversație.",
+        "title": "JARVIS — Nucleu"
+      },
+      "email": {
+        "data": {
+          "imap_enabled": "Activează citirea e-mailurilor",
+          "imap_folder": "Folder căsuță (implicit INBOX)",
+          "imap_host": "Gazdă IMAP (de ex. imap.gmail.com)",
+          "imap_port": "Port IMAP (SSL: 993)",
+          "imap_secret_key": "Cheia din secrets.yaml care conține parola",
+          "imap_ssl": "Folosește SSL (recomandat)",
+          "imap_user": "Nume utilizator IMAP / adresă de e-mail"
+        },
+        "description": "Acces la căsuță doar pentru citire. Parola IMAP este citită din secrets.yaml al Home Assistant — adaug-o acolo sub cheia de mai jos (implicit jarvis_imap_password); nu este niciodată stocată în configurația panoului.",
+        "title": "JARVIS — E-mail"
+      },
+      "identity": {
+        "data": {
+          "identity_enabled": "Recunoaște cine vorbește",
+          "identity_min_confidence": "Încredere minimă înainte de a atribui unei persoane",
+          "identity_voice_fingerprint": "Amprentă vocală (necesită un GPU local)",
+          "voice_recognition_auto_enroll": "Marchează automat vocile pentru înregistrare pe măsură ce oamenii vorbesc",
+          "voice_recognition_source": "Sursă de recunoaștere vocală (entitate dintr-un serviciu de recunoaștere a vorbitorului, de ex. binary_sensor.*_voice)"
+        },
+        "data_description": {
+          "identity_enabled": "Folosește cine e acasă + recunoașterea facială recentă de la cameră. Nu necesită GPU.",
+          "identity_min_confidence": "Mai mare = mai precaut; rămâne neutru când nu e sigur.",
+          "identity_voice_fingerprint": "Lasă dezactivat dacă nu ai un server GPU care rulează un model de identificare vocală."
+        },
+        "description": "recunoaștere per persoană, astfel încât JARVIS se adaptează la cine vorbește. Funcționează fără hardware special, folosind prezența și (dacă e configurată) recunoașterea facială de la cameră. Amprenta vocală este cea mai precisă, dar necesită un GPU local, așa că este dezactivată implicit.",
+        "title": "JARVIS — Identitate"
+      },
+      "init": {
+        "menu_options": {
+          "core": "Nucleu — personalitate, directivă, model de conversație",
+          "email": "E-mail — căsuță doar pentru citire (parolă prin secrets.yaml)",
+          "identity": "Identitate — recunoaștere per persoană",
+          "observer": "Observator — conștientizare proactivă (necesită o cheie Gemini)",
+          "routing": "Rutare — zone de dormitor, grup de difuzare, serviciu de notificare"
+        },
+        "title": "JARVIS — Configurează"
+      },
+      "observer": {
+        "data": {
+          "classifier_model": "Model de clasificare (nivel 1 — ieftin)",
+          "gemini_api_key": "Cheie API Gemini",
+          "observer_enabled": "Activează modul observator",
+          "observer_quiet_end": "Sfârșitul orelor de liniște (HH:MM)",
+          "observer_quiet_start": "Începutul orelor de liniște (HH:MM)",
+          "reasoning_model": "Model de raționament (nivel 2 — principal)",
+          "review_model": "Model de revizuire (nivel 3 — periodic)"
+        },
+        "description": "conștientizare proactivă. JARVIS îți supraveghează casa și intervine când ceva merită semnalat. Necesită o cheie API Gemini (se recomandă cu facturare activată).",
+        "title": "JARVIS — Mod observator"
+      },
+      "routing": {
+        "data": {
+          "bedroom_areas": "Zone de dormitor (pentru detectarea somnului în orele de liniște)",
+          "broadcast_group": "Grup de difuzoare pentru difuzare (de obicei grupul Cast de acasă)",
+          "notify_service": "Serviciu de notificare al telefonului (de ex. notify.mobile_app_yourphone)"
+        },
+        "data_description": {
+          "bedroom_areas": "Orice senzor de prezență din aceste zone declanșează modul de somn în orele de liniște.",
+          "broadcast_group": "Folosit pentru anunțuri critice și foarte urgente.",
+          "notify_service": "Folosit când ești plecat de acasă sau dormi."
+        },
+        "description": "alege ce zone HA sunt dormitoare (pentru detectarea somnului), ce grup media_player să folosești pentru difuzări și serviciul de notificare al telefonului.",
+        "title": "JARVIS — Rutare"
+      }
+    }
+  }
+}

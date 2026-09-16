@@ -737,12 +737,6 @@ async def ws_get_panel_data(
                 "departure_origin_entity": str(_runtime_opt(hass, entry, "departure_origin_entity", "") or ""),
                 "departure_osrm_url": str(_runtime_opt(hass, entry, "departure_osrm_url", "") or ""),
                 "departure_travel_sensor": str(_runtime_opt(hass, entry, "departure_travel_sensor", "") or ""),
-                "driving_mode_enabled": bool(_runtime_opt(hass, entry, "driving_mode_enabled", False)),
-                "driving_notify_briefings": bool(_runtime_opt(hass, entry, "driving_notify_briefings", True)),
-                "driving_notify_travel": bool(_runtime_opt(hass, entry, "driving_notify_travel", True)),
-                "driving_notify_security": bool(_runtime_opt(hass, entry, "driving_notify_security", True)),
-                "driving_suppress_home_audio": bool(_runtime_opt(hass, entry, "driving_suppress_home_audio", True)),
-                "driving_car_sensor": str(_runtime_opt(hass, entry, "driving_car_sensor", "") or ""),
                 "identity_min_confidence": _runtime_opt(hass, entry, "identity_min_confidence", 0.45),
                 "ollama_num_ctx": _runtime_opt(hass, entry, "ollama_num_ctx", 8192),
                 "memory_threading_enabled": bool(_runtime_opt(hass, entry, "memory_threading_enabled", True)),
@@ -1308,12 +1302,6 @@ PANEL_WRITABLE_KEYS = {
     "departure_origin_entity",
     "departure_osrm_url",
     "departure_travel_sensor",
-    "driving_mode_enabled",          # bool: route proactive alerts to the car (Android Auto) screen
-    "driving_car_sensor",            # str: head-unit-connected binary_sensor (blank = auto-detect *_android_auto)
-    "driving_notify_briefings",      # bool: route proactive briefings to the car screen
-    "driving_notify_travel",         # bool: route departure / leave-now heads-ups to the car screen
-    "driving_notify_security",       # bool: route security / hazard / camera alerts to the car screen
-    "driving_suppress_home_audio",   # bool: while driving, skip the home spoken announcement for routed alerts
     "memory_threading_enabled",
     "memory_threading_hours",
     "memory_threading_max",

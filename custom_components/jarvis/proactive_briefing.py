@@ -363,23 +363,10 @@ async def _push_to_phone(
             "camera": "JARVIS — Camera Alert",
         }.get(reason, "JARVIS — Briefing")
 
-        payload = {"message": message, "title": title}
-        try:
-            from . import driving_mode
-            reason_cat = {
-                "arrival": driving_mode.CAT_BRIEFING,
-                "scheduled": driving_mode.CAT_BRIEFING,
-                "security": driving_mode.CAT_SECURITY,
-                "camera": driving_mode.CAT_SECURITY,
-            }.get(reason, driving_mode.CAT_BRIEFING)
-            merged = driving_mode.augment_data_for_category(hass, config, reason_cat)
-            if merged:
-                payload["data"] = merged
-        except Exception:
-            pass
-
         await hass.services.async_call(
-            svc_domain, svc_name, payload, blocking=False,
+            svc_domain, svc_name,
+            {"message": message, "title": title},
+            blocking=False,
         )
         _LOGGER.info("Proactive: pushed to phone via %s", notify_svc)
     except Exception as exc:
