@@ -85,7 +85,7 @@
           "llm": "LLM — hallitse palveluntarjoajien avaimia",
           "core": "Ydin — persoona, ohje, keskustelumalli",
           "routing": "Reititys — makuuhuonealueet, kuulutusryhmä, ilmoituspalvelu",
-          "observer": "Tarkkailija — ennakoiva tietoisuus (vaatii Gemini-avaimen)",
+          "observer": "Tarkkailija — ennakoiva tietoisuus (käyttää määritettyjä LLM-palveluntarjoajia)",
           "identity": "Henkilöllisyys — henkilökohtainen tunnistus",
           "email": "Sähköposti — vain luettava postilaatikko (salasana secrets.yaml:n kautta)"
         }

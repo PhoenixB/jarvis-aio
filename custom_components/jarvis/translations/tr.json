@@ -85,7 +85,7 @@
           "llm": "LLM — sağlayıcı anahtarlarını yönet",
           "core": "Çekirdek — kişilik, direktif, sohbet modeli",
           "routing": "Yönlendirme — yatak odası alanları, yayın grubu, bildirim servisi",
-          "observer": "Gözlemci — proaktif farkındalık (bir Gemini anahtarı gerektirir)",
+          "observer": "Gözlemci — proaktif farkındalık (yapılandırılmış LLM sağlayıcılarını kullanır)",
           "identity": "Kimlik — kişi bazlı tanıma",
           "email": "E-posta — salt okunur gelen kutusu (parola secrets.yaml üzerinden)"
         }

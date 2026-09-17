@@ -85,7 +85,7 @@
           "llm": "LLM — zarządzaj kluczami dostawców",
           "core": "Rdzeń — osobowość, dyrektywa, model konwersacji",
           "routing": "Trasowanie — obszary sypialni, grupa rozgłaszania, usługa powiadomień",
-          "observer": "Obserwator — proaktywna świadomość (wymaga klucza Gemini)",
+          "observer": "Obserwator — proaktywna świadomość (używa skonfigurowanych dostawców LLM)",
           "identity": "Tożsamość — rozpoznawanie poszczególnych osób",
           "email": "E-mail — skrzynka tylko do odczytu (hasło przez secrets.yaml)"
         }

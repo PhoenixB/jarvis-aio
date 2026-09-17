@@ -85,7 +85,7 @@
           "llm": "LLM — gestionar claves de proveedor",
           "core": "Núcleo — persona, directiva, modelo de conversación",
           "routing": "Enrutamiento — áreas de dormitorio, grupo de difusión, servicio de notificación",
-          "observer": "Observador — percepción proactiva (necesita una clave Gemini)",
+          "observer": "Observador — percepción proactiva (usa proveedores LLM configurados)",
           "identity": "Identidad — reconocimiento por persona",
           "email": "Correo — bandeja de entrada de solo lectura (contraseña vía secrets.yaml)"
         }

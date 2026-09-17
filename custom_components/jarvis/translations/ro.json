@@ -85,7 +85,7 @@
           "llm": "LLM — gestionează cheile furnizorilor",
           "core": "Nucleu — personalitate, directivă, model de conversație",
           "routing": "Rutare — zone de dormitor, grup de difuzare, serviciu de notificare",
-          "observer": "Observator — conștientizare proactivă (necesită o cheie Gemini)",
+          "observer": "Observator — conștientizare proactivă (folosește furnizorii LLM configurați)",
           "identity": "Identitate — recunoaștere per persoană",
           "email": "E-mail — căsuță doar pentru citire (parolă prin secrets.yaml)"
         }

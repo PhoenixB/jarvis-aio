@@ -85,7 +85,7 @@
           "llm": "LLM — providersleutels beheren",
           "core": "Kern — persona, richtlijn, conversatiemodel",
           "routing": "Routering — slaapkamergebieden, omroepgroep, meldingsdienst",
-          "observer": "Waarnemer — proactief bewustzijn (vereist een Gemini-sleutel)",
+          "observer": "Waarnemer — proactief bewustzijn (gebruikt geconfigureerde LLM-providers)",
           "identity": "Identiteit — herkenning per persoon",
           "email": "E-mail — alleen-lezen inbox (wachtwoord via secrets.yaml)"
         }

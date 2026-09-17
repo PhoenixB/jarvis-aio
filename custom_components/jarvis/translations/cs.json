@@ -85,7 +85,7 @@
           "llm": "LLM — správa klíčů poskytovatelů",
           "core": "Jádro — osobnost, direktiva, konverzační model",
           "routing": "Směrování — ložnicové oblasti, skupina pro vysílání, oznamovací služba",
-          "observer": "Pozorovatel — proaktivní vnímání (vyžaduje klíč Gemini)",
+          "observer": "Pozorovatel — proaktivní vnímání (používá nakonfigurované poskytovatele LLM)",
           "identity": "Identita — rozpoznávání jednotlivých osob",
           "email": "E-mail — schránka pouze pro čtení (heslo přes secrets.yaml)"
         }

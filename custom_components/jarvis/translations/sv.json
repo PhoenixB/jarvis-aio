@@ -85,7 +85,7 @@
           "llm": "LLM — hantera leverantörsnycklar",
           "core": "Kärna — persona, direktiv, konversationsmodell",
           "routing": "Routing — sovrumsområden, utsändningsgrupp, aviseringstjänst",
-          "observer": "Observatör — proaktiv medvetenhet (kräver en Gemini-nyckel)",
+          "observer": "Observatör — proaktiv medvetenhet (använder konfigurerade LLM-leverantörer)",
           "identity": "Identitet — igenkänning per person",
           "email": "E-post — skrivskyddad inkorg (lösenord via secrets.yaml)"
         }

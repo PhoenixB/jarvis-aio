@@ -85,7 +85,7 @@
           "llm": "LLM — Anbieter-Schlüssel verwalten",
           "core": "Kern — Persona, Direktive, Konversationsmodell",
           "routing": "Routing — Schlafzimmerbereiche, Broadcast-Gruppe, Benachrichtigungsdienst",
-          "observer": "Beobachter — proaktive Wahrnehmung (benötigt einen Gemini-Schlüssel)",
+          "observer": "Beobachter — proaktive Wahrnehmung (verwendet konfigurierte LLM-Anbieter)",
           "identity": "Identität — Erkennung pro Person",
           "email": "E-Mail — schreibgeschützter Posteingang (Passwort über secrets.yaml)"
         }

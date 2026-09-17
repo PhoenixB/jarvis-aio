@@ -85,7 +85,7 @@
           "llm": "LLM — manage provider keys",
           "core": "Core — persona, directive, conversation model",
           "routing": "Routing — bedroom areas, broadcast group, notify service",
-          "observer": "Observer — proactive awareness (needs a Gemini key)",
+          "observer": "Observer — proactive awareness (uses configured LLM providers)",
           "identity": "Identity — per-person recognition",
           "email": "Email — read-only inbox (password via secrets.yaml)"
         }

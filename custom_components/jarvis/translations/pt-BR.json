@@ -85,7 +85,7 @@
           "llm": "LLM — gerenciar chaves de provedores",
           "core": "Núcleo — persona, diretriz, modelo de conversa",
           "routing": "Roteamento — áreas de quarto, grupo de transmissão, serviço de notificação",
-          "observer": "Observador — percepção proativa (precisa de uma chave Gemini)",
+          "observer": "Observador — percepção proativa (usa provedores de LLM configurados)",
           "identity": "Identidade — reconhecimento por pessoa",
           "email": "E-mail — caixa de entrada somente leitura (senha via secrets.yaml)"
         }

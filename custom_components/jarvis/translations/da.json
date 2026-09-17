@@ -85,7 +85,7 @@
           "llm": "LLM — administrer udbydernøgler",
           "core": "Kerne — persona, direktiv, samtalemodel",
           "routing": "Routing — soveværelsesområder, broadcast-gruppe, notifikationstjeneste",
-          "observer": "Observatør — proaktiv opmærksomhed (kræver en Gemini-nøgle)",
+          "observer": "Observatør — proaktiv opmærksomhed (bruger konfigurerede LLM-udbydere)",
           "identity": "Identitet — genkendelse pr. person",
           "email": "E-mail — skrivebeskyttet indbakke (adgangskode via secrets.yaml)"
         }

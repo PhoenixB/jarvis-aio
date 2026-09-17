@@ -85,7 +85,7 @@
           "llm": "LLM — gestisci le chiavi dei provider",
           "core": "Nucleo — persona, direttiva, modello di conversazione",
           "routing": "Instradamento — aree camera, gruppo broadcast, servizio di notifica",
-          "observer": "Osservatore — consapevolezza proattiva (richiede una chiave Gemini)",
+          "observer": "Osservatore — consapevolezza proattiva (usa i provider LLM configurati)",
           "identity": "Identità — riconoscimento per persona",
           "email": "Email — casella di posta in sola lettura (password tramite secrets.yaml)"
         }

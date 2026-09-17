@@ -429,13 +429,10 @@ class JarvisOptionsFlow(OptionsFlow):
         )
 
     async def async_step_llm(self, user_input: dict[str, Any] | None = None) -> dict:
-        """LLM — submenu: add/rotate any provider's key, or set which
-        configured provider drives the Main Agent. Each provider has its own
-        dedicated credential field, so configuring one never overwrites
-        another's key (e.g. Groq for the Main Agent, Gemini for Observer)."""
+        """LLM — submenu for adding or rotating provider keys."""
         configured = [p for p in _PROVIDER_STEPS if await self._provider_configured(p)]
         if configured:
-            note = "Configured: " + ", ".join(configured) + ". Add/rotate another, or set the Main Agent."
+            note = "Configured: " + ", ".join(configured) + ". Add or rotate another provider."
         else:
             note = "No provider configured yet. Pick one to add its API key (or URL for Ollama/Custom)."
         return self.async_show_menu(

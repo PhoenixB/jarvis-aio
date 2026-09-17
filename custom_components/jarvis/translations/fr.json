@@ -85,7 +85,7 @@
           "llm": "LLM — gérer les clés des fournisseurs",
           "core": "Cœur — persona, directive, modèle de conversation",
           "routing": "Routage — zones de chambre, groupe de diffusion, service de notification",
-          "observer": "Observateur — conscience proactive (nécessite une clé Gemini)",
+          "observer": "Observateur — conscience proactive (utilise les fournisseurs LLM configurés)",
           "identity": "Identité — reconnaissance par personne",
           "email": "E-mail — boîte de réception en lecture seule (mot de passe via secrets.yaml)"
         }
