@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Mod observator",
-        "description": "conștientizare proactivă. JARVIS îți supraveghează casa și intervine când ceva merită semnalat. Necesită o cheie API Gemini (se recomandă cu facturare activată).",
+        "description": "conștientizare proactivă. JARVIS îți supraveghează casa și intervine când ceva merită semnalat.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

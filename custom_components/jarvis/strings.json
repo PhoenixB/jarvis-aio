@@ -179,7 +179,7 @@
       },
       "observer": {
         "title": "JARVIS — Observer Mode",
-        "description": "Proactive awareness. Requires a Gemini API key.",
+        "description": "Configure each Observer model tier and its quiet hours.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

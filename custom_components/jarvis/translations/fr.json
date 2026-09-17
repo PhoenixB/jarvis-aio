@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Mode Observateur",
-        "description": "conscience proactive. JARVIS surveille votre maison et intervient quand quelque chose mérite d'être signalé. Nécessite une clé API Gemini (facturation activée recommandée).",
+        "description": "conscience proactive. JARVIS surveille votre maison et intervient quand quelque chose mérite d'être signalé.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

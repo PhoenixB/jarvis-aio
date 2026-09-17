@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Režim pozorovateľa",
-        "description": "proaktívne vnímanie. JARVIS sleduje váš domov a ozve sa, keď niečo stojí za zmienku. Vyžaduje API kľúč Gemini (odporúča sa s povoleným účtovaním).",
+        "description": "proaktívne vnímanie. JARVIS sleduje váš domov a ozve sa, keď niečo stojí za zmienku.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

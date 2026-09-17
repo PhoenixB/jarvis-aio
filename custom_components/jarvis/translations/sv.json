@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Observatörsläge",
-        "description": "proaktiv medvetenhet. JARVIS bevakar ditt hem och säger till när något är värt att notera. Kräver en Gemini API-nyckel (fakturering rekommenderas aktiverad).",
+        "description": "proaktiv medvetenhet. JARVIS bevakar ditt hem och säger till när något är värt att notera.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

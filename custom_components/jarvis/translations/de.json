@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Beobachter-Modus",
-        "description": "proaktive Wahrnehmung. JARVIS beobachtet dein Zuhause und meldet sich, wenn etwas erwähnenswert ist. Benötigt einen Gemini-API-Schlüssel (Abrechnung aktiviert empfohlen).",
+        "description": "proaktive Wahrnehmung. JARVIS beobachtet dein Zuhause und meldet sich, wenn etwas erwähnenswert ist.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

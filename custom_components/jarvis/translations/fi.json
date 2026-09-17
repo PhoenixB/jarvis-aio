@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Tarkkailutila",
-        "description": "ennakoiva tietoisuus. JARVIS tarkkailee kotiasi ja ilmoittaa, kun jokin on huomionarvoista. Vaatii Gemini API-avaimen (laskutus suositellaan käyttöön).",
+        "description": "ennakoiva tietoisuus. JARVIS tarkkailee kotiasi ja ilmoittaa, kun jokin on huomionarvoista.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

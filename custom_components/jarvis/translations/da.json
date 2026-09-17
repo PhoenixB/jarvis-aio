@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Observatørtilstand",
-        "description": "proaktiv opmærksomhed. JARVIS holder øje med dit hjem og siger til, når noget er værd at bemærke. Kræver en Gemini API-nøgle (fakturering anbefales aktiveret).",
+        "description": "proaktiv opmærksomhed. JARVIS holder øje med dit hjem og siger til, når noget er værd at bemærke.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

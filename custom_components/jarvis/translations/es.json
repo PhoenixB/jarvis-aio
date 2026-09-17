@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Modo Observador",
-        "description": "percepción proactiva. JARVIS vigila su hogar e interviene cuando algo merece mención. Necesita una clave API de Gemini (se recomienda con facturación activada).",
+        "description": "percepción proactiva. JARVIS vigila su hogar e interviene cuando algo merece mención.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

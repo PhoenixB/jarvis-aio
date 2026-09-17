@@ -952,7 +952,7 @@ class JarvisAgent(conversation.ConversationEntity):
             # v5.7.00: Local engine is PRIMARY. Complexity scoring decides
             # whether to escalate to LLM. Handles 95%+ of requests at zero
             # API cost. Only genuinely complex/creative/analytical requests
-            # fall through to the LLM agent (Groq/Gemini).
+            # fall through to the configured LLM agent.
             from .local_engine import try_local, score_complexity
             local_result = await try_local(self.hass, user_input.text, honorific)
 
@@ -984,7 +984,7 @@ class JarvisAgent(conversation.ConversationEntity):
                         )
                 else:
                     jarvis_log("AGENT", f"LLM needed (complexity={complexity}): {user_input.text[:60]}")
-                    # Complex request — use LLM agent (Groq/Gemini fallback)
+                    # Complex request — use the configured LLM agent.
                     from .agent import run_agent
                     from . import ha_secrets as _hs
                     from . import jarvis_config as _jc

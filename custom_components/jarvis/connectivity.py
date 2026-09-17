@@ -1,7 +1,7 @@
 """
 JARVIS Connectivity Circuit Breaker (v5.9.06).
 
-Tracks whether the cloud LLM (Groq/Gemini) is reachable so JARVIS can:
+Tracks whether a configured cloud LLM provider is reachable so JARVIS can:
   1. Avoid wasting 5-10s on doomed network calls when already known-offline.
   2. Degrade gracefully to local-only handling during outages.
   3. Recover automatically once connectivity returns.

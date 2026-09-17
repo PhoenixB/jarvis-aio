@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — 观察者模式",
-        "description": "主动感知。JARVIS 会关注你的家，并在有值得注意的情况时主动开口。需要 Gemini API 密钥（建议启用计费）。",
+        "description": "Configure each Observer model tier and its quiet hours.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

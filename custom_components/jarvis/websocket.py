@@ -584,7 +584,7 @@ async def ws_get_panel_data(
             quiet_end=quiet_end,
         )
 
-        gemini_key = bool(await ha_secrets.async_get_provider_key(hass, "gemini"))
+        configured_providers = await _configured_providers(hass, entry)
         broadcast_group = _entry_opt(entry, CONF_BROADCAST_GROUP, "") or ""
         notify_service = _entry_opt(entry, CONF_NOTIFY_SERVICE, "") or ""
         observer_enabled_cfg = bool(_runtime_opt(hass, entry, CONF_OBSERVER_ENABLED, False))
@@ -658,9 +658,9 @@ async def ws_get_panel_data(
                 "state": "ASLEEP" if sleeping else "AWAKE",
                 "level": "warn" if sleeping else "live",
             },
-            "gemini": {
-                "state": "READY" if gemini_key else "UNSET",
-                "level": "live" if gemini_key else "warn",
+            "llm_providers": {
+                "state": f"{len(configured_providers)} READY" if configured_providers else "UNSET",
+                "level": "live" if configured_providers else "warn",
             },
             "broadcast": {
                 "state": "ONLINE" if broadcast_group else "UNSET",
@@ -1867,11 +1867,12 @@ def _resolve_provider_key(hass: HomeAssistant, entry, provider: str) -> str:
 async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
     """Providers with a usable credential/endpoint today — drives the AI
     Models role dropdowns so you can't pick a provider with nothing to call.
-    ollama needs no key and has a sensible default endpoint, so it's always
-    offered. Credentials are read straight from secrets.yaml — the only place
-    they live."""
+    ollama needs no key, but is only configured when its endpoint is set.
+    Credentials are read straight from secrets.yaml — the only place they live."""
     from . import ha_secrets
-    out = ["ollama"]
+    out = []
+    if str(_runtime_opt(hass, entry, "llm_base_url", "") or "").strip():
+        out.append("ollama")
     for provider, field in PROVIDER_API_KEY_FIELDS.items():
         if provider == "custom":
             if _runtime_opt(hass, entry, "custom_base_url", "") or _runtime_opt(hass, entry, "llm_base_url", ""):

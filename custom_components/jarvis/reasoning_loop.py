@@ -14,8 +14,8 @@ It returns either:
   - A "speak" decision: {"speak": true, "message": "...", "urgency": "..."}
   - A "stay silent" decision: {"speak": false, "reason": "..."}
 
-The model is Gemini Flash by default — more capable than Flash-Lite but
-still cheap. Uses thinking_budget normally (lets it reason).
+The reasoning-tier model is provider-configurable. Uses thinking_budget
+normally (lets it reason).
 
 The observer calls this, then hands the result (if speak=true) to the
 output gate for rate limiting and routing.

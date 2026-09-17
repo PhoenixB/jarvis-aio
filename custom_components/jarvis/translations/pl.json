@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Tryb obserwatora",
-        "description": "proaktywna świadomość. JARVIS obserwuje Twój dom i odzywa się, gdy coś jest warte uwagi. Wymaga klucza API Gemini (zalecane włączone rozliczenia).",
+        "description": "proaktywna świadomość. JARVIS obserwuje Twój dom i odzywa się, gdy coś jest warte uwagi.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

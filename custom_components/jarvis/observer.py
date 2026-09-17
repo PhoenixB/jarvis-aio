@@ -14,8 +14,8 @@ v5.3 changes from v5.2:
 Pipeline:
   1. Pre-filter (domain whitelist + device_class filtering)
   2. Debounce per entity (no repeats within 30s)
-  3. Classifier (Gemini Flash-Lite) — worth considering?
-  4. Reasoning (Gemini Flash) — speak or stay silent, in character
+    3. Classifier tier — worth considering?
+    4. Reasoning tier — speak or stay silent, in character
   5. Output gate (rate limits, dedupe, mute memory)
   6. Routing (audio_routing.observer_speak_target)
   7. Speak (tts.speak to selected targets) or notify (phone push)
@@ -45,7 +45,7 @@ _LOGGER = logging.getLogger(__name__)
 # ─── Pre-filter rules (no LLM cost) ──────────────────────────────────────────
 #
 # Philosophy: PRE-FILTER AGGRESSIVELY, classify EXPENSIVELY.
-# It costs zero dollars to pre-filter an event. It costs real Gemini quota
+# It costs zero dollars to pre-filter an event. It costs real provider quota
 # every time we let one through. Bias STRONGLY toward dropping.
 
 # Domains we ignore entirely — too noisy or not observation-worthy
@@ -62,7 +62,7 @@ IGNORED_DOMAINS = {
 
 # Sensor device_classes we DO care about. ONLY discrete-state / safety sensors.
 # Numeric sensors (power/energy/voltage/current/temperature/humidity/etc.) are
-# EXCLUDED because they fire constantly and would burn Gemini quota.
+# EXCLUDED because they fire constantly and would burn provider quota.
 INTERESTING_SENSOR_CLASSES = {
     "moisture",         # water leak
     "smoke",

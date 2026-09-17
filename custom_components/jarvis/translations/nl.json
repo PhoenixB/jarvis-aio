@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Waarnemermodus",
-        "description": "proactief bewustzijn. JARVIS houdt je huis in de gaten en laat van zich horen als er iets vermeldenswaardig is. Vereist een Gemini-API-sleutel (facturering ingeschakeld aanbevolen).",
+        "description": "proactief bewustzijn. JARVIS houdt je huis in de gaten en laat van zich horen als er iets vermeldenswaardig is.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

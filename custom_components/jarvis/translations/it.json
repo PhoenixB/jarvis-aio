@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Modalità Osservatore",
-        "description": "consapevolezza proattiva. JARVIS sorveglia la tua casa e interviene quando c'è qualcosa da segnalare. Richiede una chiave API Gemini (consigliata con fatturazione attiva).",
+        "description": "consapevolezza proattiva. JARVIS sorveglia la tua casa e interviene quando c'è qualcosa da segnalare.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

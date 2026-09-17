@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Режим спостерігача",
-        "description": "проактивна обізнаність. JARVIS стежить за вашим домом і озивається, коли щось варте уваги. Потрібен API-ключ Gemini (рекомендовано з увімкненою оплатою).",
+        "description": "проактивна обізнаність. JARVIS стежить за вашим домом і озивається, коли щось варте уваги.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

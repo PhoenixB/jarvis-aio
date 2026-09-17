@@ -180,7 +180,7 @@
       },
       "observer": {
         "title": "JARVIS — Gözlemci Modu",
-        "description": "proaktif farkındalık. JARVIS evinizi izler ve kayda değer bir şey olduğunda söz alır. Bir Gemini API anahtarı gerektirir (faturalandırma etkin önerilir).",
+        "description": "proaktif farkındalık. JARVIS evinizi izler ve kayda değer bir şey olduğunda söz alır.",
         "menu_options": {
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",

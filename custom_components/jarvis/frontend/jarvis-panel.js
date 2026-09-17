@@ -1598,7 +1598,7 @@ class JarvisPanel extends HTMLElement {
     return {
       observer:   { state: "RUNNING", level: "live" },
       sleep:      { state: "AWAKE",   level: "live" },
-      gemini:     { state: "READY",   level: "live" },
+      llm_providers: { state: "3 READY", level: "live" },
       broadcast:  { state: "ONLINE",  level: "live" },
       notify:     { state: "UNSET",   level: "warn" },
       satellites: { state: "8 / 8",   level: "live" },
@@ -1662,7 +1662,7 @@ class JarvisPanel extends HTMLElement {
     return {
       observer:   live.status.observer,
       sleep:      live.status.sleep,
-      gemini:     live.status.gemini,
+      llm_providers: live.status.llm_providers,
       broadcast:  live.status.broadcast,
       notify:     live.status.notify,
       satellites: live.status.satellites,
@@ -1755,7 +1755,7 @@ class JarvisPanel extends HTMLElement {
     const statusPanel = root.querySelector(".c-status");
     if (statusPanel) {
       const rows = statusPanel.querySelectorAll(".status-row");
-      const statusKeys = ["observer", "sleep", "gemini", "broadcast", "notify", "satellites"];
+      const statusKeys = ["observer", "sleep", "llm_providers", "broadcast", "notify", "satellites"];
       rows.forEach((row, i) => {
         const key = statusKeys[i];
         const st = live.status[key];
@@ -4035,7 +4035,7 @@ class JarvisPanel extends HTMLElement {
       <div class="status-list">
         ${statusRow("Observer",   d.observer)}
         ${statusRow("Sleep",      d.sleep)}
-        ${statusRow("Gemini",     d.gemini)}
+        ${statusRow("LLM Providers", d.llm_providers)}
         ${statusRow("Broadcast",  d.broadcast)}
         ${statusRow("Notify",     d.notify)}
         ${statusRow("Satellites", d.satellites)}
