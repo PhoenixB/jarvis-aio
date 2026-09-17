@@ -70,7 +70,9 @@
       "need_llm": "Saisissez soit une clé API cloud, soit une URL de LLM local.",
       "cannot_connect": "Impossible de joindre le LLM. Vérifiez que l'URL/point de terminaison est correct et que le serveur (ex. Ollama) est en cours d'exécution.",
       "invalid_auth": "La clé API a été refusée. Vérifiez la clé et réessayez.",
-      "unknown": "Impossible de valider la connexion au LLM. Vérifiez les paramètres et réessayez."
+      "unknown": "Impossible de valider la connexion au LLM. Vérifiez les paramètres et réessayez.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     },
     "abort": {
       "already_configured": "JARVIS est déjà configuré.",
@@ -138,13 +140,6 @@
         "title": "JARVIS — Ollama",
         "data": {
           "ollama_base_url": "URL de base (vide = http://homeassistant.local:11434/v1)"
-        }
-      },
-      "llm_main": {
-        "title": "JARVIS — Agent Principal",
-        "data": {
-          "llm_provider": "Fournisseur de l'Agent Principal",
-          "model": "Modèle de conversation"
         }
       },
       "core": {

@@ -70,7 +70,9 @@
       "need_llm": "請輸入雲端 API 金鑰或本地 LLM URL。",
       "cannot_connect": "無法連線到 LLM。請檢查 URL/端點是否正確，以及伺服器（例如 Ollama）是否正在執行。",
       "invalid_auth": "API 金鑰被拒絕。請檢查金鑰後重試。",
-      "unknown": "無法驗證 LLM 連線。請檢查設定後重試。"
+      "unknown": "無法驗證 LLM 連線。請檢查設定後重試。",
+      "no_models": "此提供商沒有可用模型。請檢查端點後重試。",
+      "no_providers": "尚未設定 LLM 提供商。請先在 LLM 區段新增 API 金鑰或端點。"
     },
     "abort": {
       "already_configured": "JARVIS 已配置。",
@@ -138,13 +140,6 @@
         "title": "JARVIS — Ollama",
         "data": {
           "ollama_base_url": "基礎 URL（留空使用 http://homeassistant.local:11434/v1）"
-        }
-      },
-      "llm_main": {
-        "title": "JARVIS — 主代理",
-        "data": {
-          "llm_provider": "主代理提供商",
-          "model": "對話模型"
         }
       },
       "core": {

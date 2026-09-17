@@ -268,7 +268,9 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_finish_model(self, user_input: dict[str, Any] | None = None) -> dict:
         """Choose the initial Main Agent model from the provider's live list."""
-        provider = self._finish_provider
+        provider = getattr(self, "_finish_provider", None)
+        if not provider or provider not in self._provider_keys:
+            return await self.async_step_provider_menu()
         fields = self._provider_keys[provider]
         models = await _fetch_available_models(
             self.hass, provider, fields.get("api_key", ""), fields.get("llm_base_url", ""),
@@ -610,14 +612,14 @@ class JarvisOptionsFlow(OptionsFlow):
         if user_input is not None:
             self._data.update(user_input)
             return await self._save_section(dict(self._data))
-        current = self._cur(CONF_MODEL, DEFAULT_MODEL)
-        selected = current if current in models else models[0]
         if not models:
             return self.async_show_form(
                 step_id="core_model",
                 data_schema=vol.Schema({}),
                 errors={"base": "no_models"},
             )
+        current = self._cur(CONF_MODEL, DEFAULT_MODEL)
+        selected = current if current in models else models[0]
         return self.async_show_form(
             step_id="core_model",
             data_schema=vol.Schema({
@@ -657,10 +659,19 @@ class JarvisOptionsFlow(OptionsFlow):
             await self._persist({provider_key: user_input[provider_key]})
             return await self._async_step_observer_model(tier)
         providers = [p for p in _PROVIDER_STEPS if await self._provider_configured(p)]
+        if not providers:
+            return self.async_show_form(
+                step_id=tier,
+                data_schema=vol.Schema({}),
+                errors={"base": "no_providers"},
+            )
+        default_provider = self._cur(provider_key, providers[0])
+        if default_provider not in providers:
+            default_provider = providers[0]
         return self.async_show_form(
             step_id=tier,
             data_schema=vol.Schema({
-                vol.Required(provider_key, default=self._cur(provider_key, "groq")):
+                vol.Required(provider_key, default=default_provider):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=providers, mode=selector.SelectSelectorMode.DROPDOWN)),
             }),

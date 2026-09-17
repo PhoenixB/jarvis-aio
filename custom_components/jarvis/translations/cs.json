@@ -70,7 +70,9 @@
       "need_llm": "Zadejte buď cloudový API klíč, nebo URL lokálního LLM.",
       "cannot_connect": "LLM není dostupný. Zkontrolujte, že URL/endpoint je správný a server (např. Ollama) běží.",
       "invalid_auth": "API klíč byl odmítnut. Zkontrolujte klíč a zkuste to znovu.",
-      "unknown": "Připojení k LLM se nepodařilo ověřit. Zkontrolujte nastavení a zkuste to znovu."
+      "unknown": "Připojení k LLM se nepodařilo ověřit. Zkontrolujte nastavení a zkuste to znovu.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     },
     "abort": {
       "already_configured": "JARVIS je už nakonfigurován.",
@@ -138,13 +140,6 @@
         "title": "JARVIS — Ollama",
         "data": {
           "ollama_base_url": "Základní URL (prázdné použije http://homeassistant.local:11434/v1)"
-        }
-      },
-      "llm_main": {
-        "title": "JARVIS — Hlavní agent",
-        "data": {
-          "llm_provider": "Poskytovatel Hlavního agenta",
-          "model": "Konverzační model"
         }
       },
       "core": {

@@ -70,7 +70,9 @@
       "need_llm": "Ange antingen en moln-API-nyckel eller en lokal LLM-URL.",
       "cannot_connect": "Kunde inte nå LLM:en. Kontrollera att URL/endpoint är korrekt och att servern (t.ex. Ollama) körs.",
       "invalid_auth": "API-nyckeln avvisades. Kontrollera nyckeln och försök igen.",
-      "unknown": "Kunde inte validera LLM-anslutningen. Kontrollera inställningarna och försök igen."
+      "unknown": "Kunde inte validera LLM-anslutningen. Kontrollera inställningarna och försök igen.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     },
     "abort": {
       "already_configured": "JARVIS är redan konfigurerad.",
@@ -138,13 +140,6 @@
         "title": "JARVIS — Ollama",
         "data": {
           "ollama_base_url": "Bas-URL (tomt använder http://homeassistant.local:11434/v1)"
-        }
-      },
-      "llm_main": {
-        "title": "JARVIS — Huvudagent",
-        "data": {
-          "llm_provider": "Huvudagentens leverantör",
-          "model": "Konversationsmodell"
         }
       },
       "core": {

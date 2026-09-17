@@ -70,7 +70,9 @@
       "need_llm": "Gib entweder einen Cloud-API-Schlüssel oder eine lokale LLM-URL ein.",
       "cannot_connect": "LLM nicht erreichbar. Prüfe, ob die URL/der Endpunkt korrekt ist und der Server (z. B. Ollama) läuft.",
       "invalid_auth": "Der API-Schlüssel wurde abgelehnt. Prüfe den Schlüssel und versuche es erneut.",
-      "unknown": "LLM-Verbindung konnte nicht überprüft werden. Prüfe die Einstellungen und versuche es erneut."
+      "unknown": "LLM-Verbindung konnte nicht überprüft werden. Prüfe die Einstellungen und versuche es erneut.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     },
     "abort": {
       "already_configured": "JARVIS ist bereits eingerichtet.",
@@ -138,13 +140,6 @@
         "title": "JARVIS — Ollama",
         "data": {
           "ollama_base_url": "Basis-URL (leer = http://homeassistant.local:11434/v1)"
-        }
-      },
-      "llm_main": {
-        "title": "JARVIS — Hauptagent",
-        "data": {
-          "llm_provider": "Anbieter des Hauptagenten",
-          "model": "Konversationsmodell"
         }
       },
       "core": {

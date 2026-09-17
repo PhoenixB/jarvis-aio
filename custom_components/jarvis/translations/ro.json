@@ -70,7 +70,9 @@
       "need_llm": "Introdu fie o cheie API cloud, fie un URL LLM local.",
       "cannot_connect": "Nu s-a putut contacta LLM-ul. Verifică dacă URL-ul/endpointul este corect și dacă serverul (de ex. Ollama) rulează.",
       "invalid_auth": "Cheia API a fost respinsă. Verifică cheia și încearcă din nou.",
-      "unknown": "Nu s-a putut valida conexiunea LLM. Verifică setările și încearcă din nou."
+      "unknown": "Nu s-a putut valida conexiunea LLM. Verifică setările și încearcă din nou.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     },
     "abort": {
       "already_configured": "JARVIS este deja configurat.",
@@ -138,13 +140,6 @@
         "title": "JARVIS — Ollama",
         "data": {
           "ollama_base_url": "URL de bază (gol folosește http://homeassistant.local:11434/v1)"
-        }
-      },
-      "llm_main": {
-        "title": "JARVIS — Agent Principal",
-        "data": {
-          "llm_provider": "Furnizorul Agentului Principal",
-          "model": "Model de conversație"
         }
       },
       "core": {

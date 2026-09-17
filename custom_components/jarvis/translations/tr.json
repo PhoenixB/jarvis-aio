@@ -70,7 +70,9 @@
       "need_llm": "Bir bulut API anahtarı ya da yerel bir LLM URL'si girin.",
       "cannot_connect": "LLM'ye ulaşılamadı. URL/uç noktanın doğru olduğunu ve sunucunun (ör. Ollama) çalıştığını kontrol edin.",
       "invalid_auth": "API anahtarı reddedildi. Anahtarı kontrol edip tekrar deneyin.",
-      "unknown": "LLM bağlantısı doğrulanamadı. Ayarları kontrol edip tekrar deneyin."
+      "unknown": "LLM bağlantısı doğrulanamadı. Ayarları kontrol edip tekrar deneyin.",
+      "no_models": "Bu sağlayıcı için kullanılabilir model yok. Sağlayıcı uç noktasını kontrol edip tekrar deneyin.",
+      "no_providers": "Henüz LLM sağlayıcısı yapılandırılmadı. Önce LLM bölümünden bir API anahtarı veya uç nokta ekleyin."
     },
     "abort": {
       "already_configured": "JARVIS zaten yapılandırılmış.",
@@ -138,13 +140,6 @@
         "title": "JARVIS — Ollama",
         "data": {
           "ollama_base_url": "Temel URL (boş bırakılırsa http://homeassistant.local:11434/v1 kullanılır)"
-        }
-      },
-      "llm_main": {
-        "title": "JARVIS — Ana Ajan",
-        "data": {
-          "llm_provider": "Ana Ajan sağlayıcısı",
-          "model": "Sohbet modeli"
         }
       },
       "core": {

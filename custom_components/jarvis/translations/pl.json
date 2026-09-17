@@ -70,7 +70,9 @@
       "need_llm": "Wprowadź klucz API chmury albo adres URL lokalnego LLM.",
       "cannot_connect": "Nie można połączyć się z LLM. Sprawdź, czy adres URL/punkt końcowy jest poprawny, a serwer (np. Ollama) działa.",
       "invalid_auth": "Klucz API został odrzucony. Sprawdź klucz i spróbuj ponownie.",
-      "unknown": "Nie udało się zweryfikować połączenia z LLM. Sprawdź ustawienia i spróbuj ponownie."
+      "unknown": "Nie udało się zweryfikować połączenia z LLM. Sprawdź ustawienia i spróbuj ponownie.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     },
     "abort": {
       "already_configured": "JARVIS jest już skonfigurowany.",
@@ -138,13 +140,6 @@
         "title": "JARVIS — Ollama",
         "data": {
           "ollama_base_url": "Podstawowy URL (puste użyje http://homeassistant.local:11434/v1)"
-        }
-      },
-      "llm_main": {
-        "title": "JARVIS — Główny agent",
-        "data": {
-          "llm_provider": "Dostawca Głównego agenta",
-          "model": "Model konwersacji"
         }
       },
       "core": {
