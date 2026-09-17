@@ -806,6 +806,8 @@ def _register_services(
 
     def _register_service(name: str, handler, schema=None) -> None:
         """Guard registration so reloads are idempotent and unload stays symmetric."""
+        if name not in JARVIS_SERVICE_NAMES:
+            raise ValueError(f"Unlisted JARVIS service: {name}")
         if hass.services.has_service(DOMAIN, name):
             _LOGGER.debug("JARVIS service already registered: %s.%s", DOMAIN, name)
             return
