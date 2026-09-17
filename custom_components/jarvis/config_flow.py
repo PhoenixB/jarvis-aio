@@ -89,10 +89,15 @@ def _find_config() -> dict | None:
     from .const import resolve_provider_base_url
     provider = data.get("llm_provider", "groq")
     has_secret = bool(ha_secrets.get_provider_key_sync(provider))
+    # A legacy install may still have its credential in config.json (not yet
+    # migrated to secrets.yaml). Treat that as usable too, so the entry gets
+    # created and async_setup_entry()'s migration can relocate it, instead of
+    # sending an already-configured user through fresh setup.
+    has_legacy_secret = bool(data.get(CONF_API_KEY) or data.get("groq_api_key"))
     local_ok = provider == "ollama" or (
         provider == "custom" and bool(resolve_provider_base_url(data, "custom"))
     )
-    return data if (has_secret or local_ok) else None
+    return data if (has_secret or has_legacy_secret or local_ok) else None
 
 
 class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -288,10 +293,15 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
         base_url = resolve_provider_base_url(import_data, provider)
         local_ok = bool(base_url) and provider in ("ollama", "custom")
         has_key = bool(await ha_secrets.async_get_provider_key(self.hass, provider))
+        # A legacy install may still have its credential in config.json only
+        # (not yet relocated to secrets.yaml). Treat that as usable too, so
+        # the entry gets created and async_setup_entry()'s migration can
+        # relocate it instead of aborting an already-configured install.
+        has_legacy_key = bool(import_data.get(CONF_API_KEY) or import_data.get("groq_api_key"))
 
         # An LLM is required, but a local model counts: proceed if we have either
         # a cloud key (in secrets.yaml) OR a local endpoint (ollama/custom + URL).
-        if not has_key and not local_ok:
+        if not has_key and not has_legacy_key and not local_ok:
             _LOGGER.warning("JARVIS: config found but no API key and no local LLM")
             return self.async_abort(reason="import_failed")
 
@@ -385,10 +395,12 @@ class JarvisOptionsFlow(OptionsFlow):
         if provider == "ollama":
             return True   # no key needed; has a working default endpoint
         if provider == "custom":
-            # A Custom endpoint is valid with no key at all — configured means
-            # it has a URL, not that it has a secret.
+            # A Custom endpoint requires a URL — the key is optional, not
+            # the other way around. A key with no URL still isn't usable,
+            # since create_provider() would fall through to the default
+            # OpenAI endpoint instead of the intended custom one.
             from .const import CONF_CUSTOM_BASE_URL
-            return bool(self._cur(CONF_CUSTOM_BASE_URL, "")) or bool(self._cur_secret(provider))
+            return bool(self._cur(CONF_CUSTOM_BASE_URL, "")) or bool(self._cur("llm_base_url", ""))
         return bool(self._cur_secret(provider))
 
     def _cur_secret(self, provider: str) -> str:

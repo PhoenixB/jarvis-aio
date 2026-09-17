@@ -87,14 +87,18 @@ def _make_client(hass: HomeAssistant, provider: str, model: str, fallback):
             return fallback
         from . import ha_secrets
         api_key = ha_secrets.get_provider_key_sync(provider)
-        if not api_key and provider != "ollama":
-            return fallback
         from .const import PROVIDER_BASE_URL_FIELDS
         endpoint_field = PROVIDER_BASE_URL_FIELDS.get(provider)
         base_url = (
             (_cfg_opt(hass, endpoint_field, "") if endpoint_field else "")
             or _cfg_opt(hass, "llm_base_url", "")
         ) or None
+        # Ollama needs no key at all; Custom is explicitly allowed to have
+        # none as long as its endpoint is configured.
+        if not api_key and provider not in ("ollama", "custom"):
+            return fallback
+        if not api_key and provider == "custom" and not base_url:
+            return fallback
         key = (provider, model, api_key, base_url or "")
         cached = _PROVIDER_CACHE.get(key)
         if cached is not None:

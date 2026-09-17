@@ -2010,7 +2010,11 @@ class JarvisPanel extends HTMLElement {
       const curModel = cfg[r.modelKey] || '';
       // Always include the role's current provider, even if unconfigured,
       // so an existing selection doesn't silently vanish from the list.
-      const provList = cfgSet.has(curProv) ? configured : [curProv, ...configured];
+      // curProv comes from runtime/config data, so it must be validated
+      // against the known provider names before being used unescaped below.
+      const provList = cfgSet.has(curProv)
+        ? configured
+        : (ALL_PROVIDERS.includes(curProv) ? [curProv, ...configured] : configured);
       const provOpts = provList.map(p =>
         `<option value="${p}"${p === curProv ? ' selected' : ''}>${p}</option>`).join('');
       // Model select starts with the current value + a loading hint; it's
