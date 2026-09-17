@@ -73,6 +73,29 @@ def test_retries_with_renamed_param_on_unsupported_error(provider):
     assert "max_tokens" not in calls[1]
 
 
+def test_retry_chain_removes_unsupported_temperature(provider):
+    class _RejectsBoth:
+        def __init__(self):
+            self.calls = []
+
+        def create(self, **kwargs):
+            self.calls.append(kwargs)
+            if "max_tokens" in kwargs:
+                raise Exception("Unsupported parameter max_tokens; use max_completion_tokens")
+            if "temperature" in kwargs:
+                raise Exception("Unsupported parameter temperature for this model")
+            return _Resp()
+
+    completions = _RejectsBoth()
+    provider._client = _FakeClient()
+    provider._client.chat.completions = completions
+    result = provider.chat([{"role": "user", "content": "hi"}], max_tokens=5, temperature=0.7)
+    assert result["text"] == "ok"
+    assert "max_tokens" in completions.calls[0]
+    assert "max_completion_tokens" in completions.calls[1]
+    assert "temperature" not in completions.calls[2]
+
+
 def test_does_not_retry_on_unrelated_error(provider):
     class _AlwaysFails(_FakeCompletions):
         def create(self, **kwargs):
