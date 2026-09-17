@@ -1,3 +1,7 @@
+## [7.93.1] — fix: JARVIS silent / VoiceNotFoundError when only the medium voice is installed
+
+JARVIS now requests the JARVIS voice at the quality it actually installed — it follows the Voice Quality setting (medium by default) instead of always asking for the high-quality voice. Previously, on a default setup where only en_GB-jarvis-medium was present, JARVIS's speech asked for en_GB-jarvis-high, hit a VoiceNotFoundError, and fell back to the engine's plain default voice (or went silent during TTS streaming). If you want the high-quality voice, set Voice Quality to "high" and JARVIS will install and use it.
+
 ## [7.93.0] — quieter cameras: analyze everything, announce only what matters
 
 JARVIS no longer narrates routine camera activity. Automatic camera reviews now speak up only for things worth your attention — a person approaching or at a door, a delivery or package, mail, someone at an odd hour — while parked or passing cars, pets, empty scenes, and recognized residents are still analyzed and logged but kept silent. The scene-reasoning step was also tightened to default to silence and only flag genuinely notable events.

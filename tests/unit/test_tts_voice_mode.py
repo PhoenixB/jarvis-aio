@@ -24,9 +24,23 @@ def _speak_call(hass):
     return calls[-1][2]
 
 
+def _set_quality(hass, q):
+    hass.data.setdefault(DOMAIN, {}).setdefault("e1", {"runtime_config": {}})
+    hass.data[DOMAIN]["e1"].setdefault("runtime_config", {})["voice_quality"] = q
+
+
 async def test_default_requests_jarvis_voice_on_piper(tts, fake_hass):
+    # Default voice_quality is "medium" (matches what the bootstrap installs),
+    # so JARVIS asks for the medium voice rather than a hardcoded "high" that may
+    # not be on disk — the VoiceNotFoundError of issue #26.
     ok = await tts.async_announce(fake_hass, "hello", "tts.piper", ["media_player.x"])
     assert ok is True
+    assert _speak_call(fake_hass).get("options", {}).get("voice") == "en_GB-jarvis-medium"
+
+
+async def test_configured_high_quality_is_honored(tts, fake_hass):
+    _set_quality(fake_hass, "high")
+    await tts.async_announce(fake_hass, "hi", "tts.piper", ["media_player.x"])
     assert _speak_call(fake_hass).get("options", {}).get("voice") == "en_GB-jarvis-high"
 
 
@@ -41,7 +55,7 @@ async def test_ha_voice_mode_omits_voice(tts, fake_hass):
 async def test_ha_voice_off_keeps_jarvis_voice(tts, fake_hass):
     _set_ha_voice(fake_hass, False)
     await tts.async_announce(fake_hass, "hi", "tts.piper", ["media_player.x"])
-    assert _speak_call(fake_hass).get("options", {}).get("voice") == "en_GB-jarvis-high"
+    assert _speak_call(fake_hass).get("options", {}).get("voice") == "en_GB-jarvis-medium"
 
 
 async def test_non_piper_never_forces_voice(tts, fake_hass):

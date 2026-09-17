@@ -160,6 +160,31 @@ def resolve_tts_for_context(
 
 # ─── The announce primitive ──────────────────────────────────────────────────
 
+def _pick_jarvis_voice(runtime_configs, is_piper: bool) -> Optional[str]:
+    """The Piper voice option to request for JARVIS speech, or None to let the
+    engine use its own default.
+
+    Follows the configured ``voice_quality`` (default "medium", matching what the
+    bootstrap installs) instead of a fixed quality — asking for
+    ``en_GB-jarvis-high`` when only ``en_GB-jarvis-medium`` is on disk is exactly
+    what triggers VoiceNotFoundError. ``tts_use_ha_voice`` overrides everything
+    (use the engine's own voice). Pure/defensive so it's unit-testable."""
+    if not is_piper:
+        return None
+    use_ha_voice = False
+    voice_quality = "medium"
+    for rc in runtime_configs or []:
+        if not isinstance(rc, dict):
+            continue
+        if rc.get("tts_use_ha_voice"):
+            use_ha_voice = True
+        if rc.get("voice_quality"):
+            voice_quality = str(rc["voice_quality"])
+    if use_ha_voice:
+        return None
+    return f"en_GB-jarvis-{voice_quality}"
+
+
 async def async_announce(
     hass: HomeAssistant,
     text: str,
@@ -213,36 +238,34 @@ async def async_announce(
 
     is_piper = "piper" in tts_entity.lower()
 
-    # When the user prefers Home Assistant's configured voice, don't force the
-    # JARVIS Piper voice — omit the `voice` option entirely so the TTS entity
-    # uses its own default (e.g. a French fr_FR-tom voice on a French install).
-    # Default off keeps the JARVIS voice for everyone who has it. Read from the
-    # live runtime_config (seeded from config.json at setup, updated by the
-    # panel) so we don't import jarvis_config on this path.
-    use_ha_voice = False
+    # Pick the JARVIS Piper voice at the configured quality (or the engine's own
+    # voice when tts_use_ha_voice is set). Read from the live runtime_config
+    # (seeded from config.json at setup, updated by the panel) so we don't import
+    # jarvis_config on this path.
     try:
         from .const import DOMAIN
-        for _ed in (hass.data.get(DOMAIN) or {}).values():
-            if isinstance(_ed, dict) and (
-                    _ed.get("runtime_config") or {}).get("tts_use_ha_voice"):
-                use_ha_voice = True
-                break
+        _rcs = [
+            (_ed.get("runtime_config") or {})
+            for _ed in (hass.data.get(DOMAIN) or {}).values()
+            if isinstance(_ed, dict)
+        ]
     except Exception:
-        use_ha_voice = False
+        _rcs = []
+    jarvis_voice = _pick_jarvis_voice(_rcs, is_piper)
 
     service_data = {
         "media_player_entity_id": list(speakers),
         "message": text,
         "cache": True,
     }
-    if is_piper and not use_ha_voice:
-        # Request the JARVIS Piper voice. No `language`/`length_scale` keys: this
-        # Piper build rejects length_scale ("Invalid options found") before any
-        # audio plays. If the voice isn't installed (VoiceNotFoundError), the
-        # per-speaker fallback below retries without it and uses the engine's
-        # default voice, so a missing custom voice is never fatal.
+    if jarvis_voice:
+        # No `language`/`length_scale` keys: this Piper build rejects length_scale
+        # ("Invalid options found") before any audio plays. If the voice isn't
+        # installed (VoiceNotFoundError), the per-speaker fallback below retries
+        # without it and uses the engine's default voice, so a missing custom
+        # voice is never fatal.
         service_data["options"] = {
-            "voice": "en_GB-jarvis-high",
+            "voice": jarvis_voice,
         }
 
     try:
