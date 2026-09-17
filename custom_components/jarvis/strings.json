@@ -101,7 +101,8 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Custom (OpenAI-compatible)",
-          "ollama": "Ollama (local)"
+          "ollama": "Ollama (local)",
+          "back": "Back to Configure menu"
         }
       },
       "groq": {
@@ -179,7 +180,8 @@
           "classifier": "Classifier (Tier 1 — cheap)",
           "reasoning": "Reasoning (Tier 2 — main)",
           "review": "Review (Tier 3 — periodic)",
-          "observer_settings": "Observer settings"
+          "observer_settings": "Observer settings",
+          "back": "Back to Configure menu"
         }
       },
       "classifier": {

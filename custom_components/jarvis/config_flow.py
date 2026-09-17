@@ -421,7 +421,8 @@ class JarvisOptionsFlow(OptionsFlow):
         """Fetch models for a configured provider for a HA selector."""
         from . import ha_secrets
         api_key = await ha_secrets.async_get_provider_key(self.hass, provider)
-        base_url = str(self._cur("llm_base_url", "") or "")
+        endpoint_key = {"custom": CONF_CUSTOM_BASE_URL, "ollama": CONF_OLLAMA_BASE_URL}.get(provider, "llm_base_url")
+        base_url = str(self._cur(endpoint_key, "") or "")
         return await _fetch_available_models(self.hass, provider, api_key, base_url)
 
     def _model_selector(self, models: list[str], current: str = ""):
@@ -576,9 +577,12 @@ class JarvisOptionsFlow(OptionsFlow):
         does blocking file I/O. The live runtime copy is updated too because
         the dashboard reads runtime_config before config.json."""
         entry_id = getattr(self._entry, "entry_id", None)
-        data = self.hass.data.get(DOMAIN, {}).get(entry_id, {}) if entry_id else {}
-        if isinstance(data, dict):
-            data.setdefault("runtime_config", {}).update(updates)
+        if entry_id:
+            domain_data = self.hass.data.setdefault(DOMAIN, {})
+            if isinstance(domain_data, dict):
+                entry_data = domain_data.setdefault(entry_id, {})
+                if isinstance(entry_data, dict):
+                    entry_data.setdefault("runtime_config", {}).update(updates)
         try:
             from . import jarvis_config
             await self.hass.async_add_executor_job(jarvis_config.set_many, updates)
