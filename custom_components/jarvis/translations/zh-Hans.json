@@ -185,7 +185,8 @@
           "classifier": "Classifier model",
           "reasoning": "Reasoning model",
           "review": "Review model",
-          "observer_settings": "Observer settings"
+          "observer_settings": "Observer settings",
+          "back": "返回配置菜单"
         }
       },
       "classifier": {

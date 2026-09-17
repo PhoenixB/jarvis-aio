@@ -643,7 +643,7 @@ class JarvisOptionsFlow(OptionsFlow):
             return await self._save_section(user_input)
         return self.async_show_menu(
             step_id="observer",
-            menu_options=["classifier", "reasoning", "review", "observer_settings"],
+            menu_options=["classifier", "reasoning", "review", "observer_settings", "back"],
         )
 
     async def _async_step_observer_tier(

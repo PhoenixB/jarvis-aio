@@ -388,6 +388,15 @@ async def test_import_allows_blank_ollama_url(config_flow, fake_hass):
     assert res["data"]["llm_provider"] == "ollama"
 
 
+async def test_observer_menu_back_returns_to_main_configure_menu(config_flow, fake_hass):
+    flow = _flow(config_flow, fake_hass)
+    res = await flow.async_step_observer(None)
+    assert res["type"] == "menu"
+    assert "back" in res["menu_options"]
+    res = await flow.async_step_back(None)
+    assert res["type"] == "menu" and res["step_id"] == "init"
+
+
 async def test_import_migrates_selected_provider_legacy_key(config_flow, fake_hass, monkeypatch, load):
     ha_secrets = load("ha_secrets")
     calls = []
