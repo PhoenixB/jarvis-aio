@@ -2556,7 +2556,7 @@ async def _create_provider_with_fallback(
             _LOGGER.warning("Reasoning tier fallback also failed: %s", exc2)
 
     raise RuntimeError(
-            f"No LLM providers available (tried {provider_name} + reasoning tier)"
+        f"No LLM providers available (tried {provider_name} + reasoning tier)"
     )
 
 
