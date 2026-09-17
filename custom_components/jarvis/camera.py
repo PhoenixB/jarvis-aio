@@ -115,13 +115,26 @@ def _vision_model_rejects_images(exc) -> bool:
     return "must be a string" in str(exc)
 
 
+def _strip_think(text: str) -> str:
+    """Remove model 'thinking' traces (e.g. Gemma/Qwen <think>…</think> or
+    <|think|>…) that otherwise leave the real answer empty or unparseable."""
+    if not text:
+        return ""
+    import re
+    t = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    t = re.sub(r"<\|?think\|?>.*?<\|?/?think\|?>", "", t, flags=re.DOTALL | re.IGNORECASE)
+    # A dangling, unterminated <think> with no closing tag — drop from it onward.
+    t = re.sub(r"<\|?/?think\|?>.*$", "", t, flags=re.DOTALL | re.IGNORECASE)
+    return t.strip()
+
+
 def _parse_json_obj(raw: str):
     """Best-effort extraction of a JSON object from an LLM response."""
     import json as _json
     import re
     if not raw:
         return None
-    s = raw.strip()
+    s = _strip_think(raw).strip()
     if s.startswith("```"):
         s = re.sub(r"^```[a-zA-Z]*\n?", "", s).rstrip("`").strip()
     try:
@@ -175,27 +188,30 @@ async def _reason_about_scene(
 
     system = (
         "You are JARVIS's camera-reasoning module. Given a description of what a "
-        "camera saw, decide whether it is worth interrupting the resident to say "
-        "aloud. Default to silence — most footage is not worth announcing.\n"
-        "ANNOUNCE (notable=true; category person, delivery, package, or mail) ONLY "
-        "for: an unrecognised person approaching, lingering at, or standing at a "
-        "door or entry; a delivery, package, or mail being dropped off or taken; a "
-        "person present at an unusual hour; or someone clearly attempting to enter "
-        "or tamper with something.\n"
-        "DO NOT ANNOUNCE (notable=false, speak empty) for everything else: a "
-        "recognised resident coming or going, an empty or unchanged scene, a car "
-        "parked or passing, a pet or wild animal, weather, shadows, lights, or any "
-        "other routine or benign activity. When in doubt, do NOT announce.\n"
+        "camera saw, classify how much it warrants the resident's attention. "
+        "Default to 'routine' — the large majority of footage is routine.\n"
+        "Severity levels:\n"
+        "- 'urgent': a genuine security concern — an unrecognised person "
+        "approaching, lingering at, or standing at a door or entry; someone "
+        "apparently trying to enter or tamper; a stranger at the property at an "
+        "unusual hour; a prowler. These are rare.\n"
+        "- 'notable': worth a quiet heads-up but not alarming — a delivery, "
+        "package, or mail dropped off or taken; an unrecognised person briefly "
+        "passing through view.\n"
+        "- 'routine': everything else — a recognised resident coming or going, an "
+        "empty or unchanged scene, a car parked or passing, a pet or wild animal, "
+        "weather, shadows, lights, or normal indoor activity. When unsure, choose "
+        "'routine'.\n"
         "You may be given Frigate object-detector ground truth: if the description "
         "claims a PERSON but Frigate reports NO person, treat it as a likely false "
         "positive (a shadow, reflection, or headlight — very common in night or "
-        "infrared footage) and set notable=false unless there is strong other "
-        "evidence.\n"
+        "infrared footage) and choose 'routine'.\n"
         "Respond with ONLY a JSON object: "
-        '{"notable": true|false, '
+        '{"severity": "urgent|notable|routine", '
+        '"notable": true|false, '
         '"category": "delivery|package|mail|person|known_resident|vehicle|animal|empty|other", '
         '"summary": "<one concise factual sentence for the log>", '
-        '"speak": "<exactly what JARVIS should say aloud if and only if notable; otherwise an empty string>"}'
+        '"speak": "<what JARVIS should say aloud, in his voice, ONLY if severity is urgent or notable; otherwise an empty string>"}'
     )
     fg_line = ""
     if frigate_dets:
@@ -232,17 +248,26 @@ async def _reason_about_scene(
         data = _parse_json_obj((result.get("text") or "").strip())
         if isinstance(data, dict):
             speak = str(data.get("speak", "") or "").strip()
+            severity = str(data.get("severity", "") or "").strip().lower()
+            notable = bool(data.get("notable", severity in ("urgent", "notable")))
+            if severity not in _SEV_RANK:
+                severity = "notable" if notable else "routine"
             return {
-                "notable": bool(data.get("notable", True)),
+                "notable": notable,
+                "severity": severity,
                 "category": str(data.get("category", det_type) or det_type),
                 "summary": (str(data.get("summary", "") or description))[:300],
                 "speak": speak or None,
             }
     except Exception as exc:
-        _LOGGER.warning("camera: reasoning step failed (%s) — falling back", exc)
+        _LOGGER.warning("camera: reasoning step failed (%s) — failing quiet", exc)
 
-    # Fallback: never drop a real event silently.
-    return {"notable": True, "category": det_type, "summary": description, "speak": description}
+    # Fallback: the reasoning step produced nothing usable. Fail QUIET — treat as
+    # routine and don't announce. A broken or empty analysis must not spam the
+    # resident; genuine intrusions are handled by the separate always-on
+    # intrusion path, not this scene narration. (v7.94.0)
+    return {"notable": False, "severity": "routine", "category": det_type,
+            "summary": description or "", "speak": None}
 
 
 # ─── Utility: detect camera integration ──────────────────────────────────────
@@ -1000,40 +1025,51 @@ def _frigate_ground_hint(dets: Optional[dict]) -> str:
     return ""
 
 
-# Mundane camera categories that should NOT be announced on an automatic review,
-# even if the (small, error-prone) reasoning model marks them notable. Analysis
-# and logging still happen — this only gates the spoken/pushed announcement so
-# JARVIS talks about people/deliveries/intrusions, not parked cars, pets, empty
-# scenes, or recognised residents. (v7.93.0)
-_MUTE_CATEGORIES = {"known_resident", "empty", "vehicle", "animal", "other"}
+# Camera scene severity, worst-to-least. Auto reviews announce only when the
+# severity meets the configured alert level, so JARVIS observes everything but
+# speaks only when it matters. (v7.94.0)
+_SEV_RANK = {"routine": 0, "notable": 1, "urgent": 2}
+# Minimum severity rank each alert level will announce.
+_LEVEL_RANK = {"off": 99, "urgent": 2, "important": 1, "all": 0}
 
 
-def _important_only(hass: HomeAssistant) -> bool:
-    """Whether automatic camera reviews announce only important events."""
-    val = _cfg_opt(hass, "camera_important_only", True)
-    return bool(val) if val is not None else True
+def _alert_level(hass: HomeAssistant) -> str:
+    """Configured camera alert level: off | urgent | important | all. Defaults to
+    'urgent' (observe, alert only on urgent), honouring the older
+    camera_important_only boolean when the new key isn't set."""
+    lvl = _cfg_opt(hass, "camera_alert_level", None)
+    if lvl:
+        return str(lvl).strip().lower()
+    if _cfg_opt(hass, "camera_important_only", None) is False:
+        return "all"
+    return "urgent"
 
 
 def _announce_decision(judgment: dict, analysis: str, *, gate_announce: bool,
-                       important_only: bool) -> Optional[str]:
+                       level: str) -> Optional[str]:
     """Pure decision: what (if anything) to say for a camera judgment. Returns the
-    text to announce, or None to stay silent. Analysis/logging happen regardless
-    of this — only the announcement is gated.
+    text to announce, or None to stay silent. Analysis/logging happen regardless —
+    only the announcement is gated.
 
-    - notable + speak → announce, UNLESS this is an automatic review in
-      important-only mode and the category is a mundane one (parked car, pet,
-      empty scene, recognised resident, unclassified).
-    - not notable → announce nothing on automatic reviews; on a manual analyze
-      request, report the full description (the user explicitly asked)."""
-    notable = bool(judgment.get("notable"))
-    speak = judgment.get("speak")
-    category = str(judgment.get("category", "") or "").strip().lower()
-    if notable and speak:
-        if gate_announce and important_only and category in _MUTE_CATEGORIES:
-            return None
-        return speak
+    - Manual analyze request (gate_announce False): always report (the user asked).
+    - Automatic review: announce only when the scene's severity meets the alert
+      level. 'urgent' (default) speaks only for genuine threats; 'important' adds
+      deliveries/notable people; 'all' narrates anything notable; 'off' is silent.
+    A judgment with no/failed severity is treated as routine unless explicitly
+    notable, so a broken or empty analysis never speaks."""
+    speak = (judgment.get("speak") or "")
+    speak = speak.strip() if isinstance(speak, str) else ""
+    summary = str(judgment.get("summary") or "")
     if not gate_announce:
-        return analysis
+        return (speak or analysis) or None
+    if level == "off":
+        return None
+    severity = str(judgment.get("severity", "") or "").strip().lower()
+    rank = _SEV_RANK.get(severity)
+    if rank is None:
+        rank = 1 if bool(judgment.get("notable")) else 0
+    if rank >= _LEVEL_RANK.get(level, 2):
+        return (speak or (summary if level == "all" else "")) or None
     return None
 
 
@@ -1176,7 +1212,7 @@ async def async_analyze_camera(
                 model_override=vision_model or None,
             )
         )
-        analysis = result["text"].strip()
+        analysis = _strip_think((result.get("text") or "").strip())
     except Exception as exc:
         # A text-only model rejects the image content array with a 400 like
         # "messages[1].content must be a string". Surface the real cause and the
@@ -1204,6 +1240,24 @@ async def async_analyze_camera(
         return {"success": False, "error": str(exc)}
 
     # ── Camera-reasoning step: interpret the scene ────────────────────────────
+    if len(analysis) < 3:
+        # Vision returned nothing usable (an empty reply, or a thinking-only reply
+        # that stripped to nothing — common with reasoning-mode vision models).
+        # Treat as "no clear observation": log it, don't mark notable, never
+        # announce. (v7.94.0)
+        _LOGGER.info("JARVIS: %s → vision returned no usable description; skipping",
+                     camera_name)
+        try:
+            from .websocket import jarvis_log
+            jarvis_log("CAMERA", f"{camera_name}: no usable view from vision model "
+                                 f"({vision_provider}/{vision_model}) — skipped")
+        except Exception:
+            pass
+        return {
+            "success": True, "analysis": "", "summary": "",
+            "notable": False, "category": "empty", "severity": "routine",
+            "speak": None, "spoke": False, "camera": camera_name,
+        }
     det_type = _guess_detection_type(prompt, analysis)
     rsn_provider = _cfg_opt(hass, "camera_reasoning_provider", "groq") or "groq"
     rsn_model = _cfg_opt(hass, "camera_reasoning_model", "openai/gpt-oss-120b") or "openai/gpt-oss-120b"
@@ -1255,7 +1309,7 @@ async def async_analyze_camera(
     if announce:
         _say = _announce_decision(
             judgment, analysis,
-            gate_announce=gate_announce, important_only=_important_only(hass),
+            gate_announce=gate_announce, level=_alert_level(hass),
         )
         if _say:
             await async_announce(hass, _say, tts_entity, speakers)

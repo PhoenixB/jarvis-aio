@@ -1,3 +1,9 @@
+## [7.94.0] — cameras: observe quietly, speak only when it's urgent
+
+Automatic camera reviews now default to **urgent only** — JARVIS watches and logs everything but speaks up only for a genuine concern (an unrecognized person approaching or at a door, someone at an odd hour, an apparent attempt to enter). Routine footage — residents, empty scenes, parked or passing cars, pets, weather, normal indoor activity — is analyzed silently. A new **Camera alerts** control (General → by Camera Watch) lets you choose the threshold: Off (observe only), Urgent only (default), Important (adds deliveries and packages), or Everything notable. Manual camera analyses always report their result, and this doesn't change intrusion alerts, which are always spoken.
+
+Also fixed a source of spurious camera chatter: when the vision model returned an empty or "thinking-only" response, JARVIS treated the event as notable and could announce it. Empty or unreadable analyses are now skipped, thinking-model traces are stripped, and a failed reasoning step stays silent instead of defaulting to notable.
+
 ## [7.93.1] — fix: JARVIS silent / VoiceNotFoundError when only the medium voice is installed
 
 JARVIS now requests the JARVIS voice at the quality it actually installed — it follows the Voice Quality setting (medium by default) instead of always asking for the high-quality voice. Previously, on a default setup where only en_GB-jarvis-medium was present, JARVIS's speech asked for en_GB-jarvis-high, hit a VoiceNotFoundError, and fell back to the engine's plain default voice (or went silent during TTS streaming). If you want the high-quality voice, set Voice Quality to "high" and JARVIS will install and use it.

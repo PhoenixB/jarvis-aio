@@ -727,6 +727,10 @@ async def ws_get_panel_data(
                 "camera_auto_analyze": bool(_runtime_opt(hass, entry, "camera_auto_analyze", True)),
                 "camera_auto_analyze_motion": bool(_runtime_opt(hass, entry, "camera_auto_analyze_motion", False)),
                 "camera_important_only": bool(_runtime_opt(hass, entry, "camera_important_only", True)),
+                "camera_alert_level": (
+                    str(_runtime_opt(hass, entry, "camera_alert_level", "") or "")
+                    or ("all" if _runtime_opt(hass, entry, "camera_important_only", True) is False else "urgent")
+                ),
                 "package_detection": bool(_runtime_opt(hass, entry, "package_detection", True)),
                 "visitor_learning": bool(_runtime_opt(hass, entry, "visitor_learning", True)),
                 "rich_reasoning": bool(_runtime_opt(hass, entry, "rich_reasoning", False)),
@@ -1432,7 +1436,8 @@ PANEL_WRITABLE_KEYS = {
     "appliance_announce_unknown",   # bool: announce loads matching no declared appliance
     "camera_auto_analyze",          # bool: auto-inspect doorbell/person camera events
     "camera_auto_analyze_motion",   # bool: also auto-inspect motion events (noisier)
-    "camera_important_only",         # bool: auto reviews announce only important events (person/delivery/etc.)
+    "camera_important_only",         # bool: (legacy) auto reviews announce only important events
+    "camera_alert_level",            # str: off|urgent|important|all — severity threshold for auto camera announcements
     "package_detection",            # bool: watch porch cameras for packages & mail
     "visitor_learning",             # bool: silent vision learning from person events
     "rich_reasoning",               # bool: cloud-first reasoning for medium+ events

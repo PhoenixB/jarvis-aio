@@ -480,8 +480,8 @@ setTimeout(async () => {
     ["camera auto-analyze motion toggle present + wired",
       !!el.shadowRoot.querySelector('button[data-cfg-key="camera_auto_analyze"][data-cfg-val]') &&
       !!el.shadowRoot.querySelector('button[data-cfg-key="camera_auto_analyze_motion"][data-cfg-val]')],
-    ["camera important-only toggle present + wired",
-      !!el.shadowRoot.querySelector('button[data-cfg-key="camera_important_only"][data-cfg-val]')],
+    ["camera alert-level select present + wired",
+      !!el.shadowRoot.querySelector('select[data-cfg-key="camera_alert_level"]')],
     ["name input placeholder is the HA name",
       el.shadowRoot.querySelector('.camset-name[data-cam="camera.front"]')?.getAttribute("placeholder") === "Front Door"],
     ["location chips render with resolved AUTO label",

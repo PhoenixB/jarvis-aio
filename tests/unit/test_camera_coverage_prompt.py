@@ -110,49 +110,71 @@ def test_lowlight_hint_present(cam):
     assert "infrared" in cam._LOWLIGHT_HINT and "shadows" in cam._LOWLIGHT_HINT
 
 
-# ── Announce gating: important-only (v7.93.0) ────────────────────────────────
-def _j(notable, category, speak="Someone is at the door."):
-    return {"notable": notable, "category": category, "speak": speak, "summary": "x"}
+
+# ── Announce gating: severity + alert level (v7.94.0) ────────────────────────
+def _j(severity, speak="Someone unknown is at the front door.", notable=None):
+    if notable is None:
+        notable = severity in ("urgent", "notable")
+    return {"severity": severity, "notable": notable, "category": "person",
+            "speak": speak, "summary": "x"}
 
 
-def test_auto_important_only_mutes_mundane(cam):
-    # Auto review, important-only ON: mundane categories stay silent even if the
-    # (weak) reasoning model flagged them notable.
-    for cat in ("vehicle", "animal", "empty", "known_resident", "other"):
-        assert cam._announce_decision(_j(True, cat), "desc",
-                                      gate_announce=True, important_only=True) is None
+def test_urgent_level_announces_only_urgent(cam):
+    assert cam._announce_decision(_j("urgent"), "d", gate_announce=True, level="urgent") \
+        == "Someone unknown is at the front door."
+    assert cam._announce_decision(_j("notable", speak="A package was dropped off."),
+                                  "d", gate_announce=True, level="urgent") is None
+    assert cam._announce_decision(_j("routine", speak=""), "d",
+                                  gate_announce=True, level="urgent") is None
 
 
-def test_auto_important_only_announces_important(cam):
-    for cat in ("person", "delivery", "package", "mail"):
-        assert cam._announce_decision(_j(True, cat), "desc",
-                                      gate_announce=True, important_only=True) == "Someone is at the door."
+def test_important_level_adds_notable(cam):
+    assert cam._announce_decision(_j("notable", speak="A package was dropped off."),
+                                  "d", gate_announce=True, level="important") == "A package was dropped off."
+    assert cam._announce_decision(_j("urgent"), "d", gate_announce=True, level="important") \
+        == "Someone unknown is at the front door."
 
 
-def test_important_only_off_announces_any_notable(cam):
-    # Verbose mode: a notable vehicle speaks.
-    assert cam._announce_decision(_j(True, "vehicle"), "desc",
-                                  gate_announce=True, important_only=False) == "Someone is at the door."
+def test_off_level_is_silent(cam):
+    assert cam._announce_decision(_j("urgent"), "d", gate_announce=True, level="off") is None
 
 
-def test_manual_request_bypasses_mute(cam):
-    # Manual analyze (gate_announce=False): user asked, so even a mundane category
-    # is reported, and a non-notable scene reports the full description.
-    assert cam._announce_decision(_j(True, "vehicle"), "desc",
-                                  gate_announce=False, important_only=True) == "Someone is at the door."
-    assert cam._announce_decision(_j(False, "empty"), "full analysis",
-                                  gate_announce=False, important_only=True) == "full analysis"
+def test_all_level_narrates_with_summary(cam):
+    j = {"severity": "notable", "notable": True, "speak": "", "summary": "A car in the drive."}
+    assert cam._announce_decision(j, "d", gate_announce=True, level="all") == "A car in the drive."
 
 
-def test_auto_not_notable_is_silent(cam):
-    assert cam._announce_decision(_j(False, "empty"), "desc",
-                                  gate_announce=True, important_only=True) is None
-    # notable but no speak text → nothing to say
-    assert cam._announce_decision(_j(True, "person", speak=""), "desc",
-                                  gate_announce=True, important_only=True) is None
+def test_manual_always_reports(cam):
+    # Manual analyze (gate_announce False) reports regardless of level/severity.
+    assert cam._announce_decision(_j("routine", speak=""), "full analysis",
+                                  gate_announce=False, level="urgent") == "full analysis"
+    assert cam._announce_decision(_j("urgent"), "full analysis",
+                                  gate_announce=False, level="off") == "Someone unknown is at the front door."
 
 
-def test_mute_set_membership(cam):
-    assert {"vehicle", "animal", "empty", "known_resident", "other"} <= cam._MUTE_CATEGORIES
-    for keep in ("person", "delivery", "package", "mail"):
-        assert keep not in cam._MUTE_CATEGORIES
+def test_failed_or_empty_judgment_is_silent_on_auto(cam):
+    # The fail-quiet fallback shape must never announce on an auto review.
+    fb = {"notable": False, "severity": "routine", "category": "motion", "summary": "", "speak": None}
+    for lvl in ("urgent", "important", "all"):
+        assert cam._announce_decision(fb, "d", gate_announce=True, level=lvl) is None
+
+
+def test_missing_severity_backcompat(cam):
+    # No severity field: notable→rank 1 (announced at important/all, not urgent).
+    j = {"notable": True, "speak": "thing", "summary": "s"}
+    assert cam._announce_decision(j, "d", gate_announce=True, level="urgent") is None
+    assert cam._announce_decision(j, "d", gate_announce=True, level="important") == "thing"
+
+
+def test_level_rank_ordering(cam):
+    assert cam._LEVEL_RANK["urgent"] == 2
+    assert cam._LEVEL_RANK["off"] > cam._LEVEL_RANK["important"] >= cam._LEVEL_RANK["all"]
+    assert cam._SEV_RANK["urgent"] > cam._SEV_RANK["notable"] > cam._SEV_RANK["routine"]
+
+
+def test_strip_think(cam):
+    assert cam._strip_think("<think>reasoning</think>Hello") == "Hello"
+    assert cam._strip_think("before<think>x</think>after") == "beforeafter"
+    assert cam._strip_think("<think>only thinking</think>") == ""
+    assert cam._strip_think("plain text") == "plain text"
+    assert cam._strip_think("") == ""
