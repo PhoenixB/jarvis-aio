@@ -25,10 +25,12 @@ from . import audio_routing, sleep_detection
 from .const import (
     CONF_BEDROOM_AREAS,
     CONF_BROADCAST_GROUP,
+    CONF_CUSTOM_BASE_URL,
     CONF_NOTIFY_SERVICE,
     CONF_OBSERVER_ENABLED,
     CONF_OBSERVER_QUIET_END,
     CONF_OBSERVER_QUIET_START,
+    CONF_OLLAMA_BASE_URL,
     DEFAULT_OBSERVER_QUIET_END,
     DEFAULT_OBSERVER_QUIET_START,
     DOMAIN,
@@ -1867,17 +1869,19 @@ def _resolve_provider_key(hass: HomeAssistant, entry, provider: str) -> str:
 async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
     """Providers with a usable credential/endpoint today — drives the AI
     Models role dropdowns so you can't pick a provider with nothing to call.
-    ollama needs no key, but is only configured when its endpoint is set.
+    ollama needs no key, but is only configured when its endpoint is set; a
+    Custom endpoint is likewise valid with no key at all.
     Credentials are read straight from secrets.yaml — the only place they live."""
     from . import ha_secrets
     out = []
-    if str(_runtime_opt(hass, entry, "llm_base_url", "") or "").strip():
+    if str(_runtime_opt(hass, entry, CONF_OLLAMA_BASE_URL, "") or "").strip():
         out.append("ollama")
+    if str(_runtime_opt(hass, entry, CONF_CUSTOM_BASE_URL, "") or "").strip():
+        out.append("custom")
     for provider, field in PROVIDER_API_KEY_FIELDS.items():
-        if provider == "custom":
-            if _runtime_opt(hass, entry, "custom_base_url", "") or _runtime_opt(hass, entry, "llm_base_url", ""):
-                out.append(provider)
-        elif field and await ha_secrets.async_get_provider_key(hass, provider):
+        if provider in out:
+            continue
+        if field and await ha_secrets.async_get_provider_key(hass, provider):
             out.append(provider)
     return out
 

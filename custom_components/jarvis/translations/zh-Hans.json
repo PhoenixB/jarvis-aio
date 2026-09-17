@@ -71,8 +71,8 @@
       "cannot_connect": "无法连接到 LLM。请检查 URL/端点是否正确，以及服务器（例如 Ollama）是否正在运行。",
       "invalid_auth": "API 密钥被拒绝。请检查密钥后重试。",
       "unknown": "无法验证 LLM 连接。请检查设置后重试。",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "此提供商没有可用模型。请检查端点后重试。",
+      "no_providers": "尚未配置 LLM 提供商。请先在 LLM 部分添加 API 密钥或端点。"
     },
     "abort": {
       "already_configured": "JARVIS 已配置。",

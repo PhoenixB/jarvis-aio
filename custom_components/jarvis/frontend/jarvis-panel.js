@@ -1598,7 +1598,7 @@ class JarvisPanel extends HTMLElement {
     return {
       observer:   { state: "RUNNING", level: "live" },
       sleep:      { state: "AWAKE",   level: "live" },
-      llm_providers: { state: "3 READY", level: "live" },
+      llm_providers: { state: "UNSET", level: "warn" },
       broadcast:  { state: "ONLINE",  level: "live" },
       notify:     { state: "UNSET",   level: "warn" },
       satellites: { state: "8 / 8",   level: "live" },

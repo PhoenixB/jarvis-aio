@@ -2554,10 +2554,11 @@ async def _create_provider_with_fallback(
             )
         except Exception as exc2:
             _LOGGER.warning("Reasoning tier fallback also failed: %s", exc2)
+        raise RuntimeError(
+            f"No LLM providers available (tried {provider_name} + reasoning tier)"
+        )
 
-    raise RuntimeError(
-        f"No LLM providers available (tried {provider_name} + reasoning tier)"
-    )
+    raise RuntimeError(f"No LLM providers available (tried {provider_name}; no reasoning tier configured)")
 
 
 # ── Main agent loop ─────────────────────────────────────────────────────────
