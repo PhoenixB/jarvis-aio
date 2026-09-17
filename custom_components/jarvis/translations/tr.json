@@ -51,14 +51,14 @@
       "custom": {
         "title": "JARVIS — Özel Sağlayıcı",
         "data": {
-          "llm_base_url": "API temel URL'si (OpenAI uyumlu)",
-          "api_key": "API anahtarı (isteğe bağlı, uç nokta gerektiriyorsa)"
+          "api_key": "API anahtarı (isteğe bağlı, uç nokta gerektiriyorsa)",
+          "custom_base_url": "API temel URL'si (OpenAI uyumlu)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Temel URL (boş bırakılırsa http://homeassistant.local:11434/v1 kullanılır)"
+          "ollama_base_url": "Temel URL (boş bırakılırsa http://homeassistant.local:11434/v1 kullanılır)"
         }
       },
       "finish": {
@@ -177,14 +177,14 @@
       "custom": {
         "title": "JARVIS — Özel Sağlayıcı",
         "data": {
-          "llm_base_url": "API temel URL'si (OpenAI uyumlu)",
-          "api_key": "API anahtarı (isteğe bağlı, uç nokta gerektiriyorsa)"
+          "api_key": "API anahtarı (isteğe bağlı, uç nokta gerektiriyorsa)",
+          "custom_base_url": "API temel URL'si (OpenAI uyumlu)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Temel URL (boş bırakılırsa http://homeassistant.local:11434/v1 kullanılır)"
+          "ollama_base_url": "Temel URL (boş bırakılırsa http://homeassistant.local:11434/v1 kullanılır)"
         }
       },
       "llm_main": {

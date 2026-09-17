@@ -51,14 +51,14 @@
       "custom": {
         "title": "JARVIS — Пользовательский провайдер",
         "data": {
-          "llm_base_url": "Базовый URL API (совместим с OpenAI)",
-          "api_key": "API-ключ (необязательно, если требуется конечной точкой)"
+          "api_key": "API-ключ (необязательно, если требуется конечной точкой)",
+          "custom_base_url": "Базовый URL API (совместим с OpenAI)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Базовый URL (пусто использует http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Базовый URL (пусто использует http://homeassistant.local:11434/v1)"
         }
       },
       "finish": {
@@ -177,14 +177,14 @@
       "custom": {
         "title": "JARVIS — Пользовательский провайдер",
         "data": {
-          "llm_base_url": "Базовый URL API (совместим с OpenAI)",
-          "api_key": "API-ключ (необязательно, если требуется конечной точкой)"
+          "api_key": "API-ключ (необязательно, если требуется конечной точкой)",
+          "custom_base_url": "Базовый URL API (совместим с OpenAI)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Базовый URL (пусто использует http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Базовый URL (пусто использует http://homeassistant.local:11434/v1)"
         }
       },
       "llm_main": {

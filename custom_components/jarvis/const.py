@@ -65,6 +65,23 @@ PROVIDER_API_KEY_FIELDS = {
     "ollama":    None,
 }
 
+# Custom and Ollama each keep their own endpoint so configuring one can't
+# overwrite the other; every other provider uses its canonical cloud endpoint.
+PROVIDER_BASE_URL_FIELDS = {
+    "custom": CONF_CUSTOM_BASE_URL,
+    "ollama": CONF_OLLAMA_BASE_URL,
+}
+
+
+def resolve_provider_base_url(config: dict, provider: str) -> str | None:
+    """The base URL `provider` should use: its own field first (falls back to
+    the legacy shared `llm_base_url` for installs migrating off it), else None
+    for cloud providers with a canonical endpoint."""
+    field = PROVIDER_BASE_URL_FIELDS.get(provider)
+    if not field:
+        return None
+    return config.get(field) or config.get("llm_base_url") or None
+
 CONF_NOTIFY_SERVICE           = "notify_service"
 
 # ─── Driving Mode (v7.89.0) ──────────────────────────────────────────────────

@@ -294,9 +294,10 @@ class JarvisAgent(conversation.ConversationEntity):
             from .llm_provider import create_provider as _cp
             from . import jarvis_config as _jc
             from . import ha_secrets as _hs
+            from .const import resolve_provider_base_url
             _eff = _jc.effective_config(entry)
             provider_name = _eff.get("llm_provider", "groq")
-            base_url = _eff.get("llm_base_url", "") or None
+            base_url = resolve_provider_base_url(_eff, provider_name)
             api_key = _hs.get_provider_key_sync(provider_name)
             self._client = _cp(
                 provider_name,
@@ -993,7 +994,12 @@ class JarvisAgent(conversation.ConversationEntity):
                     # provider's key to a different provider's API.
                     api_key_val = await _hs.async_get_provider_key(self.hass, provider_name)
                     model_val = self._rt_opt(CONF_MODEL, DEFAULT_MODEL)
-                    base_url_val = self._rt_opt("llm_base_url", "") or None
+                    from .const import PROVIDER_BASE_URL_FIELDS
+                    endpoint_field = PROVIDER_BASE_URL_FIELDS.get(provider_name)
+                    base_url_val = (
+                        (self._rt_opt(endpoint_field, "") if endpoint_field else "")
+                        or self._rt_opt("llm_base_url", "")
+                    ) or None
 
                     # The reasoning-tier fallback needs the FULL config, not
                     # entry.data|options — those are empty on panel-configured

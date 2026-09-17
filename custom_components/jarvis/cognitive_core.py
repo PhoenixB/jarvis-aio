@@ -2536,6 +2536,7 @@ def _make_followup_runner(hass, config):
     itself, so replies read as JARVIS reporting back, not answering a question."""
     async def _run(instruction: str, context: str) -> str:
         from .agent import run_agent
+        from .const import resolve_provider_base_url
         try:
             from .const import CONF_MODEL, DEFAULT_MODEL
             model = config.get(CONF_MODEL, DEFAULT_MODEL)
@@ -2557,7 +2558,7 @@ def _make_followup_runner(hass, config):
             api_key=await hass.async_add_executor_job(
                 _provider_api_key, config, config.get("llm_provider", "groq")),
             model=model,
-            base_url=config.get("llm_base_url") or None,
+            base_url=resolve_provider_base_url(config, config.get("llm_provider", "groq")),
             temperature=0.4,
             config=config,
         )

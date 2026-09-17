@@ -51,14 +51,14 @@
       "custom": {
         "title": "JARVIS — Furnizor Personalizat",
         "data": {
-          "llm_base_url": "URL de bază API (compatibil OpenAI)",
-          "api_key": "Cheie API (opțională, dacă endpoint-ul o cere)"
+          "api_key": "Cheie API (opțională, dacă endpoint-ul o cere)",
+          "custom_base_url": "URL de bază API (compatibil OpenAI)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "URL de bază (gol folosește http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "URL de bază (gol folosește http://homeassistant.local:11434/v1)"
         }
       },
       "finish": {
@@ -177,14 +177,14 @@
       "custom": {
         "title": "JARVIS — Furnizor Personalizat",
         "data": {
-          "llm_base_url": "URL de bază API (compatibil OpenAI)",
-          "api_key": "Cheie API (opțională, dacă endpoint-ul o cere)"
+          "api_key": "Cheie API (opțională, dacă endpoint-ul o cere)",
+          "custom_base_url": "URL de bază API (compatibil OpenAI)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "URL de bază (gol folosește http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "URL de bază (gol folosește http://homeassistant.local:11434/v1)"
         }
       },
       "llm_main": {

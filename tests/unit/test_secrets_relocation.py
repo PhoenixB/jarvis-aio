@@ -26,6 +26,28 @@ async def test_relocate_entry_credentials_writes_missing_secret(hs, fake_hass, t
     })()
     assert await hs.relocate_entry_credentials(fake_hass, entry) == 1
     assert hs.get_secret_sync("jarvis_api_key", path=p) == "legacy-key"
+    # The plaintext copy must not linger in the config entry once it is safely
+    # in secrets.yaml.
+    assert "api_key" not in entry.data
+
+
+async def test_relocate_entry_credentials_maps_legacy_key_to_selected_provider(
+    hs, fake_hass, tmp_path, monkeypatch,
+):
+    """Pre-multi-provider installs always stored the credential under the
+    shared `api_key` field regardless of which provider was configured — the
+    migrated secret must land under that provider's real field, not the
+    generic (and never read back) `jarvis_api_key`."""
+    p = tmp_path / "secrets.yaml"
+    monkeypatch.setattr(hs, "SECRETS_PATH", p)
+    entry = type("Entry", (), {
+        "data": {"api_key": "legacy-openai-key", "llm_provider": "openai"},
+        "options": {},
+    })()
+    assert await hs.relocate_entry_credentials(fake_hass, entry) == 1
+    assert hs.get_secret_sync("jarvis_openai_api_key", path=p) == "legacy-openai-key"
+    assert hs.get_secret_sync("jarvis_api_key", path=p) is None
+    assert await hs.async_get_provider_key(fake_hass, "openai") == "legacy-openai-key"
 
 
 # ── line upsert ──────────────────────────────────────────────────────────────

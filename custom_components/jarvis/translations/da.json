@@ -51,14 +51,14 @@
       "custom": {
         "title": "JARVIS — Brugerdefineret udbyder",
         "data": {
-          "llm_base_url": "API-basis-URL (OpenAI-kompatibel)",
-          "api_key": "API-nøgle (valgfri, hvis endpointet kræver en)"
+          "api_key": "API-nøgle (valgfri, hvis endpointet kræver en)",
+          "custom_base_url": "API-basis-URL (OpenAI-kompatibel)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Basis-URL (tom bruger http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Basis-URL (tom bruger http://homeassistant.local:11434/v1)"
         }
       },
       "finish": {
@@ -177,14 +177,14 @@
       "custom": {
         "title": "JARVIS — Brugerdefineret udbyder",
         "data": {
-          "llm_base_url": "API-basis-URL (OpenAI-kompatibel)",
-          "api_key": "API-nøgle (valgfri, hvis endpointet kræver en)"
+          "api_key": "API-nøgle (valgfri, hvis endpointet kræver en)",
+          "custom_base_url": "API-basis-URL (OpenAI-kompatibel)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Basis-URL (tom bruger http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Basis-URL (tom bruger http://homeassistant.local:11434/v1)"
         }
       },
       "llm_main": {

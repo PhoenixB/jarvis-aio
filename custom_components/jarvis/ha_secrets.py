@@ -183,20 +183,40 @@ async def relocate_entry_credentials(hass, entry) -> int:
     Older installs stored credentials in ``entry.data`` or ``entry.options``;
     this runs before provider client construction so those installs do not
     briefly boot with an empty credential after the secrets-only migration.
-    Existing secrets win when both locations contain different values.
+    Existing secrets win when both locations contain different values. Once a
+    key is safely in secrets.yaml it is also removed from the entry so the
+    plaintext copy doesn't linger in Home Assistant's config-entry storage.
     """
+    data = dict(getattr(entry, "data", {}) or {})
+    options = dict(getattr(entry, "options", {}) or {})
+    values = {**data, **options}
+    provider = values.get("llm_provider", "groq")
     moved = 0
-    values = {**(getattr(entry, "data", {}) or {}),
-              **(getattr(entry, "options", {}) or {})}
+    migrated_keys = []
     for key in CREDENTIAL_KEYS:
         value = values.get(key)
         if not value:
             continue
-        secret_name = secret_key_for(key)
+        # Pre-multi-provider installs always used the shared `api_key` field
+        # regardless of which provider was selected — resolve it to that
+        # provider's real field so the migrated secret is actually readable.
+        field = key
+        if key == "api_key" and provider != "groq":
+            field = provider_key_name(provider) or key
+        secret_name = secret_key_for(field)
         existing = await hass.async_add_executor_job(get_secret_sync, secret_name, "")
         if not existing:
             if await hass.async_add_executor_job(set_secret_sync, secret_name, value):
                 moved += 1
+                migrated_keys.append(key)
+        else:
+            migrated_keys.append(key)  # already in secrets.yaml — still drop the copy
+
+    if migrated_keys:
+        new_data = {k: v for k, v in data.items() if k not in migrated_keys}
+        new_options = {k: v for k, v in options.items() if k not in migrated_keys}
+        if new_data != data or new_options != options:
+            hass.config_entries.async_update_entry(entry, data=new_data, options=new_options)
     return moved
 
 
@@ -273,11 +293,18 @@ async def relocate_plaintext_credentials(hass) -> int:
         cfg = await hass.async_add_executor_job(jarvis_config.get_all)
     except Exception:
         return 0
+    provider = cfg.get("llm_provider", "groq")
     for ck in CREDENTIAL_KEYS:
         val = cfg.get(ck)
         if not val:
             continue
-        skey = secret_key_for(ck)
+        # Pre-multi-provider installs always used the shared `api_key` field
+        # regardless of which provider was selected — resolve it to that
+        # provider's real field so the migrated secret is actually readable.
+        field = ck
+        if ck == "api_key" and provider != "groq":
+            field = provider_key_name(provider) or ck
+        skey = secret_key_for(field)
         try:
             existing = await hass.async_add_executor_job(get_secret_sync, skey, None)
             if existing != val:

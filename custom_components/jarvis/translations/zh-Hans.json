@@ -51,14 +51,14 @@
       "custom": {
         "title": "JARVIS — 自定义提供商",
         "data": {
-          "llm_base_url": "API 基础 URL（兼容 OpenAI）",
-          "api_key": "API 密钥（可选，若端点需要）"
+          "api_key": "API 密钥（可选，若端点需要）",
+          "custom_base_url": "API 基础 URL（兼容 OpenAI）"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "基础 URL（留空使用 http://homeassistant.local:11434/v1）"
+          "ollama_base_url": "基础 URL（留空使用 http://homeassistant.local:11434/v1）"
         }
       },
       "finish": {
@@ -177,14 +177,14 @@
       "custom": {
         "title": "JARVIS — 自定义提供商",
         "data": {
-          "llm_base_url": "API 基础 URL（兼容 OpenAI）",
-          "api_key": "API 密钥（可选，若端点需要）"
+          "api_key": "API 密钥（可选，若端点需要）",
+          "custom_base_url": "API 基础 URL（兼容 OpenAI）"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "基础 URL（留空使用 http://homeassistant.local:11434/v1）"
+          "ollama_base_url": "基础 URL（留空使用 http://homeassistant.local:11434/v1）"
         }
       },
       "llm_main": {

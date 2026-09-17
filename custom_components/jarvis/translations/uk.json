@@ -51,14 +51,14 @@
       "custom": {
         "title": "JARVIS — Власний постачальник",
         "data": {
-          "llm_base_url": "Базова URL-адреса API (сумісна з OpenAI)",
-          "api_key": "Ключ API (необов'язково, якщо кінцева точка вимагає)"
+          "api_key": "Ключ API (необов'язково, якщо кінцева точка вимагає)",
+          "custom_base_url": "Базова URL-адреса API (сумісна з OpenAI)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Базова URL-адреса (порожньо використовує http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Базова URL-адреса (порожньо використовує http://homeassistant.local:11434/v1)"
         }
       },
       "finish": {
@@ -177,14 +177,14 @@
       "custom": {
         "title": "JARVIS — Власний постачальник",
         "data": {
-          "llm_base_url": "Базова URL-адреса API (сумісна з OpenAI)",
-          "api_key": "Ключ API (необов'язково, якщо кінцева точка вимагає)"
+          "api_key": "Ключ API (необов'язково, якщо кінцева точка вимагає)",
+          "custom_base_url": "Базова URL-адреса API (сумісна з OpenAI)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Базова URL-адреса (порожньо використовує http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Базова URL-адреса (порожньо використовує http://homeassistant.local:11434/v1)"
         }
       },
       "llm_main": {

@@ -89,7 +89,12 @@ def _make_client(hass: HomeAssistant, provider: str, model: str, fallback):
         api_key = ha_secrets.get_provider_key_sync(provider)
         if not api_key and provider != "ollama":
             return fallback
-        base_url = _cfg_opt(hass, "llm_base_url", "") or None
+        from .const import PROVIDER_BASE_URL_FIELDS
+        endpoint_field = PROVIDER_BASE_URL_FIELDS.get(provider)
+        base_url = (
+            (_cfg_opt(hass, endpoint_field, "") if endpoint_field else "")
+            or _cfg_opt(hass, "llm_base_url", "")
+        ) or None
         key = (provider, model, api_key, base_url or "")
         cached = _PROVIDER_CACHE.get(key)
         if cached is not None:

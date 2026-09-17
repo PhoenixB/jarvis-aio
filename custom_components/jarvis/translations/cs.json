@@ -51,14 +51,14 @@
       "custom": {
         "title": "JARVIS — Vlastní poskytovatel",
         "data": {
-          "llm_base_url": "Základní URL API (kompatibilní s OpenAI)",
-          "api_key": "API klíč (volitelné, pokud jej koncový bod vyžaduje)"
+          "api_key": "API klíč (volitelné, pokud jej koncový bod vyžaduje)",
+          "custom_base_url": "Základní URL API (kompatibilní s OpenAI)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Základní URL (prázdné použije http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Základní URL (prázdné použije http://homeassistant.local:11434/v1)"
         }
       },
       "finish": {
@@ -177,14 +177,14 @@
       "custom": {
         "title": "JARVIS — Vlastní poskytovatel",
         "data": {
-          "llm_base_url": "Základní URL API (kompatibilní s OpenAI)",
-          "api_key": "API klíč (volitelné, pokud jej koncový bod vyžaduje)"
+          "api_key": "API klíč (volitelné, pokud jej koncový bod vyžaduje)",
+          "custom_base_url": "Základní URL API (kompatibilní s OpenAI)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Základní URL (prázdné použije http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Základní URL (prázdné použije http://homeassistant.local:11434/v1)"
         }
       },
       "llm_main": {

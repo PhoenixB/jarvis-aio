@@ -41,14 +41,14 @@
       "custom": {
         "title": "JARVIS — Benutzerdefinierter Anbieter",
         "data": {
-          "llm_base_url": "API-Basis-URL (OpenAI-kompatibel)",
-          "api_key": "API-Schlüssel (optional, falls der Endpunkt einen benötigt)"
+          "api_key": "API-Schlüssel (optional, falls der Endpunkt einen benötigt)",
+          "custom_base_url": "API-Basis-URL (OpenAI-kompatibel)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Basis-URL (leer = http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Basis-URL (leer = http://homeassistant.local:11434/v1)"
         }
       },
       "finish": {
@@ -125,14 +125,14 @@
       "custom": {
         "title": "JARVIS — Benutzerdefinierter Anbieter",
         "data": {
-          "llm_base_url": "API-Basis-URL (OpenAI-kompatibel)",
-          "api_key": "API-Schlüssel (optional, falls der Endpunkt einen benötigt)"
+          "api_key": "API-Schlüssel (optional, falls der Endpunkt einen benötigt)",
+          "custom_base_url": "API-Basis-URL (OpenAI-kompatibel)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Basis-URL (leer = http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Basis-URL (leer = http://homeassistant.local:11434/v1)"
         }
       },
       "llm_main": {

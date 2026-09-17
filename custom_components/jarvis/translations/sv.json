@@ -51,14 +51,14 @@
       "custom": {
         "title": "JARVIS — Anpassad leverantör",
         "data": {
-          "llm_base_url": "API-bas-URL (OpenAI-kompatibel)",
-          "api_key": "API-nyckel (valfritt, om slutpunkten kräver en)"
+          "api_key": "API-nyckel (valfritt, om slutpunkten kräver en)",
+          "custom_base_url": "API-bas-URL (OpenAI-kompatibel)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Bas-URL (tomt använder http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Bas-URL (tomt använder http://homeassistant.local:11434/v1)"
         }
       },
       "finish": {
@@ -177,14 +177,14 @@
       "custom": {
         "title": "JARVIS — Anpassad leverantör",
         "data": {
-          "llm_base_url": "API-bas-URL (OpenAI-kompatibel)",
-          "api_key": "API-nyckel (valfritt, om slutpunkten kräver en)"
+          "api_key": "API-nyckel (valfritt, om slutpunkten kräver en)",
+          "custom_base_url": "API-bas-URL (OpenAI-kompatibel)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Bas-URL (tomt använder http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Bas-URL (tomt använder http://homeassistant.local:11434/v1)"
         }
       },
       "llm_main": {

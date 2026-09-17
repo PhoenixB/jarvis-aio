@@ -51,14 +51,14 @@
       "custom": {
         "title": "JARVIS — Mukautettu palveluntarjoaja",
         "data": {
-          "llm_base_url": "API:n perus-URL (OpenAI-yhteensopiva)",
-          "api_key": "API-avain (valinnainen, jos päätepiste vaatii sen)"
+          "api_key": "API-avain (valinnainen, jos päätepiste vaatii sen)",
+          "custom_base_url": "API:n perus-URL (OpenAI-yhteensopiva)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Perus-URL (tyhjä käyttää http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Perus-URL (tyhjä käyttää http://homeassistant.local:11434/v1)"
         }
       },
       "finish": {
@@ -177,14 +177,14 @@
       "custom": {
         "title": "JARVIS — Mukautettu palveluntarjoaja",
         "data": {
-          "llm_base_url": "API:n perus-URL (OpenAI-yhteensopiva)",
-          "api_key": "API-avain (valinnainen, jos päätepiste vaatii sen)"
+          "api_key": "API-avain (valinnainen, jos päätepiste vaatii sen)",
+          "custom_base_url": "API:n perus-URL (OpenAI-yhteensopiva)"
         }
       },
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "llm_base_url": "Perus-URL (tyhjä käyttää http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Perus-URL (tyhjä käyttää http://homeassistant.local:11434/v1)"
         }
       },
       "llm_main": {

@@ -86,11 +86,12 @@ def _find_config() -> dict | None:
     except Exception:
         return None
     from . import ha_secrets
-    has_secret = any(
-        ha_secrets.get_secret_sync(ha_secrets.secret_key_for(k), "")
-        for k in ha_secrets.CREDENTIAL_KEYS
+    from .const import resolve_provider_base_url
+    provider = data.get("llm_provider", "groq")
+    has_secret = bool(ha_secrets.get_provider_key_sync(provider))
+    local_ok = provider == "ollama" or (
+        provider == "custom" and bool(resolve_provider_base_url(data, "custom"))
     )
-    local_ok = bool(data.get("llm_base_url")) and data.get("llm_provider") in ("ollama", "custom")
     return data if (has_secret or local_ok) else None
 
 
@@ -281,9 +282,10 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
         this only needs to confirm one exists for the chosen provider — never
         reads/writes a key value itself."""
         from . import ha_secrets
+        from .const import resolve_provider_base_url
 
-        base_url = (import_data.get("llm_base_url", "") or "").strip()
         provider = import_data.get("llm_provider", "groq")
+        base_url = resolve_provider_base_url(import_data, provider)
         local_ok = bool(base_url) and provider in ("ollama", "custom")
         has_key = bool(await ha_secrets.async_get_provider_key(self.hass, provider))
 
@@ -382,6 +384,11 @@ class JarvisOptionsFlow(OptionsFlow):
         """Whether `provider` currently has a usable key/endpoint."""
         if provider == "ollama":
             return True   # no key needed; has a working default endpoint
+        if provider == "custom":
+            # A Custom endpoint is valid with no key at all — configured means
+            # it has a URL, not that it has a secret.
+            from .const import CONF_CUSTOM_BASE_URL
+            return bool(self._cur(CONF_CUSTOM_BASE_URL, "")) or bool(self._cur_secret(provider))
         return bool(self._cur_secret(provider))
 
     def _cur_secret(self, provider: str) -> str:
@@ -437,7 +444,7 @@ class JarvisOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
         if user_input is not None:
             api_key = (user_input.get(CONF_API_KEY) or "").strip()
-            base_url = (user_input.get("llm_base_url") or "").strip()
+            base_url = (user_input.get(CONF_CUSTOM_BASE_URL) or "").strip()
             if not base_url:
                 errors["base"] = "need_llm"
             else:
@@ -447,10 +454,10 @@ class JarvisOptionsFlow(OptionsFlow):
                 else:
                     if api_key:
                         await ha_secrets.async_set_provider_key(self.hass, "custom", api_key)
-                    await self._persist({"llm_base_url": base_url})
+                    await self._persist({CONF_CUSTOM_BASE_URL: base_url})
                     return await self.async_step_llm()
         schema = vol.Schema({
-            vol.Required("llm_base_url", description=self._sv("llm_base_url", "")): str,
+            vol.Required(CONF_CUSTOM_BASE_URL, description=self._sv(CONF_CUSTOM_BASE_URL, "")): str,
             vol.Optional(CONF_API_KEY, description={"suggested_value": self._cur_secret("custom")}):
                 selector.TextSelector(selector.TextSelectorConfig(
                     type=selector.TextSelectorType.PASSWORD)),
@@ -463,15 +470,15 @@ class JarvisOptionsFlow(OptionsFlow):
 
         errors: dict[str, str] = {}
         if user_input is not None:
-            base_url = (user_input.get("llm_base_url") or "").strip()
+            base_url = (user_input.get(CONF_OLLAMA_BASE_URL) or "").strip()
             conn_err = await test_connection(self.hass, "ollama", "", DEFAULT_MODEL, base_url or None)
             if conn_err:
                 errors["base"] = conn_err
             else:
-                await self._persist({"llm_base_url": base_url})
+                await self._persist({CONF_OLLAMA_BASE_URL: base_url})
                 return await self.async_step_llm()
         schema = vol.Schema({
-            vol.Optional("llm_base_url", description=self._sv("llm_base_url", "")): str,
+            vol.Optional(CONF_OLLAMA_BASE_URL, description=self._sv(CONF_OLLAMA_BASE_URL, "")): str,
         })
         return self.async_show_form(step_id="ollama", data_schema=schema, errors=errors)
 
