@@ -564,7 +564,12 @@ class JarvisOptionsFlow(OptionsFlow):
         (Contrast with _save_section, which ends the flow and reloads the
         entry — appropriate only when something reload-worthy changes, like
         the Main Agent's provider/model.) Runs off the event loop — jarvis_config
-        does blocking file I/O."""
+        does blocking file I/O. The live runtime copy is updated too because
+        the dashboard reads runtime_config before config.json."""
+        entry_id = getattr(self._entry, "entry_id", None)
+        data = self.hass.data.get(DOMAIN, {}).get(entry_id, {}) if entry_id else {}
+        if isinstance(data, dict):
+            data.setdefault("runtime_config", {}).update(updates)
         try:
             from . import jarvis_config
             await self.hass.async_add_executor_job(jarvis_config.set_many, updates)

@@ -388,6 +388,27 @@ async def test_import_allows_blank_ollama_url(config_flow, fake_hass):
     assert res["data"]["llm_provider"] == "ollama"
 
 
+async def test_observer_tier_save_updates_live_runtime_config(config_flow, fake_hass):
+    entry = _Entry()
+    fake_hass.data.setdefault(config_flow.DOMAIN, {})["entry-1"] = {
+        "runtime_config": {
+            "classifier_provider": "groq",
+            "classifier_model": "old-model",
+        },
+    }
+    entry.entry_id = "entry-1"
+    flow = config_flow.JarvisOptionsFlow(entry)
+    flow.hass = fake_hass
+    flow._available_models = _models
+
+    await flow.async_step_classifier({"classifier_provider": "openai"})
+    await flow.async_step_classifier_model({"classifier_model": "new-model"})
+
+    live = fake_hass.data[config_flow.DOMAIN]["entry-1"]["runtime_config"]
+    assert live["classifier_provider"] == "openai"
+    assert live["classifier_model"] == "new-model"
+
+
 async def test_observer_menu_back_returns_to_main_configure_menu(config_flow, fake_hass):
     flow = _flow(config_flow, fake_hass)
     res = await flow.async_step_observer(None)
