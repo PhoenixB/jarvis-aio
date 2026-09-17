@@ -342,10 +342,22 @@ class AnthropicProvider(LLMProvider):
                 else:
                     chat_msgs.append({"role": "user", "content": [tool_result]})
             else:
-                chat_msgs.append({
-                    "role": role,
-                    "content": self._to_anthropic_content(m["content"]),
-                })
+                new_content = self._to_anthropic_content(m["content"])
+                # A plain user turn (e.g. the iteration-cap summary request)
+                # can immediately follow a tool_result user message — merge
+                # into it instead of emitting two consecutive "user" messages,
+                # which Anthropic rejects.
+                if role == "user" and chat_msgs and chat_msgs[-1]["role"] == "user":
+                    prev_content = chat_msgs[-1]["content"]
+                    if not isinstance(prev_content, list):
+                        prev_content = [{"type": "text", "text": prev_content}]
+                        chat_msgs[-1]["content"] = prev_content
+                    if isinstance(new_content, list):
+                        prev_content.extend(new_content)
+                    else:
+                        prev_content.append({"type": "text", "text": new_content})
+                else:
+                    chat_msgs.append({"role": role, "content": new_content})
 
         kwargs: dict[str, Any] = {
             "model": model_override or self.model,

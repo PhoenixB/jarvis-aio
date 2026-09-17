@@ -110,3 +110,30 @@ def test_assistant_text_kept_alongside_tool_use(provider):
     assistant_msg = sent["messages"][0]
     assert assistant_msg["content"][0] == {"type": "text", "text": "Sure, one sec."}
     assert assistant_msg["content"][1]["type"] == "tool_use"
+
+
+def test_summary_after_iteration_cap_merges_into_tool_result_message(provider):
+    """When the agent hits its iteration cap, agent.py appends a plain user
+    message (asking for a summary) right after the last tool result — that
+    must not become a second consecutive Anthropic "user" message."""
+    provider._client = _FakeClient()
+    messages = [
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {"id": "call_1", "type": "function",
+                 "function": {"name": "a", "arguments": "{}"}},
+            ],
+        },
+        {"role": "tool", "tool_call_id": "call_1", "content": "res1"},
+        {"role": "user", "content": "Please summarize what you did."},
+    ]
+    provider.chat(messages, max_tokens=100, temperature=0.5)
+    sent = provider._client.messages.calls[0]
+    roles = [m["role"] for m in sent["messages"]]
+    assert roles == ["assistant", "user"]      # merged, not two "user" messages
+    merged = sent["messages"][1]["content"]
+    assert merged[0]["type"] == "tool_result"
+    assert merged[1] == {"type": "text", "text": "Please summarize what you did."}
+
