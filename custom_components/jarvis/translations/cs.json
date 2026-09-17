@@ -182,9 +182,9 @@
         "title": "JARVIS — Režim pozorovatele",
         "description": "proaktivní vnímání. JARVIS sleduje váš domov a ozve se, když stojí něco za zmínku.",
         "menu_options": {
-          "classifier": "Classifier model",
-          "reasoning": "Reasoning model",
-          "review": "Review model",
+          "classifier": "Classifier (Tier 1 — cheap)",
+          "reasoning": "Reasoning (Tier 2 — main)",
+          "review": "Review (Tier 3 — periodic)",
           "observer_settings": "Observer settings",
           "back": "Zpět do nabídky konfigurace"
         }

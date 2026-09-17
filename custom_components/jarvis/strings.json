@@ -181,9 +181,9 @@
         "title": "JARVIS — Observer Mode",
         "description": "Configure each Observer model tier and its quiet hours.",
         "menu_options": {
-          "classifier": "Classifier model",
-          "reasoning": "Reasoning model",
-          "review": "Review model",
+          "classifier": "Classifier (Tier 1 — cheap)",
+          "reasoning": "Reasoning (Tier 2 — main)",
+          "review": "Review (Tier 3 — periodic)",
           "observer_settings": "Observer settings"
         }
       },

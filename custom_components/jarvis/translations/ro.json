@@ -182,9 +182,9 @@
         "title": "JARVIS — Mod observator",
         "description": "conștientizare proactivă. JARVIS îți supraveghează casa și intervine când ceva merită semnalat.",
         "menu_options": {
-          "classifier": "Classifier model",
-          "reasoning": "Reasoning model",
-          "review": "Review model",
+          "classifier": "Classifier (Tier 1 — cheap)",
+          "reasoning": "Reasoning (Tier 2 — main)",
+          "review": "Review (Tier 3 — periodic)",
           "observer_settings": "Observer settings",
           "back": "Înapoi la meniul de configurare"
         }

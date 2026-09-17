@@ -182,9 +182,9 @@
         "title": "JARVIS — Observatørmodus",
         "description": "proaktiv bevissthet. JARVIS følger med på hjemmet ditt og sier fra når noe er verdt å merke seg.",
         "menu_options": {
-          "classifier": "Classifier model",
-          "reasoning": "Reasoning model",
-          "review": "Review model",
+          "classifier": "Classifier (Tier 1 — cheap)",
+          "reasoning": "Reasoning (Tier 2 — main)",
+          "review": "Review (Tier 3 — periodic)",
           "observer_settings": "Observer settings",
           "back": "Tilbake til konfigurasjonsmenyen"
         }

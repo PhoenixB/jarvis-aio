@@ -182,9 +182,9 @@
         "title": "JARVIS — Modo Observador",
         "description": "perceção proativa. O JARVIS vigia a sua casa e intervém quando algo merece nota.",
         "menu_options": {
-          "classifier": "Classifier model",
-          "reasoning": "Reasoning model",
-          "review": "Review model",
+          "classifier": "Classifier (Tier 1 — cheap)",
+          "reasoning": "Reasoning (Tier 2 — main)",
+          "review": "Review (Tier 3 — periodic)",
           "observer_settings": "Observer settings",
           "back": "Voltar ao menu de configuração"
         }

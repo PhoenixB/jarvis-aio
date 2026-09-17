@@ -182,9 +182,9 @@
         "title": "JARVIS — Режим наблюдателя",
         "description": "проактивная осведомлённость. JARVIS следит за вашим домом и сообщает, когда что-то заслуживает внимания.",
         "menu_options": {
-          "classifier": "Classifier model",
-          "reasoning": "Reasoning model",
-          "review": "Review model",
+          "classifier": "Classifier (Tier 1 — cheap)",
+          "reasoning": "Reasoning (Tier 2 — main)",
+          "review": "Review (Tier 3 — periodic)",
           "observer_settings": "Observer settings",
           "back": "Назад в меню настройки"
         }
