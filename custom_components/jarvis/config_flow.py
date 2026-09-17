@@ -272,8 +272,13 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
         if not provider or provider not in self._provider_keys:
             return await self.async_step_provider_menu()
         fields = self._provider_keys[provider]
+        base_url_key = {
+            "custom": CONF_CUSTOM_BASE_URL,
+            "ollama": CONF_OLLAMA_BASE_URL,
+        }.get(provider)
+        provider_base_url = fields.get(base_url_key, "") if base_url_key else ""
         models = await _fetch_available_models(
-            self.hass, provider, fields.get("api_key", ""), fields.get("llm_base_url", ""),
+            self.hass, provider, fields.get("api_key", ""), provider_base_url,
         )
         if not models:
             return self.async_show_form(
@@ -283,14 +288,16 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(DOMAIN)
             self._abort_if_unique_id_configured()
             from . import ha_secrets, jarvis_config
-            base_url = ""
+            base_url = provider_base_url
+            endpoint_updates: dict[str, str] = {}
             for prov, fields in self._provider_keys.items():
                 if fields.get("api_key"):
                     await ha_secrets.async_set_provider_key(self.hass, prov, fields["api_key"])
-                if fields.get("llm_base_url"):
-                    base_url = fields["llm_base_url"]
-            if base_url:
-                await self.hass.async_add_executor_job(jarvis_config.set, "llm_base_url", base_url)
+                endpoint_key = {"custom": CONF_CUSTOM_BASE_URL, "ollama": CONF_OLLAMA_BASE_URL}.get(prov)
+                if endpoint_key and fields.get(endpoint_key):
+                    endpoint_updates[endpoint_key] = fields[endpoint_key]
+            if endpoint_updates:
+                await self.hass.async_add_executor_job(jarvis_config.set_many, endpoint_updates)
             return self.async_create_entry(
                 title="JARVIS",
                 data={
