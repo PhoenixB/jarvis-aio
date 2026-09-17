@@ -286,17 +286,16 @@ def init_from_addon(addon_options: dict) -> None:
         load()
 
     updated = 0
+    from . import ha_secrets
     with _lock:
         for key, value in addon_options.items():
+            if key in ha_secrets.CREDENTIAL_KEYS:
+                if value:
+                    ha_secrets.set_secret_sync(ha_secrets.secret_key_for(key), value)
+                continue
             if key not in _cache_dict():
                 _cache_dict()[key] = value
                 updated += 1
-            # Always update API keys (user might change them in addon config)
-            elif key in ("groq_api_key", "api_key", "gemini_api_key",
-                         "anthropic_api_key", "openai_api_key"):
-                if value and value != _cache_dict().get(key):
-                    _cache_dict()[key] = value
-                    updated += 1
 
     if updated:
         save()

@@ -502,7 +502,11 @@ def create_tier_provider(
     # endpoint). Cloud providers keep their canonical endpoints.
     base_url = config.get(f"{tier}_base_url")
     if not base_url and provider_name in ("ollama", "custom"):
-        base_url = config.get("llm_base_url") or None
+        provider_url_key = {
+            "custom": "custom_base_url",
+            "ollama": "ollama_base_url",
+        }[provider_name]
+        base_url = config.get(provider_url_key) or config.get("llm_base_url") or None
 
     _LOGGER.debug("Creating %s tier provider: %s / %s", tier, provider_name, model)
 

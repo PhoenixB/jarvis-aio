@@ -177,6 +177,29 @@ async def async_set_provider_key(hass, provider: str, value: str) -> bool:
     return await hass.async_add_executor_job(set_provider_key_sync, provider, value)
 
 
+async def relocate_entry_credentials(hass, entry) -> int:
+    """Move legacy credential values from a config entry into secrets.yaml.
+
+    Older installs stored credentials in ``entry.data`` or ``entry.options``;
+    this runs before provider client construction so those installs do not
+    briefly boot with an empty credential after the secrets-only migration.
+    Existing secrets win when both locations contain different values.
+    """
+    moved = 0
+    values = {**(getattr(entry, "data", {}) or {}),
+              **(getattr(entry, "options", {}) or {})}
+    for key in CREDENTIAL_KEYS:
+        value = values.get(key)
+        if not value:
+            continue
+        secret_name = secret_key_for(key)
+        existing = await hass.async_add_executor_job(get_secret_sync, secret_name, "")
+        if not existing:
+            if await hass.async_add_executor_job(set_secret_sync, secret_name, value):
+                moved += 1
+    return moved
+
+
 def _upsert_secret_line(text: str, key: str, value) -> str:
     """secrets.yaml text with `key: "value"` upserted: replace an existing
     top-level `key:` line if present, else append. The rest of the file is kept

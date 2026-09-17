@@ -114,6 +114,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # agent never diverge on which model to run. ───────────────────────────
     from . import jarvis_config as _jc
     from . import ha_secrets as _hs
+    await _hs.relocate_entry_credentials(hass, entry)
+    await _hs.relocate_plaintext_credentials(hass)
     _eff = await hass.async_add_executor_job(_jc.effective_config, entry)
     # Warm the remaining persisted-state caches off the event loop too, so the
     # hot paths that read them (observer tick, panel data, intrusion log) don't
@@ -121,7 +123,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.async_add_executor_job(_prewarm_persisted_state)
     llm_provider_name = _eff.get("llm_provider", "groq")
     llm_model         = _eff.get("model", "openai/gpt-oss-120b")
-    llm_base_url      = _eff.get("llm_base_url", "") or None
+    provider_base_key = {
+        "custom": "custom_base_url",
+        "ollama": "ollama_base_url",
+    }.get(llm_provider_name, "llm_base_url")
+    llm_base_url = (_eff.get(provider_base_key, "")
+                    or _eff.get("llm_base_url", "")
+                    or None)
     # Credentials live only in secrets.yaml — each provider has its own entry
     # (PROVIDER_API_KEY_FIELDS) so switching the Main Agent's provider can't
     # reuse a stale/different provider's key.
@@ -520,15 +528,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as exc:
         _LOGGER.debug("Config restore: %s", exc)
 
-    # Register services — guard against double-registration on reload
-    # Move any plaintext LLM credentials into secrets.yaml (v6.83.0). Safe:
-    # verify-before-strip; config.json is left untouched on any failure.
-    try:
-        from . import ha_secrets as _hs
-        await _hs.relocate_plaintext_credentials(hass)
-    except Exception as exc:
-        _LOGGER.debug("Credential relocation: %s", exc)
-
+    # Register services — guard against double-registration on reload.
     _register_services(hass, entry, llm_client, sentinel)
 
     # Reload services when options change

@@ -1963,7 +1963,15 @@ async def ws_list_models(hass: HomeAssistant, connection, msg) -> None:
     entry = _get_entry(hass)
     from . import ha_secrets
     api_key = await ha_secrets.async_get_provider_key(hass, provider)
-    base_url = msg.get("base_url") or str(_runtime_opt(hass, entry, "llm_base_url", "") or "")
+    provider_url_key = {
+        "custom": "custom_base_url",
+        "ollama": "ollama_base_url",
+    }.get(provider, "llm_base_url")
+    base_url = msg.get("base_url") or str(
+        _runtime_opt(hass, entry, provider_url_key, "")
+        or _runtime_opt(hass, entry, "llm_base_url", "")
+        or ""
+    )
     try:
         models = await _fetch_models(hass, provider, api_key, base_url)
         connection.send_result(msg["id"], {"provider": provider, "models": models})

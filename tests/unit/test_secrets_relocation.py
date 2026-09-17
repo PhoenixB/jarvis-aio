@@ -17,6 +17,17 @@ def hs(load):
     return load("ha_secrets")
 
 
+async def test_relocate_entry_credentials_writes_missing_secret(hs, fake_hass, tmp_path, monkeypatch):
+    p = tmp_path / "secrets.yaml"
+    monkeypatch.setattr(hs, "SECRETS_PATH", p)
+    entry = type("Entry", (), {
+        "data": {"api_key": "legacy-key"},
+        "options": {},
+    })()
+    assert await hs.relocate_entry_credentials(fake_hass, entry) == 1
+    assert hs.get_secret_sync("jarvis_api_key", path=p) == "legacy-key"
+
+
 # ── line upsert ──────────────────────────────────────────────────────────────
 
 def test_upsert_appends_when_absent(hs):

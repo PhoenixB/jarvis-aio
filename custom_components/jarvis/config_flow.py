@@ -41,6 +41,8 @@ from .const import (
     CONF_NOTIFY_SERVICE,
     CONF_OBSERVER_ENABLED,
     CONF_GEMINI_API_KEY,
+    CONF_CUSTOM_BASE_URL,
+    CONF_OLLAMA_BASE_URL,
     CONF_CLASSIFIER_MODEL,
     CONF_REASONING_MODEL,
     CONF_REVIEW_MODEL,
@@ -172,7 +174,7 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         if user_input is not None:
             api_key = (user_input.get(CONF_API_KEY) or "").strip()
-            base_url = (user_input.get("llm_base_url") or "").strip()
+            base_url = (user_input.get(CONF_CUSTOM_BASE_URL) or "").strip()
             if not base_url:
                 errors["base"] = "need_llm"
             else:
@@ -180,10 +182,10 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
                 if conn_err:
                     errors["base"] = conn_err
                 else:
-                    self._provider_keys["custom"] = {"api_key": api_key, "llm_base_url": base_url}
+                    self._provider_keys["custom"] = {"api_key": api_key, CONF_CUSTOM_BASE_URL: base_url}
                     return await self.async_step_provider_menu()
         schema = vol.Schema({
-            vol.Required("llm_base_url"): str,
+            vol.Required(CONF_CUSTOM_BASE_URL): str,
             vol.Optional(CONF_API_KEY, default=""): selector.TextSelector(selector.TextSelectorConfig(
                 type=selector.TextSelectorType.PASSWORD)),
         })
@@ -195,15 +197,15 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
 
         errors: dict[str, str] = {}
         if user_input is not None:
-            base_url = (user_input.get("llm_base_url") or "").strip()
+            base_url = (user_input.get(CONF_OLLAMA_BASE_URL) or "").strip()
             conn_err = await test_connection(self.hass, "ollama", "", DEFAULT_MODEL, base_url or None)
             if conn_err:
                 errors["base"] = conn_err
             else:
-                self._provider_keys["ollama"] = {"llm_base_url": base_url}
+                self._provider_keys["ollama"] = {CONF_OLLAMA_BASE_URL: base_url}
                 return await self.async_step_provider_menu()
         schema = vol.Schema({
-            vol.Optional("llm_base_url", default=""): str,
+            vol.Optional(CONF_OLLAMA_BASE_URL, default=""): str,
         })
         return self.async_show_form(step_id="ollama", data_schema=schema, errors=errors)
 
@@ -229,15 +231,19 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
 
                 from . import ha_secrets, jarvis_config
                 base_url = ""
+                endpoint_updates: dict[str, str] = {}
                 for prov, fields in self._provider_keys.items():
                     if fields.get("api_key"):
                         await ha_secrets.async_set_provider_key(
                             self.hass, prov, fields["api_key"])
-                    if fields.get("llm_base_url"):
-                        base_url = fields["llm_base_url"]
-                if base_url:
-                    await self.hass.async_add_executor_job(
-                        jarvis_config.set, "llm_base_url", base_url)
+                    if fields.get(CONF_CUSTOM_BASE_URL) or fields.get(CONF_OLLAMA_BASE_URL):
+                        endpoint = fields.get(CONF_CUSTOM_BASE_URL) or fields.get(CONF_OLLAMA_BASE_URL)
+                        endpoint_key = CONF_CUSTOM_BASE_URL if prov == "custom" else CONF_OLLAMA_BASE_URL
+                        endpoint_updates[endpoint_key] = endpoint
+                        if prov == provider:
+                            base_url = endpoint
+                if endpoint_updates:
+                    await self.hass.async_add_executor_job(jarvis_config.set_many, endpoint_updates)
 
                 return self.async_create_entry(
                     title="JARVIS",
