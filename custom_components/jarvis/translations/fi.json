@@ -99,7 +99,8 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Mukautettu (OpenAI-yhteensopiva)",
-          "ollama": "Ollama (paikallinen)"
+          "ollama": "Ollama (paikallinen)",
+          "back": "Takaisin määritysvalikkoon"
         }
       },
       "groq": {

@@ -99,7 +99,8 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "自訂（相容 OpenAI）",
-          "ollama": "Ollama（本地）"
+          "ollama": "Ollama（本地）",
+          "back": "返回設定選單"
         }
       },
       "groq": {

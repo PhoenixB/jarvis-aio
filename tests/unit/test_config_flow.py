@@ -308,8 +308,13 @@ async def test_llm_menu_lists_providers_and_main(config_flow, fake_hass):
     res = await _flow(config_flow, fake_hass).async_step_llm(None)
     assert res["type"] == "menu" and res["step_id"] == "llm"
     assert set(res["menu_options"]) == {
-        "groq", "openai", "anthropic", "gemini", "custom", "ollama",
+        "groq", "openai", "anthropic", "gemini", "custom", "ollama", "back",
     }
+
+
+async def test_llm_menu_back_returns_to_main_configure_menu(config_flow, fake_hass):
+    res = await _flow(config_flow, fake_hass).async_step_back(None)
+    assert res["type"] == "menu" and res["step_id"] == "init"
 
 
 async def test_llm_groq_step_saves_and_loops_back_to_menu(

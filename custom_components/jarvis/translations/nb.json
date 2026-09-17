@@ -99,7 +99,8 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Tilpasset (OpenAI-kompatibel)",
-          "ollama": "Ollama (lokal)"
+          "ollama": "Ollama (lokal)",
+          "back": "Tilbake til konfigurasjonsmenyen"
         }
       },
       "groq": {

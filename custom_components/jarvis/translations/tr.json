@@ -99,7 +99,8 @@
           "anthropic": "Anthropic",
           "gemini": "Gemini",
           "custom": "Özel (OpenAI uyumlu)",
-          "ollama": "Ollama (yerel)"
+          "ollama": "Ollama (yerel)",
+          "back": "Yapılandırma menüsüne dön"
         }
       },
       "groq": {

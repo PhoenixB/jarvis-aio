@@ -440,9 +440,13 @@ class JarvisOptionsFlow(OptionsFlow):
             note = "No provider configured yet. Pick one to add its API key (or URL for Ollama/Custom)."
         return self.async_show_menu(
             step_id="llm",
-            menu_options=list(_PROVIDER_STEPS),
+            menu_options=list(_PROVIDER_STEPS) + ["back"],
             description_placeholders={"note": note},
         )
+
+    async def async_step_back(self, user_input: dict[str, Any] | None = None) -> dict:
+        """Return from the LLM submenu to the main options menu."""
+        return await self.async_step_init()
 
     async def _provider_configured(self, provider: str) -> bool:
         """Whether `provider` currently has a usable key/endpoint."""
@@ -590,7 +594,7 @@ class JarvisOptionsFlow(OptionsFlow):
                 selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
             vol.Optional("llm_provider", description=self._sv("llm_provider", "groq")):
                 selector.SelectSelector(selector.SelectSelectorConfig(
-                    options=[p for p in _PROVIDER_STEPS if self._provider_configured(p)],
+                    options=[p for p in _PROVIDER_STEPS if await self._provider_configured(p)],
                     mode=selector.SelectSelectorMode.DROPDOWN)),
             vol.Optional(CONF_USE_HASS_API, description=self._sv(CONF_USE_HASS_API, True)):
                 selector.BooleanSelector(),
@@ -650,7 +654,7 @@ class JarvisOptionsFlow(OptionsFlow):
             self._data[provider_key] = user_input[provider_key]
             await self._persist({provider_key: user_input[provider_key]})
             return await self._async_step_observer_model(tier)
-        providers = [p for p in _PROVIDER_STEPS if self._provider_configured(p)]
+        providers = [p for p in _PROVIDER_STEPS if await self._provider_configured(p)]
         return self.async_show_form(
             step_id=tier,
             data_schema=vol.Schema({
