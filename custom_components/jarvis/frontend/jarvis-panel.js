@@ -2004,9 +2004,11 @@ class JarvisPanel extends HTMLElement {
     // Only offer providers with a stored key/endpoint — picking an
     // unconfigured one just fails to fetch models (v7.9x.0).
     const configured = cfg.configured_providers || ALL_PROVIDERS;
+    const defaultProvider = configured[0] || 'groq';
     const cfgSet = new Set(configured);
     return this._modelRoles().map(r => {
-      const curProv = cfg[r.provKey] || 'groq';
+      const storedProv = cfg[r.provKey];
+      const curProv = storedProv || defaultProvider;
       const curModel = cfg[r.modelKey] || '';
       // Always include the role's current provider, even if unconfigured,
       // so an existing selection doesn't silently vanish from the list.
@@ -2014,7 +2016,7 @@ class JarvisPanel extends HTMLElement {
       // against the known provider names before being used unescaped below.
       const provList = cfgSet.has(curProv)
         ? configured
-        : (ALL_PROVIDERS.includes(curProv) ? [curProv, ...configured] : configured);
+        : (storedProv && ALL_PROVIDERS.includes(curProv) ? [curProv, ...configured] : configured);
       const provOpts = provList.map(p =>
         `<option value="${p}"${p === curProv ? ' selected' : ''}>${p}</option>`).join('');
       // Model select starts with the current value + a loading hint; it's
@@ -4502,7 +4504,7 @@ class JarvisPanel extends HTMLElement {
           <span class="llm-url-label">LOCAL LLM URL</span>
           <input class="llm-url-input" type="text"
             placeholder="http://gpu-server:11434/v1"
-            value="${this._esc(d.config?.llm_base_url || '')}"
+            value="${this._esc(d.config?.custom_base_url || d.config?.ollama_base_url || d.config?.llm_base_url || '')}"
             title="OpenAI-compatible endpoint for the ollama/custom providers — your GPU server. Leave empty for the default."/>
         </div>
         <div class="llm-url-row">
@@ -5480,7 +5482,11 @@ ${this._renderExcludedEntities(d)}
     if (llmUrl) {
       llmUrl.addEventListener("change", async () => {
         const v = llmUrl.value.trim();
-        await this._saveConfig("llm_base_url", v);
+        await Promise.all([
+          this._saveConfig("llm_base_url", v),
+          this._saveConfig("custom_base_url", v),
+          this._saveConfig("ollama_base_url", v),
+        ]);
         this._toast(v ? `✓ local LLM endpoint → ${v}` : "✓ local LLM endpoint cleared", "ok");
       });
     }

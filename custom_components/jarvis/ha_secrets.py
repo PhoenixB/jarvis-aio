@@ -227,7 +227,12 @@ async def relocate_entry_credentials(hass, entry) -> int:
     """
     data = dict(getattr(entry, "data", {}) or {})
     options = dict(getattr(entry, "options", {}) or {})
-    values = {**data, **options}
+    values = dict(data)
+    for key, value in options.items():
+        # HA may retain an empty options placeholder after an older entry was
+        # migrated. Do not let that placeholder hide the real data value.
+        if key not in CREDENTIAL_KEYS or value not in (None, ""):
+            values[key] = value
     provider = values.get("llm_provider", "groq")
     moved = 0
     migrated_keys = []

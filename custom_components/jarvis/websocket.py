@@ -771,6 +771,8 @@ async def ws_get_panel_data(
                 "movie_media_player": str(_runtime_opt(hass, entry, "movie_media_player", "") or ""),
                 "movie_dim_pct": int(_runtime_opt(hass, entry, "movie_dim_pct", 15) or 15),
                 "llm_base_url": str(_runtime_opt(hass, entry, "llm_base_url", "") or ""),
+                "custom_base_url": str(_runtime_opt(hass, entry, "custom_base_url", "") or ""),
+                "ollama_base_url": str(_runtime_opt(hass, entry, "ollama_base_url", "") or ""),
                 "notify_service": current_notify,
                 "notify_services_available": notify_services,
                 "onboarding": _get_onboarding_state(hass, entry, current_notify),
@@ -794,7 +796,7 @@ async def ws_get_panel_data(
                 "door_mapping": _get_runtime_json(hass, entry, "door_mapping", {}),
                 # AI model selection (provider + model per role) — for the
                 # Settings "AI Models" section's live-fetched dropdowns.
-                "configured_providers": await _configured_providers(hass, entry),
+                "configured_providers": configured_providers,
                 "llm_provider":        str(_runtime_opt(hass, entry, "llm_provider", "groq") or "groq"),
                 "model":               str(_runtime_opt(hass, entry, "model", "") or ""),
                 "classifier_provider": str(_runtime_opt(hass, entry, "classifier_provider", "groq") or "groq"),
@@ -1418,6 +1420,8 @@ PANEL_WRITABLE_KEYS = {
     "llm_provider",
     "model",
     "llm_base_url",
+    "custom_base_url",
+    "ollama_base_url",
     "classifier_provider",
     "classifier_model",
     "reasoning_provider",
@@ -1879,9 +1883,20 @@ async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
         CONF_OLLAMA_BASE_URL: _runtime_opt(hass, entry, CONF_OLLAMA_BASE_URL, ""),
         "llm_base_url": _runtime_opt(hass, entry, "llm_base_url", ""),
     }
-    if resolve_provider_base_url(ollama_config, "ollama") or "http://homeassistant.local:11434/v1":
+    selected_providers = {
+        str(_runtime_opt(hass, entry, key, "") or "")
+        for key in (
+            "llm_provider", "classifier_provider", "reasoning_provider",
+            "review_provider", "vision_provider", "camera_reasoning_provider",
+        )
+    }
+    if resolve_provider_base_url(ollama_config, "ollama") or "ollama" in selected_providers:
         out.append("ollama")
-    if str(_runtime_opt(hass, entry, CONF_CUSTOM_BASE_URL, "") or "").strip():
+    custom_config = {
+        CONF_CUSTOM_BASE_URL: _runtime_opt(hass, entry, CONF_CUSTOM_BASE_URL, ""),
+        "llm_base_url": _runtime_opt(hass, entry, "llm_base_url", ""),
+    }
+    if resolve_provider_base_url(custom_config, "custom") or "custom" in selected_providers:
         out.append("custom")
     for provider, field in PROVIDER_API_KEY_FIELDS.items():
         if provider in out:

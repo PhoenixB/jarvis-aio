@@ -150,6 +150,8 @@ class _ObserverState:
         self.recent_events: deque = deque(maxlen=50)
         self.classifier_provider = None
         self.reasoning_provider = None
+        self.review_provider = None
+        self.review_count = 0
         self.hass = None
         self.config: dict = {}
         # Global rate limit tracking for classifier calls
@@ -163,6 +165,7 @@ class _ObserverState:
         self.recent_events.clear()
         self.classifier_timestamps.clear()
         self.rate_limit_warn_logged = False
+        self.review_count = 0
 
 
 _STATE = _ObserverState()
@@ -650,6 +653,22 @@ async def _process_event(event: Event) -> None:
             friendly_name=friendly_name,
         )
 
+        # Tier 3 periodically audits the primary decision. It is veto-only so
+        # Review can suppress an announcement but never create one.
+        _STATE.review_count += 1
+        if _STATE.review_provider is not None and _STATE.review_count % 10 == 0:
+            approved = await reasoning_loop.review_decision(
+                _STATE.hass,
+                _STATE.review_provider,
+                event_summary=(
+                    f"{friendly_name} ({entity_id}) changed from "
+                    f"{old_state.state} to {new_state.state}"
+                ),
+                decision=decision,
+            )
+            if not approved:
+                decision = {"speak": False, "reason": "review tier veto"}
+
         if not decision.get("speak"):
             _LOGGER.debug(
                 "Observer silent for %s: %s",
@@ -1008,21 +1027,23 @@ async def stop() -> None:
 
 
 async def refresh_tier_providers(hass: HomeAssistant, updates: dict | None = None) -> bool:
-    """Rebuild both cached tier clients and replace them atomically.
+    """Rebuild all cached tier clients and replace them atomically.
 
     Provider construction can perform blocking certificate/file I/O and either
-    tier may fail, so build both clients before changing the live state. This
+    tier may fail, so build all clients before changing the live state. This
     lets configuration-flow changes take effect without interrupting the
     Observer or leaving one tier on a mixed configuration.
     """
     config = {**_STATE.config, **(updates or {})}
-    classifier_provider, reasoning_provider = await asyncio.gather(
+    classifier_provider, reasoning_provider, review_provider = await asyncio.gather(
         hass.async_add_executor_job(create_tier_provider, config, "classifier"),
         hass.async_add_executor_job(create_tier_provider, config, "reasoning"),
+        hass.async_add_executor_job(create_tier_provider, config, "review"),
     )
     _STATE.config = config
     _STATE.classifier_provider = classifier_provider
     _STATE.reasoning_provider = reasoning_provider
+    _STATE.review_provider = review_provider
     return True
 
 

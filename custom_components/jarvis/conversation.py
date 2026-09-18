@@ -742,6 +742,9 @@ class JarvisAgent(conversation.ConversationEntity):
         user_input: conversation.ConversationInput,
         chat_log=None,
     ) -> conversation.ConversationResult:
+        shared = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id, {})
+        if shared.get("client") is not None:
+            self._client = shared["client"]
         from .websocket import jarvis_log
         device_id = getattr(user_input, 'device_id', None)
         jarvis_log("CONV", f"ENTRY text='{user_input.text[:60]}' device={device_id}")

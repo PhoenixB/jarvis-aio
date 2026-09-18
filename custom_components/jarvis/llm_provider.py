@@ -445,6 +445,33 @@ def list_providers() -> list[str]:
     return list(PROVIDERS.keys())
 
 
+async def async_refresh_main_client(hass, entry) -> None:
+    """Rebuild the active Main Agent client after a provider key rotation."""
+    from .const import DOMAIN
+
+    entry_id = getattr(entry, "entry_id", None)
+    runtime = hass.data.get(DOMAIN, {}).get(entry_id) if entry_id else None
+    if not isinstance(runtime, dict):
+        return
+    from . import ha_secrets, jarvis_config
+    from .const import resolve_provider_base_url
+
+    config = await hass.async_add_executor_job(jarvis_config.effective_config, entry)
+    provider = config.get("llm_provider", "groq")
+    api_key = await ha_secrets.async_get_provider_key(hass, provider)
+    client = await hass.async_add_executor_job(
+        create_provider,
+        provider,
+        api_key,
+        config.get("model", "openai/gpt-oss-120b"),
+        resolve_provider_base_url(config, provider),
+    )
+    runtime["client"] = client
+    sentinel = runtime.get("sentinel")
+    if sentinel is not None:
+        sentinel._groq = client
+
+
 # ─── v5.2 Tiered provider selection (observer mode) ──────────────────────────
 #
 # Observer mode uses three distinct LLM tiers:

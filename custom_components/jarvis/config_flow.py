@@ -504,6 +504,13 @@ class JarvisOptionsFlow(OptionsFlow):
                     if not ok:
                         errors["base"] = "unknown"
                     else:
+                        active_provider = self._cur("llm_provider", "groq")
+                        if provider == active_provider:
+                            from .llm_provider import async_refresh_main_client
+                            from . import observer
+                            await async_refresh_main_client(self.hass, self._entry)
+                            if observer.is_running():
+                                await observer.refresh_tier_providers(self.hass)
                         return await self.async_step_llm()
         schema = vol.Schema({
             vol.Required(CONF_API_KEY, description={"suggested_value": await self._cur_secret(provider)}):
