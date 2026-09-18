@@ -71,8 +71,8 @@
       "cannot_connect": "Kunde inte nå LLM:en. Kontrollera att URL/endpoint är korrekt och att servern (t.ex. Ollama) körs.",
       "invalid_auth": "API-nyckeln avvisades. Kontrollera nyckeln och försök igen.",
       "unknown": "Kunde inte validera LLM-anslutningen. Kontrollera inställningarna och försök igen.",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "Det finns inga modeller tillgängliga för den här leverantören. Kontrollera leverantörens endpoint och försök igen.",
+      "no_providers": "Inga LLM-leverantörer är konfigurerade. Lägg först till en leverantörsnyckel eller endpoint i LLM-avsnittet."
     },
     "abort": {
       "already_configured": "JARVIS är redan konfigurerad.",
@@ -263,8 +263,8 @@
       "cannot_connect": "Kunde inte nå LLM:en. Kontrollera att URL/endpoint är korrekt och att servern (t.ex. Ollama) körs.",
       "invalid_auth": "API-nyckeln avvisades. Kontrollera nyckeln och försök igen.",
       "unknown": "Kunde inte validera LLM-anslutningen. Kontrollera inställningarna och försök igen.",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "Det finns inga modeller tillgängliga för den här leverantören. Kontrollera leverantörens endpoint och försök igen.",
+      "no_providers": "Inga LLM-leverantörer är konfigurerade. Lägg först till en leverantörsnyckel eller endpoint i LLM-avsnittet."
     }
   },
   "issues": {

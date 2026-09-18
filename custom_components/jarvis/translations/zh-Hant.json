@@ -175,12 +175,12 @@
       },
       "observer": {
         "title": "JARVIS — 觀察者模式",
-        "description": "Configure each Observer model tier and its quiet hours.",
+        "description": "設定各個 Observer 模型層級及其安靜時段。Review 為選用項目，僅在已設定時執行。",
         "menu_options": {
-          "classifier": "Classifier (Tier 1 — cheap)",
-          "reasoning": "Reasoning (Tier 2 — main)",
-          "review": "Review (Tier 3 — periodic)",
-          "observer_settings": "Observer settings",
+          "classifier": "分類器（第 1 層 — 低成本）",
+          "reasoning": "推理（第 2 層 — 主模型）",
+          "review": "審查（第 3 層 — 週期性，選用）",
+          "observer_settings": "觀察者設定",
           "back": "返回設定選單"
         }
       },

@@ -71,8 +71,8 @@
       "cannot_connect": "Не вдалося зв’язатися з LLM. Перевірте правильність URL/кінцевої точки та роботу сервера (напр., Ollama).",
       "invalid_auth": "API-ключ відхилено. Перевірте ключ і спробуйте ще раз.",
       "unknown": "Не вдалося перевірити підключення до LLM. Перевірте налаштування та спробуйте ще раз.",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "Для цього постачальника немає доступних моделей. Перевірте кінцеву адресу постачальника й спробуйте ще раз.",
+      "no_providers": "Не налаштовано жодного постачальника LLM. Спочатку додайте ключ постачальника або кінцеву адресу в розділі LLM."
     },
     "abort": {
       "already_configured": "JARVIS уже налаштовано.",
@@ -263,8 +263,8 @@
       "cannot_connect": "Не вдалося зв’язатися з LLM. Перевірте правильність URL/кінцевої точки та роботу сервера (напр., Ollama).",
       "invalid_auth": "API-ключ відхилено. Перевірте ключ і спробуйте ще раз.",
       "unknown": "Не вдалося перевірити підключення до LLM. Перевірте налаштування та спробуйте ще раз.",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "Для цього постачальника немає доступних моделей. Перевірте кінцеву адресу постачальника й спробуйте ще раз.",
+      "no_providers": "Не налаштовано жодного постачальника LLM. Спочатку додайте ключ постачальника або кінцеву адресу в розділі LLM."
     }
   },
   "issues": {

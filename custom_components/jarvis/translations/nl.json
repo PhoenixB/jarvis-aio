@@ -71,8 +71,8 @@
       "cannot_connect": "Kon de LLM niet bereiken. Controleer of de URL/het endpoint klopt en of de server (bijv. Ollama) draait.",
       "invalid_auth": "De API-sleutel werd geweigerd. Controleer de sleutel en probeer opnieuw.",
       "unknown": "Kon de LLM-verbinding niet valideren. Controleer de instellingen en probeer opnieuw.",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "Er zijn geen modellen beschikbaar voor deze provider. Controleer het endpoint van de provider en probeer het opnieuw.",
+      "no_providers": "Er zijn geen LLM-providers geconfigureerd. Voeg eerst een providersleutel of endpoint toe in de LLM-sectie."
     },
     "abort": {
       "already_configured": "JARVIS is al geconfigureerd.",
@@ -263,8 +263,8 @@
       "cannot_connect": "Kon de LLM niet bereiken. Controleer of de URL/het endpoint klopt en of de server (bijv. Ollama) draait.",
       "invalid_auth": "De API-sleutel werd geweigerd. Controleer de sleutel en probeer opnieuw.",
       "unknown": "Kon de LLM-verbinding niet valideren. Controleer de instellingen en probeer opnieuw.",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "Er zijn geen modellen beschikbaar voor deze provider. Controleer het endpoint van de provider en probeer het opnieuw.",
+      "no_providers": "Er zijn geen LLM-providers geconfigureerd. Voeg eerst een providersleutel of endpoint toe in de LLM-sectie."
     }
   },
   "issues": {

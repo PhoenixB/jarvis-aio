@@ -71,8 +71,8 @@
       "cannot_connect": "LLM nie je dostupný. Skontrolujte, či je URL/endpoint správny a či server (napr. Ollama) beží.",
       "invalid_auth": "API kľúč bol odmietnutý. Skontrolujte kľúč a skúste to znova.",
       "unknown": "Pripojenie k LLM sa nepodarilo overiť. Skontrolujte nastavenia a skúste to znova.",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "Pre tohto poskytovateľa nie sú k dispozícii žiadne modely. Skontrolujte koncový bod poskytovateľa a skúste to znova.",
+      "no_providers": "Nie sú nakonfigurovaní žiadni poskytovatelia LLM. Najprv pridajte kľúč poskytovateľa alebo koncový bod v časti LLM."
     },
     "abort": {
       "already_configured": "JARVIS je už nakonfigurovaný.",
@@ -263,8 +263,8 @@
       "cannot_connect": "LLM nie je dostupný. Skontrolujte, či je URL/endpoint správny a či server (napr. Ollama) beží.",
       "invalid_auth": "API kľúč bol odmietnutý. Skontrolujte kľúč a skúste to znova.",
       "unknown": "Pripojenie k LLM sa nepodarilo overiť. Skontrolujte nastavenia a skúste to znova.",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "Pre tohto poskytovateľa nie sú k dispozícii žiadne modely. Skontrolujte koncový bod poskytovateľa a skúste to znova.",
+      "no_providers": "Nie sú nakonfigurovaní žiadni poskytovatelia LLM. Najprv pridajte kľúč poskytovateľa alebo koncový bod v časti LLM."
     }
   },
   "issues": {

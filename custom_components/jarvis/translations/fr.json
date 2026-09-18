@@ -71,8 +71,8 @@
       "cannot_connect": "Impossible de joindre le LLM. Vérifiez que l'URL/point de terminaison est correct et que le serveur (ex. Ollama) est en cours d'exécution.",
       "invalid_auth": "La clé API a été refusée. Vérifiez la clé et réessayez.",
       "unknown": "Impossible de valider la connexion au LLM. Vérifiez les paramètres et réessayez.",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "Aucun modèle n'est disponible pour ce fournisseur. Vérifiez le point de terminaison du fournisseur, puis réessayez.",
+      "no_providers": "Aucun fournisseur LLM n'est configuré. Ajoutez d'abord une clé de fournisseur ou un point de terminaison dans la section LLM."
     },
     "abort": {
       "already_configured": "JARVIS est déjà configuré.",
@@ -263,8 +263,8 @@
       "cannot_connect": "Impossible de joindre le LLM. Vérifiez que l'URL/point de terminaison est correct et que le serveur (ex. Ollama) est en cours d'exécution.",
       "invalid_auth": "La clé API a été refusée. Vérifiez la clé et réessayez.",
       "unknown": "Impossible de valider la connexion au LLM. Vérifiez les paramètres et réessayez.",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "Aucun modèle n'est disponible pour ce fournisseur. Vérifiez le point de terminaison du fournisseur, puis réessayez.",
+      "no_providers": "Aucun fournisseur LLM n'est configuré. Ajoutez d'abord une clé de fournisseur ou un point de terminaison dans la section LLM."
     }
   },
   "issues": {
