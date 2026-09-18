@@ -167,9 +167,10 @@ def get_legacy_provider_key(config: dict[str, Any], provider: str) -> str:
     field = provider_key_name(provider)
     if not field:
         return ""
-    val = config.get(field)
-    if val:
-        return str(val)
+    if field != "api_key":
+        val = config.get(field)
+        if val:
+            return str(val)
     if provider == "groq":
         val = config.get("groq_api_key")
         if val:

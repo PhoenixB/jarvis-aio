@@ -87,12 +87,35 @@ def test_get_legacy_provider_key_does_not_reuse_shared_key_for_other_provider(hs
     assert hs.get_legacy_provider_key(cfg, "openai") == ""
 
 
+def test_get_legacy_provider_key_does_not_reuse_other_provider_shared_key_for_groq(hs):
+    cfg = {"llm_provider": "openai", "api_key": "OPENAI"}
+    assert hs.get_legacy_provider_key(cfg, "groq") == ""
+
+
+def test_get_legacy_provider_key_keeps_groq_alias_available(hs):
+    cfg = {"llm_provider": "openai", "groq_api_key": "GROQ"}
+    assert hs.get_legacy_provider_key(cfg, "groq") == "GROQ"
+
+
 def test_get_provider_key_sync_falls_back_to_runtime_plaintext(hs, monkeypatch, load):
     jc = load("jarvis_config")
     monkeypatch.setattr(jc, "get_all",
                         lambda: {"llm_provider": "openai", "openai_api_key": "sk-openai"})
     monkeypatch.setattr(hs, "get_secret_sync", lambda *a, **k: "")
     assert hs.get_provider_key_sync("openai") == "sk-openai"
+
+
+def test_get_provider_key_sync_does_not_send_other_provider_shared_key_to_groq(
+    hs, monkeypatch, load,
+):
+    jc = load("jarvis_config")
+    monkeypatch.setattr(
+        jc,
+        "get_all",
+        lambda: {"llm_provider": "openai", "api_key": "OPENAI", "groq_api_key": "GROQ"},
+    )
+    monkeypatch.setattr(hs, "get_secret_sync", lambda *a, **k: "")
+    assert hs.get_provider_key_sync("groq") == "GROQ"
 
 
 def test_get_stored_provider_key_sync_reads_secrets_only(hs, monkeypatch):
