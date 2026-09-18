@@ -67,6 +67,28 @@ async def test_configured_providers_allow_selected_ollama_default_endpoint(fake_
     assert "ollama" in configured
 
 
+async def test_configured_providers_do_not_leak_legacy_url_to_unselected_ollama(
+    fake_hass, monkeypatch,
+):
+    websocket = _load_websocket_module()
+    ha_secrets = importlib.import_module("jc.ha_secrets")
+    values = {
+        "llm_provider": "custom",
+        "custom_base_url": "http://gpu.local:11434/v1",
+        "ollama_base_url": "",
+        "llm_base_url": "http://gpu.local:11434/v1",
+    }
+    monkeypatch.setattr(websocket, "_runtime_opt", lambda hass, entry, key, default=None: values.get(key, default))
+
+    async def _no_key(hass, provider):
+        return ""
+
+    monkeypatch.setattr(ha_secrets, "async_get_provider_key", _no_key)
+
+    configured = await websocket._configured_providers(fake_hass, object())
+    assert "ollama" not in configured
+
+
 async def test_fetch_models_uses_resolved_api_key_in_auth_header(fake_hass, monkeypatch):
     websocket = _load_websocket_module()
     seen = {}

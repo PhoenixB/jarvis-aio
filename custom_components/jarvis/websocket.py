@@ -1879,9 +1879,11 @@ async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
     from . import ha_secrets
     out = []
     from .const import resolve_provider_base_url
+    ollama_selected = False
+    ollama_base_url = _runtime_opt(hass, entry, CONF_OLLAMA_BASE_URL, "")
     ollama_config = {
-        CONF_OLLAMA_BASE_URL: _runtime_opt(hass, entry, CONF_OLLAMA_BASE_URL, ""),
-        "llm_base_url": _runtime_opt(hass, entry, "llm_base_url", ""),
+        CONF_OLLAMA_BASE_URL: ollama_base_url,
+        "llm_base_url": "",
     }
     selected_providers = {
         str(_runtime_opt(hass, entry, key, "") or "")
@@ -1890,7 +1892,10 @@ async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
             "review_provider", "vision_provider", "camera_reasoning_provider",
         )
     }
-    if "ollama" in selected_providers and not resolve_provider_base_url(ollama_config, "ollama"):
+    ollama_selected = "ollama" in selected_providers
+    if ollama_selected:
+        ollama_config["llm_base_url"] = _runtime_opt(hass, entry, "llm_base_url", "")
+    if ollama_selected and not resolve_provider_base_url(ollama_config, "ollama"):
         ollama_config[CONF_OLLAMA_BASE_URL] = "http://homeassistant.local:11434/v1"
     if resolve_provider_base_url(ollama_config, "ollama"):
         out.append("ollama")
