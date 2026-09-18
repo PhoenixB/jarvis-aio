@@ -100,8 +100,8 @@ async def async_get_secret(hass, key: str, default: Any = None) -> Any:
         return get_secret_sync(key, default)
     try:
         return await hass.async_add_executor_job(get_secret_sync, key, default)
-    except Exception as exc:
-        _LOGGER.debug("JARVIS async_get_secret failed: %s", exc)
+    except Exception:
+        _LOGGER.debug("JARVIS async_get_secret failed")
         return default
 
 
