@@ -115,7 +115,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     from . import jarvis_config as _jc
     from . import ha_secrets as _hs
     await _hs.relocate_entry_credentials(hass, entry)
-    await _hs.relocate_plaintext_credentials(hass)
+    await _hs.relocate_plaintext_credentials(hass, entry)
     _eff = await hass.async_add_executor_job(_jc.effective_config, entry)
     # Warm the remaining persisted-state caches off the event loop too, so the
     # hot paths that read them (observer tick, panel data, intrusion log) don't

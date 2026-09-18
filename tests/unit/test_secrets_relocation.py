@@ -50,6 +50,23 @@ async def test_relocate_entry_credentials_maps_legacy_key_to_selected_provider(
     assert await hs.async_get_provider_key(fake_hass, "openai") == "legacy-openai-key"
 
 
+async def test_relocate_plaintext_credentials_uses_entry_provider_for_legacy_key(
+    hs, fake_hass, tmp_path, load, monkeypatch,
+):
+    jc = load("jarvis_config")
+    p = tmp_path / "secrets.yaml"
+    monkeypatch.setattr(hs, "SECRETS_PATH", p)
+    monkeypatch.setattr(jc, "get_all", lambda: {"api_key": "legacy-openai-key"})
+    deleted = []
+    monkeypatch.setattr(jc, "delete", lambda k: deleted.append(k))
+    entry = type("Entry", (), {"data": {"llm_provider": "openai"}, "options": {}})()
+
+    assert await hs.relocate_plaintext_credentials(fake_hass, entry) == 1
+    assert hs.get_secret_sync("jarvis_openai_api_key", path=p) == "legacy-openai-key"
+    assert hs.get_secret_sync("jarvis_api_key", path=p) is None
+    assert deleted == ["api_key"]
+
+
 # ── line upsert ──────────────────────────────────────────────────────────────
 
 def test_upsert_appends_when_absent(hs):

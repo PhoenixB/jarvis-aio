@@ -2037,6 +2037,21 @@ class JarvisPanel extends HTMLElement {
     }).join('');
   }
 
+  _localLlmUrl(config) {
+    const cfg = config || {};
+    const provider = [
+      cfg.llm_provider,
+      cfg.classifier_provider,
+      cfg.reasoning_provider,
+      cfg.review_provider,
+      cfg.vision_provider,
+      cfg.camera_reasoning_provider,
+    ].find((p) => p === 'custom' || p === 'ollama');
+    if (provider === 'custom') return cfg.custom_base_url || cfg.llm_base_url || '';
+    if (provider === 'ollama') return cfg.ollama_base_url || cfg.llm_base_url || '';
+    return cfg.custom_base_url || cfg.ollama_base_url || cfg.llm_base_url || '';
+  }
+
   _esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -4504,7 +4519,7 @@ class JarvisPanel extends HTMLElement {
           <span class="llm-url-label">LOCAL LLM URL</span>
           <input class="llm-url-input" type="text"
             placeholder="http://gpu-server:11434/v1"
-            value="${this._esc(d.config?.custom_base_url || d.config?.ollama_base_url || d.config?.llm_base_url || '')}"
+            value="${this._esc(this._localLlmUrl(d.config))}"
             title="OpenAI-compatible endpoint for the ollama/custom providers — your GPU server. Leave empty for the default."/>
         </div>
         <div class="llm-url-row">
@@ -5482,11 +5497,18 @@ ${this._renderExcludedEntities(d)}
     if (llmUrl) {
       llmUrl.addEventListener("change", async () => {
         const v = llmUrl.value.trim();
-        await Promise.all([
-          this._saveConfig("llm_base_url", v),
-          this._saveConfig("custom_base_url", v),
-          this._saveConfig("ollama_base_url", v),
-        ]);
+        const provider = Array.from(this.shadowRoot.querySelectorAll(".prov-select"))
+          .map((el) => el?.value || "")
+          .find((value) => value === "custom" || value === "ollama");
+        if (!provider) {
+          this._toast("✗ select Custom or Ollama before saving a local endpoint", "err");
+          return;
+        }
+        if (provider === "custom") {
+          await this._saveConfig("custom_base_url", v);
+        } else {
+          await this._saveConfig("ollama_base_url", v);
+        }
         this._toast(v ? `✓ local LLM endpoint → ${v}` : "✓ local LLM endpoint cleared", "ok");
       });
     }

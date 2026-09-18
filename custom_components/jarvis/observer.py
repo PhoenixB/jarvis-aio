@@ -140,6 +140,27 @@ def _entity_id_looks_noisy(entity_id: str) -> bool:
     return False
 
 
+def _refresh_config_with_credentials(base_config: dict, updates: dict | None = None) -> dict:
+    """Merge live updates and refresh secrets-backed credentials."""
+    from . import ha_secrets
+    return ha_secrets.overlay_credentials({**(base_config or {}), **(updates or {})})
+
+
+def _review_tier_is_configured(config: dict) -> bool:
+    """Whether the optional review tier has an explicitly configured provider."""
+    from .const import PROVIDER_API_KEY_FIELDS, resolve_provider_base_url
+
+    provider = str(config.get("review_provider") or "").strip().lower()
+    if not provider:
+        return False
+    if provider == "ollama":
+        return True
+    if provider == "custom":
+        return bool(resolve_provider_base_url(config, "custom"))
+    key_field = PROVIDER_API_KEY_FIELDS.get(provider)
+    return bool(key_field and config.get(key_field))
+
+
 # ─── Module state ────────────────────────────────────────────────────────────
 
 class _ObserverState:
@@ -1034,11 +1055,18 @@ async def refresh_tier_providers(hass: HomeAssistant, updates: dict | None = Non
     lets configuration-flow changes take effect without interrupting the
     Observer or leaving one tier on a mixed configuration.
     """
-    config = {**_STATE.config, **(updates or {})}
+    config = await hass.async_add_executor_job(
+        _refresh_config_with_credentials, _STATE.config, updates,
+    )
+    review_task = (
+        hass.async_add_executor_job(create_tier_provider, config, "review")
+        if _review_tier_is_configured(config)
+        else asyncio.sleep(0, result=None)
+    )
     classifier_provider, reasoning_provider, review_provider = await asyncio.gather(
         hass.async_add_executor_job(create_tier_provider, config, "classifier"),
         hass.async_add_executor_job(create_tier_provider, config, "reasoning"),
-        hass.async_add_executor_job(create_tier_provider, config, "review"),
+        review_task,
     )
     _STATE.config = config
     _STATE.classifier_provider = classifier_provider

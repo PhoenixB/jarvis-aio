@@ -1896,7 +1896,7 @@ async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
         CONF_CUSTOM_BASE_URL: _runtime_opt(hass, entry, CONF_CUSTOM_BASE_URL, ""),
         "llm_base_url": _runtime_opt(hass, entry, "llm_base_url", ""),
     }
-    if resolve_provider_base_url(custom_config, "custom") or "custom" in selected_providers:
+    if resolve_provider_base_url(custom_config, "custom"):
         out.append("custom")
     for provider, field in PROVIDER_API_KEY_FIELDS.items():
         if provider in out:

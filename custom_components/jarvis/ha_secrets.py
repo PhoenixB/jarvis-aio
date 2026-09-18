@@ -313,7 +313,7 @@ def set_secret_sync(key: str, value, path: Path | None = None) -> bool:
         return False
 
 
-async def relocate_plaintext_credentials(hass) -> int:
+async def relocate_plaintext_credentials(hass, entry=None) -> int:
     """One-time, safe migration of plaintext LLM credentials out of the panel
     config (config.json) and into secrets.yaml — which is now the ONLY place
     they live; config.json must never hold one again (jarvis_config.set/
@@ -337,6 +337,12 @@ async def relocate_plaintext_credentials(hass) -> int:
     except Exception:
         return 0
     provider = cfg.get("llm_provider", "groq")
+    if entry is not None:
+        try:
+            effective = await hass.async_add_executor_job(jarvis_config.effective_config, entry)
+            provider = effective.get("llm_provider", provider)
+        except Exception:
+            pass
     for ck in CREDENTIAL_KEYS:
         val = cfg.get(ck)
         if not val:
