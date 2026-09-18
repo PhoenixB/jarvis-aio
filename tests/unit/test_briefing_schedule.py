@@ -74,12 +74,9 @@ def test_panel_has_manual_trigger():
 # ── v6.78.1 regression guards ────────────────────────────────────────────────
 
 def test_scheduler_uses_the_real_llm_client_name():
-    """The scheduled briefing must reference llm_client (which exists in
-    async_setup_entry), not groq_client (a parameter of _register_services).
-    Referencing the wrong name raised NameError on every scheduled run and was
-    swallowed by the handler's except."""
-    assert "async_briefing(hass, call, llm_client," in INIT
-    # and the wrong name must not appear inside the setup-scope scheduler
+    """The scheduled briefing must reference the live current client, not a
+    stale setup-time variable or service-local parameter."""
+    assert "async_briefing(hass, call, _current_client()," in INIT
     sched = INIT.split("Scheduled briefings", 1)[1].split("def _register_services", 1)[0]
     assert "groq_client" not in sched
 
