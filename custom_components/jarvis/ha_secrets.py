@@ -163,12 +163,8 @@ def get_legacy_provider_key(config: dict[str, Any], provider: str) -> str:
     return str(val) if val else ""
 
 
-def get_provider_key_sync(provider: str, path: Path | None = None) -> str:
-    """The API key for `provider`, read straight from secrets.yaml — the only
-    place credentials live now once migration finishes. While an older install
-    still has its selected provider key in config.json and secrets.yaml cannot
-    yet be updated, fall back to that plaintext copy so auth keeps working.
-    Blocking — call via the executor from async code."""
+def get_stored_provider_key_sync(provider: str, path: Path | None = None) -> str:
+    """The provider key stored in secrets.yaml only, with no config fallback."""
     field = provider_key_name(provider)
     if not field:
         return ""
@@ -176,6 +172,16 @@ def get_provider_key_sync(provider: str, path: Path | None = None) -> str:
     if not val and provider == "groq":
         # Legacy secret name from before provider-specific fields existed.
         val = get_secret_sync(secret_key_for("groq_api_key"), "", path)
+    return val or ""
+
+
+def get_provider_key_sync(provider: str, path: Path | None = None) -> str:
+    """The API key for `provider`, read straight from secrets.yaml — the only
+    place credentials live now once migration finishes. While an older install
+    still has its selected provider key in config.json and secrets.yaml cannot
+    yet be updated, fall back to that plaintext copy so auth keeps working.
+    Blocking — call via the executor from async code."""
+    val = get_stored_provider_key_sync(provider, path)
     if not val and path is None:
         try:
             from . import jarvis_config

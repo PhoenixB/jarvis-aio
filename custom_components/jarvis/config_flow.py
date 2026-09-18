@@ -94,7 +94,7 @@ def _find_config() -> dict | None:
     from . import ha_secrets
     from .const import resolve_provider_base_url
     provider = data.get("llm_provider", "groq")
-    has_secret = bool(ha_secrets.get_provider_key_sync(provider))
+    has_secret = bool(ha_secrets.get_stored_provider_key_sync(provider))
     # A legacy install may still have its credential in config.json (not yet
     # migrated to secrets.yaml). Treat that as usable too, so the entry gets
     # created and async_setup_entry()'s migration can relocate it, instead of
@@ -302,7 +302,8 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
         provider = import_data.get("llm_provider", "groq")
         base_url = resolve_provider_base_url(import_data, provider)
         local_ok = provider == "ollama" or (provider == "custom" and bool(base_url))
-        has_key = bool(await ha_secrets.async_get_provider_key(self.hass, provider))
+        has_key = bool(await self.hass.async_add_executor_job(
+            ha_secrets.get_stored_provider_key_sync, provider))
         # A legacy install may still have its credential in config.json only
         # (not yet relocated to secrets.yaml). Treat that as usable too, so
         # the entry gets created and async_setup_entry()'s migration can
@@ -319,6 +320,9 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
         if not has_key and legacy_key:
             has_key = await ha_secrets.async_set_provider_key(
                 self.hass, provider, legacy_key)
+            if not has_key and not local_ok:
+                _LOGGER.warning("JARVIS: config found but could not persist API key to secrets.yaml")
+                return self.async_abort(reason="import_failed")
 
         await self.async_set_unique_id(DOMAIN)
         self._abort_if_unique_id_configured()

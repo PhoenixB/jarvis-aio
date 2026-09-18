@@ -93,3 +93,10 @@ def test_get_provider_key_sync_falls_back_to_runtime_plaintext(hs, monkeypatch, 
                         lambda: {"llm_provider": "openai", "openai_api_key": "sk-openai"})
     monkeypatch.setattr(hs, "get_secret_sync", lambda *a, **k: "")
     assert hs.get_provider_key_sync("openai") == "sk-openai"
+
+
+def test_get_stored_provider_key_sync_reads_secrets_only(hs, monkeypatch):
+    monkeypatch.setattr(hs, "get_secret_sync",
+                        lambda key, default="", path=None: "sk-openai"
+                        if key == "jarvis_openai_api_key" else default)
+    assert hs.get_stored_provider_key_sync("openai") == "sk-openai"

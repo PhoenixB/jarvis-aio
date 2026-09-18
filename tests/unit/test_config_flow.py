@@ -378,14 +378,11 @@ async def test_import_migrates_selected_provider_legacy_key(config_flow, fake_ha
     ha_secrets = load("ha_secrets")
     calls = []
 
-    async def _fake_get(hass, provider):
-        return ""
-
     async def _fake_set(hass, provider, value):
         calls.append((provider, value))
         return True
 
-    monkeypatch.setattr(ha_secrets, "async_get_provider_key", _fake_get)
+    monkeypatch.setattr(ha_secrets, "get_stored_provider_key_sync", lambda provider: "")
     monkeypatch.setattr(ha_secrets, "async_set_provider_key", _fake_set)
 
     flow = config_flow.JarvisConfigFlow()
@@ -394,4 +391,17 @@ async def test_import_migrates_selected_provider_legacy_key(config_flow, fake_ha
     assert res["type"] == "create_entry"
     assert calls == [("gemini", "gk")]
 
+
+async def test_import_aborts_when_cloud_key_cannot_be_persisted(config_flow, fake_hass, monkeypatch, load):
+    ha_secrets = load("ha_secrets")
+
+    monkeypatch.setattr(ha_secrets, "get_stored_provider_key_sync", lambda provider: "")
+    monkeypatch.setattr(ha_secrets, "async_set_provider_key",
+                        lambda hass, provider, value: False)
+
+    flow = config_flow.JarvisConfigFlow()
+    flow.hass = fake_hass
+    res = await flow.async_step_import({"llm_provider": "openai", "api_key": "sk-openai"})
+    assert res["type"] == "abort"
+    assert res["reason"] == "import_failed"
 
