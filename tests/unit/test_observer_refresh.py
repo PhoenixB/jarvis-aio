@@ -80,3 +80,29 @@ async def test_refresh_tier_providers_skips_unconfigured_review(observer, fake_h
         _restore(observer, snap)
 
     assert calls == ["classifier", "reasoning"]
+
+
+async def test_refresh_tier_providers_updates_proactive_briefing_config(
+    observer, fake_hass, load, monkeypatch,
+):
+    proactive_briefing = load("proactive_briefing")
+    snap = _snapshot(observer)
+    old_proactive_config = dict(proactive_briefing._STATE.config)
+    observer._STATE.config = {
+        "classifier_provider": "groq",
+        "reasoning_provider": "groq",
+        "api_key": "fresh",
+    }
+
+    monkeypatch.setattr(
+        observer,
+        "create_tier_provider",
+        lambda config, tier: tier,
+    )
+
+    try:
+        await observer.refresh_tier_providers(fake_hass, {"reasoning_model": "updated"})
+        assert proactive_briefing._STATE.config["reasoning_model"] == "updated"
+    finally:
+        proactive_briefing._STATE.config = old_proactive_config
+        _restore(observer, snap)

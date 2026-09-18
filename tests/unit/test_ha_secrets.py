@@ -114,3 +114,11 @@ def test_get_provider_key_sync_uses_entry_fallback_when_relocation_failed(
     )
     monkeypatch.setattr(jc, "get_all", lambda: {})
     assert hs.get_provider_key_sync("openai") == "legacy-openai"
+
+
+def test_overlay_legacy_groq_secret_populates_canonical_api_key(hs, tmp_path):
+    p = tmp_path / "secrets.yaml"
+    p.write_text('jarvis_groq_api_key: "LEGACY_GROQ"\n')
+    out = hs.overlay_credentials({}, path=p)
+    assert out["api_key"] == "LEGACY_GROQ"
+    assert out["groq_api_key"] == "LEGACY_GROQ"

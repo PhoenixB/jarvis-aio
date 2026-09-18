@@ -50,6 +50,21 @@ async def test_relocate_entry_credentials_maps_legacy_key_to_selected_provider(
     assert await hs.async_get_provider_key(fake_hass, "openai") == "legacy-openai-key"
 
 
+async def test_relocate_entry_credentials_maps_legacy_groq_alias_to_canonical_secret(
+    hs, fake_hass, tmp_path, monkeypatch,
+):
+    p = tmp_path / "secrets.yaml"
+    monkeypatch.setattr(hs, "SECRETS_PATH", p)
+    entry = type("Entry", (), {
+        "data": {"groq_api_key": "legacy-groq-key", "llm_provider": "groq"},
+        "options": {},
+    })()
+    assert await hs.relocate_entry_credentials(fake_hass, entry) == 1
+    assert hs.get_secret_sync("jarvis_api_key", path=p) == "legacy-groq-key"
+    assert hs.get_secret_sync("jarvis_groq_api_key", path=p) is None
+    assert "groq_api_key" not in entry.data
+
+
 async def test_relocate_plaintext_credentials_uses_entry_provider_for_legacy_key(
     hs, fake_hass, tmp_path, load, monkeypatch,
 ):
@@ -65,6 +80,22 @@ async def test_relocate_plaintext_credentials_uses_entry_provider_for_legacy_key
     assert hs.get_secret_sync("jarvis_openai_api_key", path=p) == "legacy-openai-key"
     assert hs.get_secret_sync("jarvis_api_key", path=p) is None
     assert deleted == ["api_key"]
+
+
+async def test_relocate_plaintext_credentials_maps_legacy_groq_alias_to_canonical_secret(
+    hs, fake_hass, tmp_path, load, monkeypatch,
+):
+    jc = load("jarvis_config")
+    p = tmp_path / "secrets.yaml"
+    monkeypatch.setattr(hs, "SECRETS_PATH", p)
+    monkeypatch.setattr(jc, "get_all", lambda: {"groq_api_key": "legacy-groq-key"})
+    deleted = []
+    monkeypatch.setattr(jc, "delete", lambda k: deleted.append(k))
+
+    assert await hs.relocate_plaintext_credentials(fake_hass) == 1
+    assert hs.get_secret_sync("jarvis_api_key", path=p) == "legacy-groq-key"
+    assert hs.get_secret_sync("jarvis_groq_api_key", path=p) is None
+    assert deleted == ["groq_api_key"]
 
 
 # ── line upsert ──────────────────────────────────────────────────────────────

@@ -467,6 +467,9 @@ async def async_refresh_main_client(hass, entry) -> None:
         resolve_provider_base_url(config, provider),
     )
     runtime["client"] = client
+    client_ref = runtime.get("client_ref")
+    if isinstance(client_ref, dict):
+        client_ref["client"] = client
     sentinel = runtime.get("sentinel")
     if sentinel is not None:
         sentinel._groq = client

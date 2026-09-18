@@ -144,6 +144,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     sentinel = JarvisSentinel(hass, llm_client, honorific, entry=entry)
+    client_ref = {"client": llm_client}
+
+    def _current_client():
+        return client_ref["client"]
 
     # Register camera event listeners (nest_event, frigate_event)
     camera_unsubs = register_event_listeners(hass)
@@ -186,7 +190,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         spk = _get_speakers(hass, entry)
         hass.async_create_task(
             async_auto_analyze_on_event(
-                hass, llm_client, honorific, tts, spk, entity_id, reason, doorbell=doorbell
+                hass, _current_client(), honorific, tts, spk, entity_id, reason, doorbell=doorbell
             )
         )
 
@@ -215,7 +219,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
                     from .camera import async_visitor_observation
                     hass.async_create_task(
-                        async_visitor_observation(hass, llm_client, honorific, entity_id)
+                        async_visitor_observation(hass, _current_client(), honorific, entity_id)
                     )
                 return
             entity_id = _nest2cam(hass, device_id)
@@ -284,7 +288,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             tts = _get_tts(hass, entry, context="package")
             spk = _get_speakers(hass, entry)
             report = await package_monitor.periodic_check(
-                hass, llm_client, honorific, tts, spk, configured_camera=None
+                hass, _current_client(), honorific, tts, spk, configured_camera=None
             )
             _LOGGER.debug("JARVIS package check: %s", report)
         except Exception as exc:
@@ -413,7 +417,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 # morning looks back overnight; evening looks back over the day
                 "hours": 12 if kind == "morning" else 14,
             })
-            await async_briefing(hass, call, llm_client, honorific, tts, spk)
+            await async_briefing(hass, call, _current_client(), honorific, tts, spk)
             _LOGGER.info("JARVIS: delivered %s briefing", kind)
         except Exception as exc:
             # A scheduled briefing failing must be VISIBLE — this was
@@ -460,6 +464,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN][entry.entry_id] = {
         "client":             llm_client,
+        "client_ref":         client_ref,
         "sentinel":           sentinel,
         "camera_unsubs":      camera_unsubs,
         "recognition_unsubs": recognition_unsubs,
@@ -524,7 +529,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug("Config restore: %s", exc)
 
     # Register services — guard against double-registration on reload.
-    _register_services(hass, entry, llm_client, sentinel)
+    _register_services(hass, entry, _current_client, sentinel)
 
     # Reload services when options change
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -770,7 +775,7 @@ def _get_speakers(hass: HomeAssistant, entry: ConfigEntry) -> list[str]:
 def _register_services(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    groq_client,
+    client_getter,
     sentinel: JarvisSentinel,
 ) -> None:
     """Register all JARVIS services. Called once per entry setup."""
@@ -779,7 +784,7 @@ def _register_services(
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="camera")
         spk = _get_speakers(hass, entry)
-        await async_analyze_camera(hass, call, groq_client, honorific, tts, spk)
+        await async_analyze_camera(hass, call, client_getter(), honorific, tts, spk)
 
     hass.services.async_register(
         DOMAIN, "analyze_camera", _camera,
@@ -798,7 +803,7 @@ def _register_services(
         entity_id = call.data["entity_id"]
         reason    = call.data.get("reason", "Activity detected")
         await async_auto_analyze_on_event(
-            hass, groq_client, honorific, tts, spk, entity_id, reason
+            hass, client_getter(), honorific, tts, spk, entity_id, reason
         )
 
     hass.services.async_register(
@@ -836,7 +841,7 @@ def _register_services(
             )
             fc = _FakeCall({"entity_id": doorbell_entity, "prompt": prompt, "announce": False})
             return await async_analyze_camera(
-                hass, fc, groq_client, honorific, None, [],
+                hass, fc, client_getter(), honorific, None, [],
                 gate_announce=True, force_images=[image_bytes],
             )
 
@@ -868,7 +873,7 @@ def _register_services(
         from . import package_monitor
         cam = call.data.get("entity_id")
         report = await package_monitor.periodic_check(
-            hass, groq_client, honorific, tts, spk, configured_camera=cam
+            hass, client_getter(), honorific, tts, spk, configured_camera=cam
         )
         _LOGGER.info("JARVIS manual package check: %s", report)
 
@@ -884,7 +889,7 @@ def _register_services(
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="briefing")
         spk = _get_speakers(hass, entry)
-        await async_briefing(hass, call, groq_client, honorific, tts, spk)
+        await async_briefing(hass, call, client_getter(), honorific, tts, spk)
 
     async def _jarvis_backup(call):
         from .backup import create_backup
@@ -933,7 +938,7 @@ def _register_services(
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="chat")
         spk = _get_speakers(hass, entry)
-        await async_activate_by_intent(hass, call, groq_client, honorific, tts, spk)
+        await async_activate_by_intent(hass, call, client_getter(), honorific, tts, spk)
 
     hass.services.async_register(
         DOMAIN, "scene_by_intent", _scene_intent,
@@ -979,7 +984,7 @@ def _register_services(
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="summary")
         spk = _get_speakers(hass, entry)
-        await async_summarise(hass, call, groq_client, honorific, tts, spk)
+        await async_summarise(hass, call, client_getter(), honorific, tts, spk)
 
     hass.services.async_register(
         DOMAIN, "conversation_summary", _summary,

@@ -321,14 +321,29 @@ def init_from_entry(entry_data: dict, entry_options: dict) -> None:
         load()
 
     from . import ha_secrets
-    merged = {**entry_data, **entry_options}
+    from .const import CONF_API_KEY, PROVIDER_API_KEY_FIELDS
+
+    merged = dict(entry_data or {})
+    for key, value in dict(entry_options or {}).items():
+        if key not in ha_secrets.CREDENTIAL_KEYS or value not in (None, ""):
+            merged[key] = value
     provider = merged.get("llm_provider", "groq")
+    credential_providers = {
+        field: provider_name
+        for provider_name, field in PROVIDER_API_KEY_FIELDS.items()
+        if field
+    }
+    credential_providers["groq_api_key"] = "groq"
     updated = 0
     with _lock:
         for key, value in merged.items():
             if key in ha_secrets.CREDENTIAL_KEYS:
                 if value:
-                    _entry_credential_fallback[provider] = str(value)
+                    fallback_provider = (
+                        provider if key == CONF_API_KEY else credential_providers.get(key)
+                    )
+                    if fallback_provider:
+                        _entry_credential_fallback[fallback_provider] = str(value)
                 continue   # secrets.yaml only — never backfilled into config.json
             if key not in _cache_dict() and value:
                 _cache_dict()[key] = value

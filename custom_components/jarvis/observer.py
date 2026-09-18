@@ -1069,6 +1069,11 @@ async def refresh_tier_providers(hass: HomeAssistant, updates: dict | None = Non
         review_task,
     )
     _STATE.config = config
+    try:
+        from . import proactive_briefing
+        proactive_briefing._STATE.config = config
+    except Exception:
+        pass
     _STATE.classifier_provider = classifier_provider
     _STATE.reasoning_provider = reasoning_provider
     _STATE.review_provider = review_provider

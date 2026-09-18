@@ -130,6 +130,11 @@ def overlay_credentials(config: dict, path: Path | None = None) -> dict:
         return config
     for ck in CREDENTIAL_KEYS:
         sv = secrets.get(secret_key_for(ck))
+        if sv in (None, "") and ck == "api_key":
+            # Groq used a provider-specific alias before the shared canonical
+            # field existed; keep exposing that legacy secret under api_key so
+            # the overlaid runtime config remains readable by tier builders.
+            sv = secrets.get(secret_key_for("groq_api_key"))
         if sv not in (None, ""):
             config[ck] = sv
     return config
@@ -141,6 +146,15 @@ def provider_key_name(provider: str) -> Optional[str]:
     (ollama) or isn't recognised."""
     from .const import PROVIDER_API_KEY_FIELDS
     return PROVIDER_API_KEY_FIELDS.get(provider)
+
+
+def canonical_provider_key(config_key: str, provider: str) -> str:
+    """The credential field whose secret should store `config_key`."""
+    if config_key == "groq_api_key":
+        return "api_key"
+    if config_key == "api_key" and provider != "groq":
+        return provider_key_name(provider) or config_key
+    return config_key
 
 
 def get_legacy_provider_key(config: dict[str, Any], provider: str) -> str:
@@ -240,12 +254,11 @@ async def relocate_entry_credentials(hass, entry) -> int:
         value = values.get(key)
         if not value:
             continue
-        # Pre-multi-provider installs always used the shared `api_key` field
-        # regardless of which provider was selected — resolve it to that
-        # provider's real field so the migrated secret is actually readable.
-        field = key
-        if key == "api_key" and provider != "groq":
-            field = provider_key_name(provider) or key
+        # Pre-multi-provider installs always used the shared `api_key` field,
+        # and older Groq installs may still carry the `groq_api_key` alias.
+        # Persist both shapes under the canonical secret name that runtime
+        # config overlays and tier builders actually consume.
+        field = canonical_provider_key(key, provider)
         secret_name = secret_key_for(field)
         existing = await hass.async_add_executor_job(get_secret_sync, secret_name, "")
         if not existing:
@@ -347,12 +360,11 @@ async def relocate_plaintext_credentials(hass, entry=None) -> int:
         val = cfg.get(ck)
         if not val:
             continue
-        # Pre-multi-provider installs always used the shared `api_key` field
-        # regardless of which provider was selected — resolve it to that
-        # provider's real field so the migrated secret is actually readable.
-        field = ck
-        if ck == "api_key" and provider != "groq":
-            field = provider_key_name(provider) or ck
+        # Pre-multi-provider installs always used the shared `api_key` field,
+        # and older Groq installs may still carry the `groq_api_key` alias.
+        # Persist both shapes under the canonical secret name that runtime
+        # config overlays and tier builders actually consume.
+        field = canonical_provider_key(ck, provider)
         skey = secret_key_for(field)
         try:
             existing = await hass.async_add_executor_job(get_secret_sync, skey, None)

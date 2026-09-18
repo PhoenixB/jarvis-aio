@@ -16,6 +16,7 @@ def jcfg(load, tmp_path, monkeypatch):
     # reset module state between tests
     monkeypatch.setattr(j, "_cache", {})
     monkeypatch.setattr(j, "_loaded", False)
+    monkeypatch.setattr(j, "_entry_credential_fallback", {})
     monkeypatch.setattr(j, "last_load_error", None)
     return j
 
@@ -106,6 +107,24 @@ def test_init_from_entry_skips_credential_keys(jcfg):
     assert jcfg.get("api_key") is None
     assert jcfg.get("gemini_api_key") is None
     assert jcfg.get("honorific") == "sir"
+
+
+def test_init_from_entry_tracks_fallbacks_per_provider(jcfg):
+    jcfg.load()
+    jcfg.init_from_entry(
+        {
+            "llm_provider": "openai",
+            "api_key": "legacy-openai",
+            "gemini_api_key": "gemini-direct",
+        },
+        {
+            "openai_api_key": "",
+            "anthropic_api_key": "anthropic-direct",
+        },
+    )
+    assert jcfg.get_entry_credential_fallback("openai") == "legacy-openai"
+    assert jcfg.get_entry_credential_fallback("gemini") == "gemini-direct"
+    assert jcfg.get_entry_credential_fallback("anthropic") == "anthropic-direct"
 
 
 def test_missing_file_stays_clean(jcfg):
