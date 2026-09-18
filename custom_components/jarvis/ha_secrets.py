@@ -362,8 +362,8 @@ def set_secret_sync(key: str, value, path: Path | None = None) -> bool:
                 except Exception:
                     pass
         return True
-    except Exception as exc:
-        _LOGGER.warning("JARVIS: could not write requested secret: %s", exc)
+    except Exception:
+        _LOGGER.warning("JARVIS: could not write requested secret")
         return False
 
 
