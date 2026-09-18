@@ -320,7 +320,7 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
         if not has_key and legacy_key:
             has_key = await ha_secrets.async_set_provider_key(
                 self.hass, provider, legacy_key)
-            if not has_key and not local_ok:
+            if not has_key:
                 _LOGGER.warning("JARVIS: config found but could not persist API key to secrets.yaml")
                 return self.async_abort(reason="import_failed")
 

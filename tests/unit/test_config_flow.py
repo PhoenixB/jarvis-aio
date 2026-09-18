@@ -405,3 +405,22 @@ async def test_import_aborts_when_cloud_key_cannot_be_persisted(config_flow, fak
     assert res["type"] == "abort"
     assert res["reason"] == "import_failed"
 
+
+async def test_import_aborts_when_custom_legacy_key_cannot_be_persisted(
+    config_flow, fake_hass, monkeypatch, load,
+):
+    ha_secrets = load("ha_secrets")
+
+    monkeypatch.setattr(ha_secrets, "get_stored_provider_key_sync", lambda provider: "")
+    monkeypatch.setattr(ha_secrets, "async_set_provider_key",
+                        lambda hass, provider, value: False)
+
+    flow = config_flow.JarvisConfigFlow()
+    flow.hass = fake_hass
+    res = await flow.async_step_import({
+        "llm_provider": "custom",
+        "custom_base_url": "http://local/v1",
+        "api_key": "legacy-custom",
+    })
+    assert res["type"] == "abort"
+    assert res["reason"] == "import_failed"
