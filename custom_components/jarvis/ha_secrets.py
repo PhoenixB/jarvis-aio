@@ -180,7 +180,7 @@ def get_provider_key_sync(provider: str, path: Path | None = None) -> str:
     """The API key for `provider`, read straight from secrets.yaml — the only
     place credentials live now once migration finishes. While an older install
     still has its selected provider key in config.json and secrets.yaml cannot
-    yet be updated, fall back to that plaintext copy so auth keeps working.
+    yet be updated, fall back to that legacy in-memory value so auth keeps working.
     Blocking — call via the executor from async code."""
     val = get_stored_provider_key_sync(provider, path)
     if not val and path is None:
@@ -309,7 +309,7 @@ def set_secret_sync(key: str, value, path: Path | None = None) -> bool:
                     pass
         return True
     except Exception as exc:
-        _LOGGER.warning("JARVIS: could not write secret '%s': %s", key, exc)
+        _LOGGER.warning("JARVIS: could not write requested secret: %s", exc)
         return False
 
 
