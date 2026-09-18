@@ -195,18 +195,32 @@ async def promote_shared_secret_for_provider(hass, provider: str, path: Path | N
     """Copy a legacy shared secret to `provider`'s canonical secret name.
 
     Older installs may still have the selected provider credential stored only as
-    ``jarvis_api_key``. When that provider is no longer Groq, mirror the shared
-    value into the provider-specific secret before runtime client construction so
-    startup and tier refreshes resolve the canonical provider key consistently.
+    ``jarvis_api_key``. To avoid persisting the wrong provider key under a new
+    provider-specific name, only promote when the shared key appears to match the
+    target provider.
     """
     field = provider_key_name(provider)
     if not field or field == "api_key":
         return False
+
     shared_secret = secret_key_for("api_key")
     provider_secret = secret_key_for(field)
+
     shared = await hass.async_add_executor_job(get_secret_sync, shared_secret, "", path)
     if not shared:
         return False
+
+    key_prefixes = {
+        "openai": ("sk-", "rk-"),
+        "anthropic": ("sk-ant-",),
+        "gemini": ("AIza", "gk_"),
+    }
+    allowed = key_prefixes.get(provider)
+    if not allowed:
+        return False
+    if not any(str(shared).startswith(p) for p in allowed):
+        return False
+
     existing = await hass.async_add_executor_job(get_secret_sync, provider_secret, "", path)
     if existing:
         return False
