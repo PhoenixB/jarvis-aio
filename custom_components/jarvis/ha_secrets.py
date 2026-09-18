@@ -191,6 +191,32 @@ def get_stored_provider_key_sync(provider: str, path: Path | None = None) -> str
     return val or ""
 
 
+async def promote_shared_secret_for_provider(hass, provider: str, path: Path | None = None) -> bool:
+    """Copy a legacy shared secret to `provider`'s canonical secret name.
+
+    Older installs may still have the selected provider credential stored only as
+    ``jarvis_api_key``. When that provider is no longer Groq, mirror the shared
+    value into the provider-specific secret before runtime client construction so
+    startup and tier refreshes resolve the canonical provider key consistently.
+    """
+    field = provider_key_name(provider)
+    if not field or field == "api_key":
+        return False
+    shared_secret = secret_key_for("api_key")
+    provider_secret = secret_key_for(field)
+    shared = await hass.async_add_executor_job(get_secret_sync, shared_secret, "", path)
+    if not shared:
+        return False
+    existing = await hass.async_add_executor_job(get_secret_sync, provider_secret, "", path)
+    if existing:
+        return False
+    ok = await hass.async_add_executor_job(set_secret_sync, provider_secret, shared, path)
+    if not ok:
+        return False
+    verify = await hass.async_add_executor_job(get_secret_sync, provider_secret, "", path)
+    return verify == shared
+
+
 def get_provider_key_sync(provider: str, path: Path | None = None) -> str:
     """The API key for `provider`, read straight from secrets.yaml — the only
     place credentials live now once migration finishes. While an older install
@@ -249,11 +275,20 @@ async def relocate_entry_credentials(hass, entry) -> int:
         if key not in CREDENTIAL_KEYS or value not in (None, ""):
             values[key] = value
     provider = values.get("llm_provider", "groq")
+    try:
+        from . import jarvis_config
+        effective = await hass.async_add_executor_job(jarvis_config.effective_config, entry)
+        provider = effective.get("llm_provider", provider)
+    except Exception:
+        pass
     moved = 0
     migrated_keys = []
     ordered_keys = list(CREDENTIAL_KEYS)
     selected_key = provider_key_name(provider)
-    if selected_key and selected_key in ordered_keys and selected_key != "api_key":
+    if provider == "groq" and "groq_api_key" in ordered_keys:
+        ordered_keys.remove("groq_api_key")
+        ordered_keys.insert(0, "groq_api_key")
+    elif selected_key and selected_key in ordered_keys and selected_key != "api_key":
         ordered_keys.remove(selected_key)
         ordered_keys.insert(0, selected_key)
     for key in ordered_keys:

@@ -689,7 +689,10 @@ class JarvisOptionsFlow(OptionsFlow):
         provider_key = f"{tier}_provider"
         if user_input is not None:
             self._data[provider_key] = user_input[provider_key]
-            await self._persist({provider_key: user_input[provider_key]})
+            updates = {provider_key: user_input[provider_key]}
+            if tier == "review":
+                updates["review_enabled"] = True
+            await self._persist(updates)
             return await self._async_step_observer_model(tier)
         providers = [p for p in _PROVIDER_STEPS if await self._provider_configured(p)]
         if not providers:
@@ -716,7 +719,10 @@ class JarvisOptionsFlow(OptionsFlow):
         model_key = f"{tier}_model"
         if user_input is not None:
             self._data[model_key] = user_input[model_key]
-            await self._persist({model_key: user_input[model_key]})
+            updates = {model_key: user_input[model_key]}
+            if tier == "review":
+                updates["review_enabled"] = True
+            await self._persist(updates)
             return await self.async_step_observer()
         current = self._cur(model_key, {
             "classifier": DEFAULT_CLASSIFIER_MODEL,

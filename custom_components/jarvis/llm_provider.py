@@ -504,13 +504,15 @@ def create_tier_provider(
         DEFAULT_REVIEW_PROVIDER, DEFAULT_REVIEW_MODEL,
     )
 
+    main_provider = config.get("llm_provider", "groq")
+    main_model = config.get(CONF_MODEL, "openai/gpt-oss-120b")
     tier_defaults = {
         "classifier":   (DEFAULT_CLASSIFIER_PROVIDER, DEFAULT_CLASSIFIER_MODEL),
         "reasoning":    (DEFAULT_REASONING_PROVIDER, DEFAULT_REASONING_MODEL),
         "review":       (DEFAULT_REVIEW_PROVIDER, DEFAULT_REVIEW_MODEL),
         "conversation": (
-            config.get("llm_provider", "groq"),
-            config.get(CONF_MODEL, "openai/gpt-oss-120b"),
+            main_provider,
+            main_model,
         ),
     }
 
@@ -519,8 +521,12 @@ def create_tier_provider(
 
     default_provider, default_model = tier_defaults[tier]
 
-    provider_name = config.get(f"{tier}_provider", default_provider)
-    model         = config.get(f"{tier}_model", default_model)
+    provider_name = config.get(f"{tier}_provider")
+    model = config.get(f"{tier}_model")
+    if not provider_name:
+        provider_name = main_provider if tier in ("classifier", "reasoning") else default_provider
+    if not model:
+        model = main_model if tier in ("classifier", "reasoning") and provider_name == main_provider else default_model
 
     # Each provider's own field; ollama needs none. Falls back to the shared
     # api_key for an unrecognised provider name rather than raising.

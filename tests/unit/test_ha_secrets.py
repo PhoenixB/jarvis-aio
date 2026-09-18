@@ -125,6 +125,17 @@ def test_get_stored_provider_key_sync_reads_secrets_only(hs, monkeypatch):
     assert hs.get_stored_provider_key_sync("openai") == "sk-openai"
 
 
+async def test_promote_shared_secret_for_provider_copies_legacy_shared_secret(
+    hs, fake_hass, tmp_path, monkeypatch,
+):
+    p = tmp_path / "secrets.yaml"
+    p.write_text('jarvis_api_key: "sk-openai"\n')
+    monkeypatch.setattr(hs, "SECRETS_PATH", p)
+
+    assert await hs.promote_shared_secret_for_provider(fake_hass, "openai") is True
+    assert hs.get_secret_sync("jarvis_openai_api_key", path=p) == "sk-openai"
+
+
 def test_get_provider_key_sync_uses_entry_fallback_when_relocation_failed(
     hs, monkeypatch, load, tmp_path,
 ):

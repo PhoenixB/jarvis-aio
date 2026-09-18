@@ -2037,19 +2037,14 @@ class JarvisPanel extends HTMLElement {
     }).join('');
   }
 
-  _localLlmUrl(config) {
+  _customLlmUrl(config) {
     const cfg = config || {};
-    const provider = [
-      cfg.llm_provider,
-      cfg.classifier_provider,
-      cfg.reasoning_provider,
-      cfg.review_provider,
-      cfg.vision_provider,
-      cfg.camera_reasoning_provider,
-    ].find((p) => p === 'custom' || p === 'ollama');
-    if (provider === 'custom') return cfg.custom_base_url || cfg.llm_base_url || '';
-    if (provider === 'ollama') return cfg.ollama_base_url || cfg.llm_base_url || '';
-    return cfg.custom_base_url || cfg.ollama_base_url || cfg.llm_base_url || '';
+    return cfg.custom_base_url || cfg.llm_base_url || '';
+  }
+
+  _ollamaLlmUrl(config) {
+    const cfg = config || {};
+    return cfg.ollama_base_url || cfg.llm_base_url || '';
   }
 
   _esc(s) {
@@ -4516,11 +4511,18 @@ class JarvisPanel extends HTMLElement {
           <span style="font-size:9px;color:var(--text-faint);font-style:italic;max-width:520px;">Lower this (0 = counts only) if your LLM provider rejects requests for being too large \u2014 e.g. Groq\'s free tier caps tokens-per-minute. The assistant still discovers entities on demand, so nothing breaks.</span>
         </div>
         <div class="llm-url-row">
-          <span class="llm-url-label">LOCAL LLM URL</span>
-          <input class="llm-url-input" type="text"
+          <span class="llm-url-label">CUSTOM URL</span>
+          <input class="custom-llm-url-input llm-url-input" type="text"
             placeholder="http://gpu-server:11434/v1"
-            value="${this._esc(this._localLlmUrl(d.config))}"
-            title="OpenAI-compatible endpoint for the ollama/custom providers — your GPU server. Leave empty for the default."/>
+            value="${this._esc(this._customLlmUrl(d.config))}"
+            title="OpenAI-compatible endpoint for the custom provider."/>
+        </div>
+        <div class="llm-url-row">
+          <span class="llm-url-label">OLLAMA URL</span>
+          <input class="ollama-llm-url-input llm-url-input" type="text"
+            placeholder="http://gpu-server:11434/v1"
+            value="${this._esc(this._ollamaLlmUrl(d.config))}"
+            title="Leave empty to use Ollama's default Home Assistant endpoint."/>
         </div>
         <div class="llm-url-row">
           <span class="llm-url-label">OLLAMA num_ctx</span>
@@ -5493,23 +5495,20 @@ ${this._renderExcludedEntities(d)}
     });
 
     // Local LLM base URL (Ollama / GPU server endpoint)
-    const llmUrl = this.shadowRoot.querySelector(".llm-url-input");
-    if (llmUrl) {
-      llmUrl.addEventListener("change", async () => {
-        const v = llmUrl.value.trim();
-        const provider = Array.from(this.shadowRoot.querySelectorAll(".prov-select"))
-          .map((el) => el?.value || "")
-          .find((value) => value === "custom" || value === "ollama");
-        if (!provider) {
-          this._toast("✗ select Custom or Ollama before saving a local endpoint", "err");
-          return;
-        }
-        if (provider === "custom") {
-          await this._saveConfig("custom_base_url", v);
-        } else {
-          await this._saveConfig("ollama_base_url", v);
-        }
-        this._toast(v ? `✓ local LLM endpoint → ${v}` : "✓ local LLM endpoint cleared", "ok");
+    const customLlmUrl = this.shadowRoot.querySelector(".custom-llm-url-input");
+    if (customLlmUrl) {
+      customLlmUrl.addEventListener("change", async () => {
+        const v = customLlmUrl.value.trim();
+        await this._saveConfig("custom_base_url", v);
+        this._toast(v ? `✓ custom endpoint → ${v}` : "✓ custom endpoint cleared", "ok");
+      });
+    }
+    const ollamaLlmUrl = this.shadowRoot.querySelector(".ollama-llm-url-input");
+    if (ollamaLlmUrl) {
+      ollamaLlmUrl.addEventListener("change", async () => {
+        const v = ollamaLlmUrl.value.trim();
+        await this._saveConfig("ollama_base_url", v);
+        this._toast(v ? `✓ ollama endpoint → ${v}` : "✓ ollama endpoint cleared", "ok");
       });
     }
 

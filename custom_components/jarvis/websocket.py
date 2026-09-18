@@ -799,15 +799,15 @@ async def ws_get_panel_data(
                 "configured_providers": configured_providers,
                 "llm_provider":        str(_runtime_opt(hass, entry, "llm_provider", "groq") or "groq"),
                 "model":               str(_runtime_opt(hass, entry, "model", "") or ""),
-                "classifier_provider": str(_runtime_opt(hass, entry, "classifier_provider", "groq") or "groq"),
+                "classifier_provider": str(_runtime_opt(hass, entry, "classifier_provider", "") or ""),
                 "classifier_model":    str(_runtime_opt(hass, entry, "classifier_model", "") or ""),
-                "reasoning_provider":  str(_runtime_opt(hass, entry, "reasoning_provider", "groq") or "groq"),
+                "reasoning_provider":  str(_runtime_opt(hass, entry, "reasoning_provider", "") or ""),
                 "reasoning_model":     str(_runtime_opt(hass, entry, "reasoning_model", "") or ""),
-                "review_provider":     str(_runtime_opt(hass, entry, "review_provider", "groq") or "groq"),
+                "review_provider":     str(_runtime_opt(hass, entry, "review_provider", "") or ""),
                 "review_model":        str(_runtime_opt(hass, entry, "review_model", "") or ""),
-                "vision_provider":     str(_runtime_opt(hass, entry, "vision_provider", "groq") or "groq"),
+                "vision_provider":     str(_runtime_opt(hass, entry, "vision_provider", "") or ""),
                 "vision_model":        str(_runtime_opt(hass, entry, "vision_model", "") or ""),
-                "camera_reasoning_provider": str(_runtime_opt(hass, entry, "camera_reasoning_provider", "groq") or "groq"),
+                "camera_reasoning_provider": str(_runtime_opt(hass, entry, "camera_reasoning_provider", "") or ""),
                 "camera_reasoning_model":    str(_runtime_opt(hass, entry, "camera_reasoning_model", "") or ""),
                 # JARVIS Character & Research — these must be surfaced here or
                 # the panel's selects snap back to their defaults on every
@@ -1833,13 +1833,16 @@ async def ws_update_config(
             connection.send_error(msg["id"], "no_data", "JARVIS runtime data not found")
             return
         rc = data.setdefault("runtime_config", {})
-        rc[key] = value
+        updates = {key: value}
+        if key in {"review_provider", "review_model"} and value not in (None, ""):
+            updates["review_enabled"] = True
+        rc.update(updates)
         _LOGGER.info("JARVIS panel: set %s = %s", key, str(value)[:80])
 
         # Persist via centralized config module (survives restarts)
         try:
             from . import jarvis_config
-            await hass.async_add_executor_job(jarvis_config.set, key, value)
+            await hass.async_add_executor_job(jarvis_config.set_many, updates)
         except Exception as exc:
             _LOGGER.debug("Config persist note: %s", exc)
 
@@ -1855,6 +1858,32 @@ async def ws_update_config(
             else:
                 await observer_mod.stop()
                 data["observer_running"] = False
+        elif set(updates) & {
+            "llm_provider",
+            "model",
+            "llm_base_url",
+            "custom_base_url",
+            "ollama_base_url",
+            "classifier_provider",
+            "classifier_model",
+            "reasoning_provider",
+            "reasoning_model",
+            "review_provider",
+            "review_model",
+        }:
+            from . import observer as observer_mod
+            from .llm_provider import async_refresh_main_client
+
+            if set(updates) & {
+                "llm_provider",
+                "model",
+                "llm_base_url",
+                "custom_base_url",
+                "ollama_base_url",
+            }:
+                await async_refresh_main_client(hass, entry)
+            if observer_mod.is_running():
+                await observer_mod.refresh_tier_providers(hass, updates)
 
         connection.send_result(msg["id"], {"key": key, "value": value})
     except Exception as exc:
@@ -1899,10 +1928,12 @@ async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
         ollama_config[CONF_OLLAMA_BASE_URL] = "http://homeassistant.local:11434/v1"
     if resolve_provider_base_url(ollama_config, "ollama"):
         out.append("ollama")
+    custom_selected = "custom" in selected_providers
     custom_config = {
         CONF_CUSTOM_BASE_URL: _runtime_opt(hass, entry, CONF_CUSTOM_BASE_URL, ""),
-        "llm_base_url": _runtime_opt(hass, entry, "llm_base_url", ""),
     }
+    if custom_selected:
+        custom_config["llm_base_url"] = _runtime_opt(hass, entry, "llm_base_url", "")
     if resolve_provider_base_url(custom_config, "custom"):
         out.append("custom")
     for provider, field in PROVIDER_API_KEY_FIELDS.items():
@@ -1938,18 +1969,17 @@ async def _fetch_models(hass, provider: str, api_key: str, base_url: str) -> lis
         headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01"}
     elif provider == "gemini":
         url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
-    elif provider in ("ollama", "custom"):
+    elif provider == "ollama":
         base = (base_url or "").rstrip("/")
-        if not base and provider == "ollama":
+        if not base:
             base = "http://homeassistant.local:11434/v1"   # same default as create_provider
+        url = f"{base}/api/tags"
+    elif provider == "custom":
+        base = (base_url or "").rstrip("/")
         if not base:
             raise ValueError("base URL required for this provider")
-        # Ollama exposes /api/tags; an OpenAI-compatible base exposes /v1/models.
-        if base.endswith("/v1"):
-            url = f"{base}/models"
-            headers = {"Authorization": "Bearer " + api_key} if api_key else {}
-        else:
-            url = f"{base}/api/tags"
+        url = f"{base}/models"
+        headers = {"Authorization": "Bearer " + api_key} if api_key else {}
     else:
         raise ValueError(f"unknown provider: {provider}")
 

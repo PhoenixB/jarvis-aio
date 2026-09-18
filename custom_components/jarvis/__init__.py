@@ -114,6 +114,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # agent never diverge on which model to run. ───────────────────────────
     from . import jarvis_config as _jc
     from . import ha_secrets as _hs
+    await hass.async_add_executor_job(
+        _jc.init_from_entry,
+        dict(entry.data), dict(entry.options),
+    )
     await _hs.relocate_entry_credentials(hass, entry)
     await _hs.relocate_plaintext_credentials(hass, entry)
     _eff = await hass.async_add_executor_job(_jc.effective_config, entry)
@@ -125,6 +129,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     llm_model         = _eff.get("model", "openai/gpt-oss-120b")
     from .const import resolve_provider_base_url
     llm_base_url = resolve_provider_base_url(_eff, llm_provider_name)
+    await _hs.promote_shared_secret_for_provider(hass, llm_provider_name)
     # Credentials live only in secrets.yaml — each provider has its own entry
     # (PROVIDER_API_KEY_FIELDS) so switching the Main Agent's provider can't
     # reuse a stale/different provider's key.

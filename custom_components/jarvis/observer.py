@@ -150,9 +150,17 @@ def _review_tier_is_configured(config: dict) -> bool:
     """Whether the optional review tier has an explicitly configured provider."""
     from .const import PROVIDER_API_KEY_FIELDS, resolve_provider_base_url
 
+    explicit_opt_in = bool(config.get("review_enabled"))
     provider = str(config.get("review_provider") or "").strip().lower()
     if not provider:
         return False
+    if not explicit_opt_in:
+        # v5→v6 migrations used to seed Review with Gemini defaults even when the
+        # user had never opted in. Keep that migrated placeholder disabled until a
+        # user explicitly configures Review (or changes away from the old default).
+        review_model = str(config.get("review_model") or "").strip()
+        if provider == "gemini" and review_model in ("", "gemini-2.5-pro"):
+            return False
     if provider == "ollama":
         return True
     if provider == "custom":
@@ -677,7 +685,11 @@ async def _process_event(event: Event) -> None:
         # Tier 3 periodically audits the primary decision. It is veto-only so
         # Review can suppress an announcement but never create one.
         _STATE.review_count += 1
-        if _STATE.review_provider is not None and _STATE.review_count % 10 == 0:
+        if (
+            decision.get("speak")
+            and _STATE.review_provider is not None
+            and _STATE.review_count % 10 == 0
+        ):
             approved = await reasoning_loop.review_decision(
                 _STATE.hass,
                 _STATE.review_provider,

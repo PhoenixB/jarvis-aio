@@ -82,6 +82,53 @@ async def test_refresh_tier_providers_skips_unconfigured_review(observer, fake_h
     assert calls == ["classifier", "reasoning"]
 
 
+def test_review_tier_is_not_enabled_by_migrated_gemini_defaults(observer):
+    assert observer._review_tier_is_configured({
+        "review_provider": "gemini",
+        "review_model": "gemini-2.5-pro",
+        "gemini_api_key": "gk",
+        "review_enabled": False,
+    }) is False
+
+
+def test_review_tier_accepts_explicit_opt_in(observer):
+    assert observer._review_tier_is_configured({
+        "review_provider": "gemini",
+        "review_model": "gemini-2.5-pro",
+        "gemini_api_key": "gk",
+        "review_enabled": True,
+    }) is True
+
+
+def test_create_tier_provider_defaults_required_tiers_to_main_provider(
+    load, monkeypatch,
+):
+    llm_provider = load("llm_provider")
+    monkeypatch.setattr(
+        llm_provider,
+        "create_provider",
+        lambda provider_name, api_key, model, base_url=None: {
+            "provider": provider_name,
+            "api_key": api_key,
+            "model": model,
+            "base_url": base_url,
+        },
+    )
+
+    out = llm_provider.create_tier_provider({
+        "llm_provider": "openai",
+        "model": "gpt-4o-mini",
+        "openai_api_key": "sk-openai",
+    }, "classifier")
+
+    assert out == {
+        "provider": "openai",
+        "api_key": "sk-openai",
+        "model": "gpt-4o-mini",
+        "base_url": None,
+    }
+
+
 async def test_refresh_tier_providers_updates_proactive_briefing_config(
     observer, fake_hass, load, monkeypatch,
 ):

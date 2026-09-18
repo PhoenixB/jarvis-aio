@@ -17,6 +17,15 @@ def hs(load):
     return load("ha_secrets")
 
 
+@pytest.fixture(autouse=True)
+def _isolate_jarvis_config(load, tmp_path, monkeypatch):
+    jc = load("jarvis_config")
+    monkeypatch.setattr(jc, "CONFIG_PATH", tmp_path / "config.json")
+    monkeypatch.setattr(jc, "_cache", {})
+    monkeypatch.setattr(jc, "_loaded", True)
+    monkeypatch.setattr(jc, "_entry_credential_fallback", {})
+
+
 async def test_relocate_entry_credentials_writes_missing_secret(hs, fake_hass, tmp_path, monkeypatch):
     p = tmp_path / "secrets.yaml"
     monkeypatch.setattr(hs, "SECRETS_PATH", p)
@@ -50,6 +59,27 @@ async def test_relocate_entry_credentials_maps_legacy_key_to_selected_provider(
     assert await hs.async_get_provider_key(fake_hass, "openai") == "legacy-openai-key"
 
 
+async def test_relocate_entry_credentials_uses_effective_provider_from_panel_config(
+    hs, fake_hass, tmp_path, monkeypatch, load,
+):
+    jc = load("jarvis_config")
+    p = tmp_path / "secrets.yaml"
+    monkeypatch.setattr(hs, "SECRETS_PATH", p)
+    monkeypatch.setattr(
+        jc,
+        "effective_config",
+        lambda entry=None: {"llm_provider": "openai", "api_key": "legacy-openai-key"},
+    )
+    entry = type("Entry", (), {
+        "data": {"api_key": "legacy-openai-key"},
+        "options": {},
+    })()
+
+    assert await hs.relocate_entry_credentials(fake_hass, entry) == 1
+    assert hs.get_secret_sync("jarvis_openai_api_key", path=p) == "legacy-openai-key"
+    assert hs.get_secret_sync("jarvis_api_key", path=p) is None
+
+
 async def test_relocate_entry_credentials_prefers_provider_specific_over_shared_api_key(
     hs, fake_hass, tmp_path, monkeypatch,
 ):
@@ -67,6 +97,26 @@ async def test_relocate_entry_credentials_prefers_provider_specific_over_shared_
     assert hs.get_secret_sync("jarvis_openai_api_key", path=p) == "fresh-openai-key"
     assert "api_key" not in entry.data
     assert "openai_api_key" not in entry.data
+
+
+async def test_relocate_entry_credentials_prefers_groq_alias_over_shared_api_key(
+    hs, fake_hass, tmp_path, monkeypatch,
+):
+    p = tmp_path / "secrets.yaml"
+    monkeypatch.setattr(hs, "SECRETS_PATH", p)
+    entry = type("Entry", (), {
+        "data": {
+            "llm_provider": "groq",
+            "api_key": "stale-shared-key",
+            "groq_api_key": "fresh-groq-key",
+        },
+        "options": {},
+    })()
+
+    assert await hs.relocate_entry_credentials(fake_hass, entry) == 1
+    assert hs.get_secret_sync("jarvis_api_key", path=p) == "fresh-groq-key"
+    assert "api_key" not in entry.data
+    assert "groq_api_key" not in entry.data
 
 
 async def test_relocate_entry_credentials_maps_legacy_groq_alias_to_canonical_secret(
