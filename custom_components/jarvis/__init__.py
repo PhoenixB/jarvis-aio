@@ -50,6 +50,39 @@ from .proactive_audio import (
 
 _LOGGER = logging.getLogger(__name__)
 
+JARVIS_SERVICE_NAMES = (
+    "analyze_camera",
+    "analyze_on_event",
+    "train_doorbell_backlog",
+    "check_packages",
+    "backup",
+    "restore",
+    "briefing",
+    "scene_by_intent",
+    "routine",
+    "add_reminder",
+    "conversation_summary",
+    "sentinel_start",
+    "sentinel_stop",
+    "database_purge",
+    "database_stats",
+    "replay_policy",
+    "nap",
+    "shush",
+    "unshush",
+    "observer_start",
+    "lockdown",
+    "remember",
+    "forget",
+    "observer_stop",
+    "observer_status",
+    "create_automation",
+    "diagnose_doorbell",
+    "test_notify",
+    "test_tts",
+    "test_routing",
+)
+
 
 def _prewarm_persisted_state() -> None:
     """Read persisted state files once, off the event loop (blocking-I/O
@@ -679,14 +712,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as exc:
         _LOGGER.debug("Proactive-audio unload note: %s", exc)
 
-    # Remove services registered by this entry
-    for service in ("analyze_camera", "analyze_on_event",
-                    "conversation_summary", "briefing",
-                    "scene_by_intent", "routine", "add_reminder",
-                    "sentinel_start", "sentinel_stop",
-                    "database_purge", "database_stats",
-                    "nap", "shush", "unshush",
-                    "observer_start", "observer_stop", "observer_status"):
+    # Remove services registered by this entry using a single source of truth so
+    # the reload/unload lifecycle stays symmetric as new services are added.
+    for service in JARVIS_SERVICE_NAMES:
         hass.services.async_remove(DOMAIN, service)
 
     ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
@@ -776,14 +804,27 @@ def _register_services(
 ) -> None:
     """Register all JARVIS services. Called once per entry setup."""
 
+    def _register_service(name: str, handler, schema=None) -> None:
+        """Guard registration so reloads are idempotent and unload stays symmetric."""
+        if name not in JARVIS_SERVICE_NAMES:
+            raise ValueError(f"Unlisted JARVIS service: {name}")
+        if hass.services.has_service(DOMAIN, name):
+            _LOGGER.debug("JARVIS service already registered: %s.%s", DOMAIN, name)
+            return
+        if schema is None:
+            hass.services.async_register(DOMAIN, name, handler)
+        else:
+            hass.services.async_register(DOMAIN, name, handler, schema=schema)
+
     async def _camera(call: ServiceCall) -> None:
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="camera")
         spk = _get_speakers(hass, entry)
         await async_analyze_camera(hass, call, groq_client, honorific, tts, spk)
 
-    hass.services.async_register(
-        DOMAIN, "analyze_camera", _camera,
+    _register_service(
+        "analyze_camera",
+        _camera,
         schema=vol.Schema({
             vol.Required("entity_id"): cv.entity_id,
             vol.Optional("prompt"): cv.string,
@@ -802,8 +843,9 @@ def _register_services(
             hass, groq_client, honorific, tts, spk, entity_id, reason
         )
 
-    hass.services.async_register(
-        DOMAIN, "analyze_on_event", _analyze_on_event,
+    _register_service(
+        "analyze_on_event",
+        _analyze_on_event,
         schema=vol.Schema({
             vol.Required("entity_id"): cv.entity_id,
             vol.Optional("reason", default="Activity detected"): cv.string,
@@ -854,14 +896,14 @@ def _register_services(
         except Exception:
             pass
 
-    hass.services.async_register(
-        DOMAIN, "train_doorbell_backlog", _train_backlog,
+    _register_service(
+        "train_doorbell_backlog",
+        _train_backlog,
         schema=vol.Schema({
             vol.Optional("limit", default=40): vol.Coerce(int),
         }),
     )
 
-    # ── Package / mail — on-demand check ───────────────────────────────────────
     async def _check_packages(call: ServiceCall) -> None:
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="package")
@@ -873,14 +915,14 @@ def _register_services(
         )
         _LOGGER.info("JARVIS manual package check: %s", report)
 
-    hass.services.async_register(
-        DOMAIN, "check_packages", _check_packages,
+    _register_service(
+        "check_packages",
+        _check_packages,
         schema=vol.Schema({
             vol.Optional("entity_id"): cv.entity_id,
         }),
     )
 
-    # ── Briefing ──────────────────────────────────────────────────────────────
     async def _briefing(call: ServiceCall) -> None:
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="briefing")
@@ -898,7 +940,7 @@ def _register_services(
             "notification_id": "jarvis_backup",
         }, blocking=False)
 
-    hass.services.async_register(DOMAIN, "backup", _jarvis_backup)
+    _register_service("backup", _jarvis_backup)
 
     async def _jarvis_restore(call):
         from .backup import restore_backup
@@ -912,12 +954,15 @@ def _register_services(
             "notification_id": "jarvis_restore",
         }, blocking=False)
 
-    hass.services.async_register(
-        DOMAIN, "restore", _jarvis_restore,
-        schema=vol.Schema({vol.Optional("archive"): str}))
+    _register_service(
+        "restore",
+        _jarvis_restore,
+        schema=vol.Schema({vol.Optional("archive"): str}),
+    )
 
-    hass.services.async_register(
-        DOMAIN, "briefing", _briefing,
+    _register_service(
+        "briefing",
+        _briefing,
         schema=vol.Schema({
             vol.Optional("announce", default=True): cv.boolean,
             vol.Optional("include_weather", default=True): cv.boolean,
@@ -929,44 +974,44 @@ def _register_services(
         }),
     )
 
-    # ── Scene by intent ───────────────────────────────────────────────────────
     async def _scene_intent(call: ServiceCall) -> None:
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="chat")
         spk = _get_speakers(hass, entry)
         await async_activate_by_intent(hass, call, groq_client, honorific, tts, spk)
 
-    hass.services.async_register(
-        DOMAIN, "scene_by_intent", _scene_intent,
+    _register_service(
+        "scene_by_intent",
+        _scene_intent,
         schema=vol.Schema({
             vol.Required("intent"): cv.string,
             vol.Optional("announce", default=True): cv.boolean,
         }),
     )
 
-    # ── Routine ───────────────────────────────────────────────────────────────
     async def _routine(call: ServiceCall) -> None:
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="routine")
         spk = _get_speakers(hass, entry)
         await async_run_routine(hass, call, honorific, tts, spk)
 
-    hass.services.async_register(
-        DOMAIN, "routine", _routine,
+    _register_service(
+        "routine",
+        _routine,
         schema=vol.Schema({
             vol.Required("name"): cv.string,
         }),
     )
 
-    # ── Add reminder ──────────────────────────────────────────────────────────
     async def _add_reminder(call: ServiceCall) -> None:
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="reminder")
         spk = _get_speakers(hass, entry)
         await async_add_reminder_service(hass, call, honorific, tts, spk)
 
-    hass.services.async_register(
-        DOMAIN, "add_reminder", _add_reminder,
+    _register_service(
+        "add_reminder",
+        _add_reminder,
         schema=vol.Schema({
             vol.Required("label"): cv.string,
             vol.Required("trigger_at"): cv.string,
@@ -982,8 +1027,9 @@ def _register_services(
         spk = _get_speakers(hass, entry)
         await async_summarise(hass, call, groq_client, honorific, tts, spk)
 
-    hass.services.async_register(
-        DOMAIN, "conversation_summary", _summary,
+    _register_service(
+        "conversation_summary",
+        _summary,
         schema=vol.Schema({
             vol.Optional("hours", default=24): vol.All(int, vol.Range(min=1, max=168)),
             vol.Optional("device_id"): cv.string,
@@ -995,20 +1041,21 @@ def _register_services(
     async def _sentinel_start(call: ServiceCall) -> None:
         await sentinel.async_start()
 
-    hass.services.async_register(DOMAIN, "sentinel_start", _sentinel_start)
+    _register_service("sentinel_start", _sentinel_start)
 
     async def _sentinel_stop(call: ServiceCall) -> None:
         await sentinel.async_stop()
 
-    hass.services.async_register(DOMAIN, "sentinel_stop", _sentinel_stop)
+    _register_service("sentinel_stop", _sentinel_stop)
 
     async def _db_purge(call: ServiceCall) -> None:
         days = call.data.get("days", 30)
         deleted = await hass.async_add_executor_job(purge_old_records, days)
         _LOGGER.info("JARVIS DB purge: %d records deleted (>%d days)", deleted, days)
 
-    hass.services.async_register(
-        DOMAIN, "database_purge", _db_purge,
+    _register_service(
+        "database_purge",
+        _db_purge,
         schema=vol.Schema({
             vol.Optional("days", default=30): vol.All(int, vol.Range(min=1, max=365))
         }),
@@ -1018,7 +1065,7 @@ def _register_services(
         stats = await hass.async_add_executor_job(get_stats)
         hass.bus.async_fire("jarvis_db_stats", stats)
 
-    hass.services.async_register(DOMAIN, "database_stats", _db_stats)
+    _register_service("database_stats", _db_stats)
 
     async def _replay_policy(call: ServiceCall) -> None:
         """Replay recorded decisions of a kind against candidate confidence
@@ -1040,15 +1087,14 @@ def _register_services(
         else:
             _LOGGER.info("Replay[%s]: %s", kind, result.get("reason", "no data"))
 
-    hass.services.async_register(
-        DOMAIN, "replay_policy", _replay_policy,
+    _register_service(
+        "replay_policy",
+        _replay_policy,
         schema=vol.Schema({
             vol.Required("kind"): str,
             vol.Optional("min_samples"): vol.All(int, vol.Range(min=1, max=100000)),
         }),
     )
-
-    # ── v5.2 Observer Mode services ──────────────────────────────────────────
 
     async def _nap(call: ServiceCall) -> None:
         """Manual mute for N minutes (default 30). Suppresses non-critical
@@ -1058,8 +1104,9 @@ def _register_services(
         sd.set_nap(duration)
         hass.bus.async_fire("jarvis_observer_nap", {"duration_minutes": duration})
 
-    hass.services.async_register(
-        DOMAIN, "nap", _nap,
+    _register_service(
+        "nap",
+        _nap,
         schema=vol.Schema({
             vol.Optional("duration_minutes", default=30):
                 vol.All(int, vol.Range(min=1, max=480)),
@@ -1076,8 +1123,9 @@ def _register_services(
         hass.bus.async_fire("jarvis_observer_shushed", result)
         _LOGGER.info("JARVIS shushed: %s", result)
 
-    hass.services.async_register(
-        DOMAIN, "shush", _shush,
+    _register_service(
+        "shush",
+        _shush,
         schema=vol.Schema({
             vol.Optional("entity_id"): cv.string,
             vol.Optional("category"): cv.string,
@@ -1093,8 +1141,9 @@ def _register_services(
         result = output_gate.unshush(entity_id=entity_id, category=category)
         hass.bus.async_fire("jarvis_observer_unshushed", result)
 
-    hass.services.async_register(
-        DOMAIN, "unshush", _unshush,
+    _register_service(
+        "unshush",
+        _unshush,
         schema=vol.Schema({
             vol.Optional("entity_id"): cv.string,
             vol.Optional("category"): cv.string,
@@ -1104,14 +1153,12 @@ def _register_services(
     async def _observer_start(call: ServiceCall) -> None:
         """Start the observer manually (even if config has it disabled)."""
         from . import observer as observer_mod, jarvis_config as _jc
-        # Fresh effective config (data + options + panel, panel winning) so a
-        # manual start honors current panel settings, not stale entry data.
         observer_config = await hass.async_add_executor_job(_jc.effective_config, entry)
         await observer_mod.start(hass, observer_config)
         hass.data[DOMAIN][entry.entry_id]["observer_running"] = True
         _LOGGER.info("Observer started via service call")
 
-    hass.services.async_register(DOMAIN, "observer_start", _observer_start)
+    _register_service("observer_start", _observer_start)
 
     async def _lockdown(call: ServiceCall) -> None:
         """Engage or lift the formal lockdown state (alarm-armed posture)."""
@@ -1125,7 +1172,7 @@ def _register_services(
         else:
             _LOGGER.info("Lockdown %s via service call", "engaged" if on else "lifted")
 
-    hass.services.async_register(DOMAIN, "lockdown", _lockdown)
+    _register_service("lockdown", _lockdown)
 
     async def _remember(call: ServiceCall) -> None:
         """Teach JARVIS a durable fact or preference (knowledge store)."""
@@ -1151,7 +1198,7 @@ def _register_services(
         else:
             _LOGGER.warning("jarvis.remember: store failed for %s/%s", subject, key)
 
-    hass.services.async_register(DOMAIN, "remember", _remember)
+    _register_service("remember", _remember)
 
     async def _forget(call: ServiceCall) -> None:
         """Forget a stored fact by id, or by key (with optional subject)."""
@@ -1167,7 +1214,7 @@ def _register_services(
             lambda: knowledge.forget(fact_id=fid, subject=subject, key=key))
         _LOGGER.info("jarvis.forget: removed %d fact(s)", removed)
 
-    hass.services.async_register(DOMAIN, "forget", _forget)
+    _register_service("forget", _forget)
 
     async def _observer_stop(call: ServiceCall) -> None:
         """Stop the observer."""
@@ -1176,14 +1223,13 @@ def _register_services(
         hass.data[DOMAIN][entry.entry_id]["observer_running"] = False
         _LOGGER.info("Observer stopped via service call")
 
-    hass.services.async_register(DOMAIN, "observer_stop", _observer_stop)
+    _register_service("observer_stop", _observer_stop)
 
     async def _observer_status(call: ServiceCall) -> None:
         """Fire event with current observer state — mute list, recent activity."""
         from . import output_gate, observer as observer_mod, sleep_detection as sd
         status = output_gate.status()
         status["running"] = observer_mod.is_running()
-        # Check if user is currently being treated as sleeping
         bedroom_areas = entry.options.get(
             CONF_BEDROOM_AREAS,
             entry.data.get(CONF_BEDROOM_AREAS, [])
@@ -1206,9 +1252,8 @@ def _register_services(
         hass.bus.async_fire("jarvis_observer_status", status)
         _LOGGER.info("Observer status: %s", status)
 
-    hass.services.async_register(DOMAIN, "observer_status", _observer_status)
+    _register_service("observer_status", _observer_status)
 
-    # v5.6.0: Automation creation service
     async def _create_automation(call: ServiceCall) -> None:
         """Create an HA automation from service call data."""
         from .automation_creator import create_automation
@@ -1226,14 +1271,12 @@ def _register_services(
         else:
             _LOGGER.warning("Automation creation failed: %s", result.get("error"))
 
-    hass.services.async_register(DOMAIN, "create_automation", _create_automation)
+    _register_service("create_automation", _create_automation)
 
-    # v5.6.0: Doorbell pipeline diagnostic
     async def _diagnose_doorbell(call: ServiceCall) -> None:
         """Run doorbell pipeline diagnostics and fire event with results."""
         diag = {"checks": [], "verdict": "unknown"}
 
-        # Check 1: Does the doorbell automation exist?
         auto_state = hass.states.get("automation.doorbell_motion_analysis")
         if auto_state:
             diag["checks"].append({"check": "automation exists", "ok": True, "state": auto_state.state})
@@ -1243,7 +1286,6 @@ def _register_services(
             hass.bus.async_fire("jarvis_doorbell_diag", diag)
             return
 
-        # Check 2: Is it enabled?
         if auto_state.state != "on":
             diag["checks"].append({"check": "automation enabled", "ok": False, "state": auto_state.state})
             diag["verdict"] = "Automation exists but is disabled"
@@ -1251,16 +1293,13 @@ def _register_services(
             return
         diag["checks"].append({"check": "automation enabled", "ok": True})
 
-        # Check 3: Do we have camera entities?
         from .camera import active_cameras as _active_cams
         cameras = _active_cams(hass)
         diag["checks"].append({"check": "cameras found", "ok": len(cameras) > 0, "cameras": cameras[:10]})
 
-        # Check 4: Is jarvis.analyze_on_event registered?
         svc_exists = hass.services.has_service(DOMAIN, "analyze_on_event")
         diag["checks"].append({"check": "analyze_on_event service", "ok": svc_exists})
 
-        # Check 5: TTS working?
         tts_entities = [s.entity_id for s in hass.states.async_all("tts")]
         diag["checks"].append({"check": "TTS entities", "ok": len(tts_entities) > 0, "entities": tts_entities})
 
@@ -1273,13 +1312,11 @@ def _register_services(
         _LOGGER.info("Doorbell diagnostic: %s", diag)
         hass.bus.async_fire("jarvis_doorbell_diag", diag)
 
-    hass.services.async_register(DOMAIN, "diagnose_doorbell", _diagnose_doorbell)
+    _register_service("diagnose_doorbell", _diagnose_doorbell)
 
-    # v5.6.5: Test notification service
     async def _test_notify(call: ServiceCall) -> None:
         """Send a test notification to the configured phone."""
         notify_svc = None
-        # Check runtime_config first
         data = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
         rc = data.get("runtime_config", {}) if isinstance(data, dict) else {}
         notify_svc = rc.get("notify_service") or entry.options.get(
@@ -1302,9 +1339,8 @@ def _register_services(
         except Exception as exc:
             _LOGGER.warning("Test notification failed: %s", exc)
 
-    hass.services.async_register(DOMAIN, "test_notify", _test_notify)
+    _register_service("test_notify", _test_notify)
 
-    # v5.6.7: Test TTS with JARVIS voice
     async def _test_tts(call: ServiceCall) -> None:
         """Play a test tone using JARVIS Piper voice on the broadcast group."""
         from .tts_helper import resolve_tts_entity, async_announce
@@ -1332,9 +1368,8 @@ def _register_services(
                 "in Settings → Announcement Speakers (tts=%s, speakers=%s)",
                 tts_entity, speakers)
 
-    hass.services.async_register(DOMAIN, "test_tts", _test_tts)
+    _register_service("test_tts", _test_tts)
 
-    # v5.7.00: Routing diagnostic — dumps current routing state to log
     async def _test_routing(call: ServiceCall) -> None:
         """Dump routing diagnostics to the HA log."""
         from .audio_routing import (
@@ -1354,7 +1389,6 @@ def _register_services(
         home = anyone_home(hass)
         sat_areas = all_areas_with_satellite(hass)
 
-        # Read announcement_speakers from runtime_config
         ann_spk = None
         try:
             import json as _json
@@ -1368,7 +1402,6 @@ def _register_services(
         except Exception:
             pass
 
-        # Read satellite_pairings
         sat_pairs = None
         try:
             raw = rc.get("satellite_pairings")
@@ -1401,7 +1434,6 @@ def _register_services(
                 )
                 _LOGGER.warning("    reply_target(%s) → %s", sat, target)
 
-        # Test observer routing for each urgency
         for urg in ("low", "medium", "high", "critical"):
             targets, mode = observer_speak_target(
                 hass, urgency=urg,
@@ -1413,4 +1445,4 @@ def _register_services(
                             urg, targets, mode)
         _LOGGER.warning("=== END ROUTING DIAGNOSTIC ===")
 
-    hass.services.async_register(DOMAIN, "test_routing", _test_routing)
+    _register_service("test_routing", _test_routing)
