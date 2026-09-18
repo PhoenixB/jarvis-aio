@@ -596,6 +596,13 @@ class JarvisOptionsFlow(OptionsFlow):
             await self.hass.async_add_executor_job(jarvis_config.set_many, updates)
         except Exception as exc:
             _LOGGER.warning("JARVIS options: jarvis_config write failed: %s", exc)
+        if any(key.endswith(("_provider", "_model")) for key in updates):
+            try:
+                from . import observer
+                if observer.is_running():
+                    await observer.refresh_tier_providers(self.hass, updates)
+            except Exception as exc:
+                _LOGGER.warning("JARVIS options: observer provider refresh failed: %s", exc)
         self._data.update(updates)
 
     async def async_step_core(self, user_input: dict[str, Any] | None = None) -> dict:

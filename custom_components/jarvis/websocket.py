@@ -1869,12 +1869,17 @@ def _resolve_provider_key(hass: HomeAssistant, entry, provider: str) -> str:
 async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
     """Providers with a usable credential/endpoint today — drives the AI
     Models role dropdowns so you can't pick a provider with nothing to call.
-    ollama needs no key, but is only configured when its endpoint is set; a
-    Custom endpoint is likewise valid with no key at all.
+    Ollama needs no key and uses the same default endpoint as create_provider;
+    a Custom endpoint is likewise valid with no key at all.
     Credentials are read straight from secrets.yaml — the only place they live."""
     from . import ha_secrets
     out = []
-    if str(_runtime_opt(hass, entry, CONF_OLLAMA_BASE_URL, "") or "").strip():
+    from .const import resolve_provider_base_url
+    ollama_config = {
+        CONF_OLLAMA_BASE_URL: _runtime_opt(hass, entry, CONF_OLLAMA_BASE_URL, ""),
+        "llm_base_url": _runtime_opt(hass, entry, "llm_base_url", ""),
+    }
+    if resolve_provider_base_url(ollama_config, "ollama") or "http://homeassistant.local:11434/v1":
         out.append("ollama")
     if str(_runtime_opt(hass, entry, CONF_CUSTOM_BASE_URL, "") or "").strip():
         out.append("custom")

@@ -943,12 +943,7 @@ async def start(hass: HomeAssistant, config: dict) -> None:
     try:
         # Both providers instantiate HTTPS clients which load SSL certs from
         # disk — a blocking operation. Must run in executor, not event loop.
-        _STATE.classifier_provider = await hass.async_add_executor_job(
-            create_tier_provider, config, "classifier"
-        )
-        _STATE.reasoning_provider = await hass.async_add_executor_job(
-            create_tier_provider, config, "reasoning"
-        )
+        await refresh_tier_providers(hass, config)
     except Exception as exc:
         _LOGGER.error("Observer: failed to create tier providers: %s", exc)
         return
@@ -1010,6 +1005,25 @@ async def stop() -> None:
         pass
     _STATE.reset()
     _LOGGER.info("JARVIS Observer stopped")
+
+
+async def refresh_tier_providers(hass: HomeAssistant, updates: dict | None = None) -> bool:
+    """Rebuild both cached tier clients and replace them atomically.
+
+    Provider construction can perform blocking certificate/file I/O and either
+    tier may fail, so build both clients before changing the live state. This
+    lets configuration-flow changes take effect without interrupting the
+    Observer or leaving one tier on a mixed configuration.
+    """
+    config = {**_STATE.config, **(updates or {})}
+    classifier_provider, reasoning_provider = await asyncio.gather(
+        hass.async_add_executor_job(create_tier_provider, config, "classifier"),
+        hass.async_add_executor_job(create_tier_provider, config, "reasoning"),
+    )
+    _STATE.config = config
+    _STATE.classifier_provider = classifier_provider
+    _STATE.reasoning_provider = reasoning_provider
+    return True
 
 
 def is_running() -> bool:

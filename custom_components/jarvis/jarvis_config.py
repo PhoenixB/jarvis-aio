@@ -29,6 +29,7 @@ CONFIG_PATH = Path("/config/jarvis/config.json")
 _lock = threading.Lock()
 _cache: dict = {}
 _loaded = False
+_entry_credential_fallback: dict[str, str] = {}
 # v6.48.0 hardening: set when a hand-edited config.json couldn't be used
 # (invalid JSON, or valid JSON whose top level isn't an object). The bad
 # file is sidelined — never deleted — and defaults take over, so a typo in
@@ -137,6 +138,11 @@ def get_all() -> dict:
         load()
     with _lock:
         return dict(_cache_dict())
+
+
+def get_entry_credential_fallback(provider: str) -> str:
+    """Return a legacy entry credential kept in memory until migration succeeds."""
+    return _entry_credential_fallback.get(provider, "")
 
 
 def effective_config(entry=None) -> dict:
@@ -310,16 +316,19 @@ def init_from_entry(entry_data: dict, entry_options: dict) -> None:
     Called when the HA integration loads. Backfills any settings
     from the entry that aren't in config.json yet.
     """
-    global _loaded
+    global _loaded, _entry_credential_fallback
     if not _loaded:
         load()
 
     from . import ha_secrets
     merged = {**entry_data, **entry_options}
+    provider = merged.get("llm_provider", "groq")
     updated = 0
     with _lock:
         for key, value in merged.items():
             if key in ha_secrets.CREDENTIAL_KEYS:
+                if value:
+                    _entry_credential_fallback[provider] = str(value)
                 continue   # secrets.yaml only — never backfilled into config.json
             if key not in _cache_dict() and value:
                 _cache_dict()[key] = value

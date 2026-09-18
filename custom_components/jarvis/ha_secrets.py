@@ -2,14 +2,15 @@
 JARVIS — Home Assistant secrets.yaml resolver (v6.81.0).
 
 Credentials and passwords belong in Home Assistant's secrets.yaml, not in the
-plaintext panel config (/config/jarvis/config.json). This module is the single,
-read-only bridge to that file: it resolves a named secret from
-/config/secrets.yaml and does nothing else.
+plaintext panel config (/config/jarvis/config.json). This module is the single
+controlled bridge to that file: it resolves named secrets and performs narrow,
+atomic provider-key writes during setup or migration. It never exposes
+credentials to panel/runtime config storage and does not modify unrelated
+user-managed secrets.
 
-Read-only by design. This module NEVER writes to secrets.yaml — the user owns
-that file. It tolerates a missing or malformed file (returns the default and
-logs, never raises), so a secrets typo can't take integration setup down — the
-same "sideline, don't crash" discipline jarvis_config learned the hard way.
+Reads tolerate a missing or malformed file (returning the default and logging,
+never raising), so a secrets typo cannot take integration setup down — the same
+"sideline, don't crash" discipline jarvis_config learned the hard way.
 
 Blocking file I/O is offloaded to HA's executor via async_get_secret; a bare
 synchronous reader is exposed for the executor job and for tests.
@@ -186,6 +187,8 @@ def get_provider_key_sync(provider: str, path: Path | None = None) -> str:
         try:
             from . import jarvis_config
             val = get_legacy_provider_key(jarvis_config.get_all(), provider)
+            if not val:
+                val = jarvis_config.get_entry_credential_fallback(provider)
         except Exception:
             val = ""
     return val or ""

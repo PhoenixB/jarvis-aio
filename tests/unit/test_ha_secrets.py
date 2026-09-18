@@ -100,3 +100,17 @@ def test_get_stored_provider_key_sync_reads_secrets_only(hs, monkeypatch):
                         lambda key, default="", path=None: "sk-openai"
                         if key == "jarvis_openai_api_key" else default)
     assert hs.get_stored_provider_key_sync("openai") == "sk-openai"
+
+
+def test_get_provider_key_sync_uses_entry_fallback_when_relocation_failed(
+    hs, monkeypatch, load, tmp_path,
+):
+    jc = load("jarvis_config")
+    monkeypatch.setattr(jc, "CONFIG_PATH", tmp_path / "config.json")
+    monkeypatch.setattr(hs, "get_secret_sync", lambda *a, **k: "")
+    jc.init_from_entry(
+        {"llm_provider": "openai", "api_key": "legacy-openai"},
+        {},
+    )
+    monkeypatch.setattr(jc, "get_all", lambda: {})
+    assert hs.get_provider_key_sync("openai") == "legacy-openai"
