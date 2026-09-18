@@ -250,7 +250,12 @@ async def relocate_entry_credentials(hass, entry) -> int:
     provider = values.get("llm_provider", "groq")
     moved = 0
     migrated_keys = []
-    for key in CREDENTIAL_KEYS:
+    ordered_keys = list(CREDENTIAL_KEYS)
+    selected_key = provider_key_name(provider)
+    if selected_key and selected_key in ordered_keys and selected_key != "api_key":
+        ordered_keys.remove(selected_key)
+        ordered_keys.insert(0, selected_key)
+    for key in ordered_keys:
         value = values.get(key)
         if not value:
             continue

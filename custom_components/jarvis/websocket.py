@@ -1929,10 +1929,10 @@ async def _fetch_models(hass, provider: str, api_key: str, base_url: str) -> lis
 
     if provider == "groq":
         url = "https://api.groq.com/openai/v1/models"
-        headers = {"Authorization": f"Bearer {api_key}"}
+        headers = {"Authorization": "Bearer " + api_key}
     elif provider == "openai":
         url = "https://api.openai.com/v1/models"
-        headers = {"Authorization": f"Bearer {api_key}"}
+        headers = {"Authorization": "Bearer " + api_key}
     elif provider == "anthropic":
         url = "https://api.anthropic.com/v1/models"
         headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01"}
@@ -1947,7 +1947,7 @@ async def _fetch_models(hass, provider: str, api_key: str, base_url: str) -> lis
         # Ollama exposes /api/tags; an OpenAI-compatible base exposes /v1/models.
         if base.endswith("/v1"):
             url = f"{base}/models"
-            headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+            headers = {"Authorization": "Bearer " + api_key} if api_key else {}
         else:
             url = f"{base}/api/tags"
     else:

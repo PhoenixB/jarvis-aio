@@ -50,6 +50,25 @@ async def test_relocate_entry_credentials_maps_legacy_key_to_selected_provider(
     assert await hs.async_get_provider_key(fake_hass, "openai") == "legacy-openai-key"
 
 
+async def test_relocate_entry_credentials_prefers_provider_specific_over_shared_api_key(
+    hs, fake_hass, tmp_path, monkeypatch,
+):
+    p = tmp_path / "secrets.yaml"
+    monkeypatch.setattr(hs, "SECRETS_PATH", p)
+    entry = type("Entry", (), {
+        "data": {
+            "llm_provider": "openai",
+            "api_key": "stale-shared-key",
+            "openai_api_key": "fresh-openai-key",
+        },
+        "options": {},
+    })()
+    assert await hs.relocate_entry_credentials(fake_hass, entry) == 1
+    assert hs.get_secret_sync("jarvis_openai_api_key", path=p) == "fresh-openai-key"
+    assert "api_key" not in entry.data
+    assert "openai_api_key" not in entry.data
+
+
 async def test_relocate_entry_credentials_maps_legacy_groq_alias_to_canonical_secret(
     hs, fake_hass, tmp_path, monkeypatch,
 ):
