@@ -1890,7 +1890,9 @@ async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
             "review_provider", "vision_provider", "camera_reasoning_provider",
         )
     }
-    if resolve_provider_base_url(ollama_config, "ollama") or "ollama" in selected_providers:
+    if "ollama" in selected_providers and not resolve_provider_base_url(ollama_config, "ollama"):
+        ollama_config[CONF_OLLAMA_BASE_URL] = "http://homeassistant.local:11434/v1"
+    if resolve_provider_base_url(ollama_config, "ollama"):
         out.append("ollama")
     custom_config = {
         CONF_CUSTOM_BASE_URL: _runtime_opt(hass, entry, CONF_CUSTOM_BASE_URL, ""),

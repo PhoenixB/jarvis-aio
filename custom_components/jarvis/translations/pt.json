@@ -262,7 +262,9 @@
       "need_llm": "Introduza uma chave API na nuvem ou um URL de LLM local.",
       "cannot_connect": "Não foi possível contactar o LLM. Verifique se o URL/endpoint está correto e se o servidor (ex. Ollama) está em execução.",
       "invalid_auth": "A chave API foi rejeitada. Verifique a chave e tente novamente.",
-      "unknown": "Não foi possível validar a ligação ao LLM. Verifique as definições e tente novamente."
+      "unknown": "Não foi possível validar a ligação ao LLM. Verifique as definições e tente novamente.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     }
   },
   "issues": {

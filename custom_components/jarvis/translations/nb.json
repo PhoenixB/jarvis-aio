@@ -262,7 +262,9 @@
       "need_llm": "Skriv inn enten en sky-API-nøkkel eller en lokal LLM-URL.",
       "cannot_connect": "Kunne ikke nå LLM-en. Kontroller at URL/endepunkt er riktig og at serveren (f.eks. Ollama) kjører.",
       "invalid_auth": "API-nøkkelen ble avvist. Kontroller nøkkelen og prøv igjen.",
-      "unknown": "Kunne ikke validere LLM-tilkoblingen. Kontroller innstillingene og prøv igjen."
+      "unknown": "Kunne ikke validere LLM-tilkoblingen. Kontroller innstillingene og prøv igjen.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     }
   },
   "issues": {

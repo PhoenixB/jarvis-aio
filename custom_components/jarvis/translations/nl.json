@@ -262,7 +262,9 @@
       "need_llm": "Voer een cloud-API-sleutel of een lokale LLM-URL in.",
       "cannot_connect": "Kon de LLM niet bereiken. Controleer of de URL/het endpoint klopt en of de server (bijv. Ollama) draait.",
       "invalid_auth": "De API-sleutel werd geweigerd. Controleer de sleutel en probeer opnieuw.",
-      "unknown": "Kon de LLM-verbinding niet valideren. Controleer de instellingen en probeer opnieuw."
+      "unknown": "Kon de LLM-verbinding niet valideren. Controleer de instellingen en probeer opnieuw.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     }
   },
   "issues": {

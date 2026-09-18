@@ -262,7 +262,9 @@
       "need_llm": "Inserisci una chiave API cloud o un URL LLM locale.",
       "cannot_connect": "Impossibile raggiungere il LLM. Verifica che l'URL/endpoint sia corretto e che il server (es. Ollama) sia in esecuzione.",
       "invalid_auth": "La chiave API è stata rifiutata. Controlla la chiave e riprova.",
-      "unknown": "Impossibile convalidare la connessione al LLM. Controlla le impostazioni e riprova."
+      "unknown": "Impossibile convalidare la connessione al LLM. Controlla le impostazioni e riprova.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     }
   },
   "issues": {

@@ -262,7 +262,9 @@
       "need_llm": "请输入云端 API 密钥或本地 LLM URL。",
       "cannot_connect": "无法连接到 LLM。请检查 URL/端点是否正确，以及服务器（例如 Ollama）是否正在运行。",
       "invalid_auth": "API 密钥被拒绝。请检查密钥后重试。",
-      "unknown": "无法验证 LLM 连接。请检查设置后重试。"
+      "unknown": "无法验证 LLM 连接。请检查设置后重试。",
+      "no_models": "此提供商没有可用模型。请检查端点后重试。",
+      "no_providers": "尚未配置 LLM 提供商。请先在 LLM 部分添加 API 密钥或端点。"
     }
   },
   "issues": {

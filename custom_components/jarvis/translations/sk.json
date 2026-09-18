@@ -262,7 +262,9 @@
       "need_llm": "Zadajte buď cloudový API kľúč, alebo URL lokálneho LLM.",
       "cannot_connect": "LLM nie je dostupný. Skontrolujte, či je URL/endpoint správny a či server (napr. Ollama) beží.",
       "invalid_auth": "API kľúč bol odmietnutý. Skontrolujte kľúč a skúste to znova.",
-      "unknown": "Pripojenie k LLM sa nepodarilo overiť. Skontrolujte nastavenia a skúste to znova."
+      "unknown": "Pripojenie k LLM sa nepodarilo overiť. Skontrolujte nastavenia a skúste to znova.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     }
   },
   "issues": {

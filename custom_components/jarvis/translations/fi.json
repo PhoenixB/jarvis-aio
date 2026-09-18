@@ -262,7 +262,9 @@
       "need_llm": "Anna joko pilven API-avain tai paikallisen LLM:n URL.",
       "cannot_connect": "LLM:ää ei tavoitettu. Tarkista, että URL/päätepiste on oikein ja palvelin (esim. Ollama) on käynnissä.",
       "invalid_auth": "API-avain hylättiin. Tarkista avain ja yritä uudelleen.",
-      "unknown": "LLM-yhteyttä ei voitu vahvistaa. Tarkista asetukset ja yritä uudelleen."
+      "unknown": "LLM-yhteyttä ei voitu vahvistaa. Tarkista asetukset ja yritä uudelleen.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     }
   },
   "issues": {

@@ -262,7 +262,9 @@
       "need_llm": "Введите либо облачный API-ключ, либо URL локальной LLM.",
       "cannot_connect": "Не удалось связаться с LLM. Проверьте правильность URL/эндпоинта и работу сервера (например, Ollama).",
       "invalid_auth": "API-ключ отклонён. Проверьте ключ и повторите попытку.",
-      "unknown": "Не удалось проверить подключение к LLM. Проверьте настройки и повторите попытку."
+      "unknown": "Не удалось проверить подключение к LLM. Проверьте настройки и повторите попытку.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     }
   },
   "issues": {
