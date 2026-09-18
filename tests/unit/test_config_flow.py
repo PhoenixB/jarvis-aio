@@ -123,6 +123,14 @@ def test_find_config_requires_usable_llm(config_flow, tmp_path, monkeypatch):
     assert config_flow._find_config() is None
 
 
+def test_find_config_accepts_selected_provider_legacy_key(config_flow, tmp_path, monkeypatch):
+    runtime = tmp_path / "config.json"
+    runtime.write_text('{"llm_provider": "gemini", "gemini_api_key": "gk"}')
+    monkeypatch.setattr(config_flow, "_RUNTIME_CONFIG_PATH", str(runtime))
+    cfg = config_flow._find_config()
+    assert cfg and cfg["llm_provider"] == "gemini"
+
+
 def test_find_config_missing_file_is_none(config_flow, tmp_path, monkeypatch):
     monkeypatch.setattr(config_flow, "_RUNTIME_CONFIG_PATH",
                         str(tmp_path / "nope.json"))
@@ -211,6 +219,23 @@ async def test_finish_creates_entry_from_configured_provider(
     assert set_calls == [("groq", "gsk_x")]
 
 
+async def test_finish_stays_on_form_when_secret_write_fails(
+    config_flow, fake_hass, monkeypatch, tmp_path, load,
+):
+    ha_secrets = load("ha_secrets")
+
+    async def _fake_set(hass, provider, value):
+        return False
+    monkeypatch.setattr(ha_secrets, "async_set_provider_key", _fake_set)
+    flow = _user_flow(config_flow, fake_hass, monkeypatch, tmp_path)
+    flow._provider_keys["groq"] = {"api_key": "gsk_x"}
+    res = await flow.async_step_finish({
+        "llm_provider": "groq", "model": "m", "honorific": "sir",
+    })
+    assert res["type"] == "form"
+    assert res["errors"]["base"] == "unknown"
+
+
 def _flow(config_flow, fake_hass):
     flow = config_flow.JarvisOptionsFlow(_Entry())
     flow.hass = fake_hass
@@ -289,6 +314,26 @@ async def test_llm_groq_step_saves_and_loops_back_to_menu(
     assert res["type"] == "menu" and res["step_id"] == "llm"
 
 
+async def test_llm_groq_step_shows_error_when_secret_write_fails(
+    config_flow, fake_hass, monkeypatch, load,
+):
+    llm_provider = load("llm_provider")
+    ha_secrets = load("ha_secrets")
+
+    async def _ok(hass, provider, api_key, model, base_url):
+        return None
+
+    async def _fail_set(hass, provider, value):
+        return False
+
+    monkeypatch.setattr(llm_provider, "test_connection", _ok)
+    monkeypatch.setattr(ha_secrets, "async_set_provider_key", _fail_set)
+
+    flow = _flow(config_flow, fake_hass)
+    res = await flow.async_step_groq({"api_key": "gsk_new"})
+    assert res["type"] == "form" and res["errors"]["base"] == "unknown"
+
+
 async def test_llm_groq_step_shows_error_on_bad_key(config_flow, fake_hass, monkeypatch, load):
     llm_provider = load("llm_provider")
 
@@ -313,10 +358,40 @@ async def test_llm_main_saves_selected_provider(config_flow, fake_hass, monkeypa
     jarvis_config = load("jarvis_config")
     monkeypatch.setattr(jarvis_config, "set_many", lambda updates: None)
     flow = _flow(config_flow, fake_hass)
-    monkeypatch.setattr(flow, "_provider_configured", lambda p: p == "groq")
+    async def _configured(provider):
+        return provider == "groq"
+    monkeypatch.setattr(flow, "_provider_configured", _configured)
     res = await flow.async_step_llm_main({"llm_provider": "groq", "model": "m"})
     assert res["type"] == "create_entry"
     assert flow._data["llm_provider"] == "groq"
 
+
+async def test_import_allows_blank_ollama_url(config_flow, fake_hass):
+    flow = config_flow.JarvisConfigFlow()
+    flow.hass = fake_hass
+    res = await flow.async_step_import({"llm_provider": "ollama"})
+    assert res["type"] == "create_entry"
+    assert res["data"]["llm_provider"] == "ollama"
+
+
+async def test_import_migrates_selected_provider_legacy_key(config_flow, fake_hass, monkeypatch, load):
+    ha_secrets = load("ha_secrets")
+    calls = []
+
+    async def _fake_get(hass, provider):
+        return ""
+
+    async def _fake_set(hass, provider, value):
+        calls.append((provider, value))
+        return True
+
+    monkeypatch.setattr(ha_secrets, "async_get_provider_key", _fake_get)
+    monkeypatch.setattr(ha_secrets, "async_set_provider_key", _fake_set)
+
+    flow = config_flow.JarvisConfigFlow()
+    flow.hass = fake_hass
+    res = await flow.async_step_import({"llm_provider": "gemini", "gemini_api_key": "gk"})
+    assert res["type"] == "create_entry"
+    assert calls == [("gemini", "gk")]
 
 

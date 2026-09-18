@@ -1873,7 +1873,10 @@ async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
     from . import ha_secrets
     out = ["ollama"]
     for provider, field in PROVIDER_API_KEY_FIELDS.items():
-        if field and await ha_secrets.async_get_provider_key(hass, provider):
+        if provider == "custom":
+            if _runtime_opt(hass, entry, "custom_base_url", "") or _runtime_opt(hass, entry, "llm_base_url", ""):
+                out.append(provider)
+        elif field and await ha_secrets.async_get_provider_key(hass, provider):
             out.append(provider)
     return out
 
@@ -1963,13 +1966,11 @@ async def ws_list_models(hass: HomeAssistant, connection, msg) -> None:
     entry = _get_entry(hass)
     from . import ha_secrets
     api_key = await ha_secrets.async_get_provider_key(hass, provider)
-    provider_url_key = {
-        "custom": "custom_base_url",
-        "ollama": "ollama_base_url",
-    }.get(provider, "llm_base_url")
+    from .const import PROVIDER_BASE_URL_FIELDS
+    endpoint_field = PROVIDER_BASE_URL_FIELDS.get(provider)
     base_url = msg.get("base_url") or str(
-        _runtime_opt(hass, entry, provider_url_key, "")
-        or _runtime_opt(hass, entry, "llm_base_url", "")
+        ((_runtime_opt(hass, entry, endpoint_field, "")
+          or _runtime_opt(hass, entry, "llm_base_url", "")) if endpoint_field else "")
         or ""
     )
     try:

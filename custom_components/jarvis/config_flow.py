@@ -73,6 +73,12 @@ _RUNTIME_CONFIG_PATH = "/config/jarvis/config.json"
 _PROVIDER_STEPS = ("groq", "openai", "anthropic", "gemini", "custom", "ollama")
 
 
+def _legacy_provider_key(data: dict[str, Any], provider: str) -> str:
+    """The selected provider's legacy plaintext runtime credential, if any."""
+    from . import ha_secrets
+    return ha_secrets.get_legacy_provider_key(data, provider)
+
+
 def _find_config() -> dict | None:
     """Read an existing runtime config, if one with a usable LLM exists.
     Credentials live only in secrets.yaml (never config.json), so "usable"
@@ -93,7 +99,7 @@ def _find_config() -> dict | None:
     # migrated to secrets.yaml). Treat that as usable too, so the entry gets
     # created and async_setup_entry()'s migration can relocate it, instead of
     # sending an already-configured user through fresh setup.
-    has_legacy_secret = bool(data.get(CONF_API_KEY) or data.get("groq_api_key"))
+    has_legacy_secret = bool(_legacy_provider_key(data, provider))
     local_ok = provider == "ollama" or (
         provider == "custom" and bool(resolve_provider_base_url(data, "custom"))
     )
@@ -240,28 +246,32 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
                 endpoint_updates: dict[str, str] = {}
                 for prov, fields in self._provider_keys.items():
                     if fields.get("api_key"):
-                        await ha_secrets.async_set_provider_key(
+                        ok = await ha_secrets.async_set_provider_key(
                             self.hass, prov, fields["api_key"])
+                        if not ok:
+                            errors["base"] = "unknown"
+                            break
                     if fields.get(CONF_CUSTOM_BASE_URL) or fields.get(CONF_OLLAMA_BASE_URL):
                         endpoint = fields.get(CONF_CUSTOM_BASE_URL) or fields.get(CONF_OLLAMA_BASE_URL)
                         endpoint_key = CONF_CUSTOM_BASE_URL if prov == "custom" else CONF_OLLAMA_BASE_URL
                         endpoint_updates[endpoint_key] = endpoint
                         if prov == provider:
                             base_url = endpoint
-                if endpoint_updates:
-                    await self.hass.async_add_executor_job(jarvis_config.set_many, endpoint_updates)
+                if not errors:
+                    if endpoint_updates:
+                        await self.hass.async_add_executor_job(jarvis_config.set_many, endpoint_updates)
 
-                return self.async_create_entry(
-                    title="JARVIS",
-                    data={
-                        CONF_API_KEY: "",
-                        CONF_MODEL: model,
-                        CONF_HONORIFIC: honorific,
-                        "llm_provider": provider,
-                        "llm_base_url": base_url,
-                        "schema_version": 7,
-                    },
-                )
+                    return self.async_create_entry(
+                        title="JARVIS",
+                        data={
+                            CONF_API_KEY: "",
+                            CONF_MODEL: model,
+                            CONF_HONORIFIC: honorific,
+                            "llm_provider": provider,
+                            "llm_base_url": base_url,
+                            "schema_version": 7,
+                        },
+                    )
         schema = vol.Schema({
             vol.Required("llm_provider", default=providers[0]):
                 selector.SelectSelector(selector.SelectSelectorConfig(
@@ -291,19 +301,24 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
 
         provider = import_data.get("llm_provider", "groq")
         base_url = resolve_provider_base_url(import_data, provider)
-        local_ok = bool(base_url) and provider in ("ollama", "custom")
+        local_ok = provider == "ollama" or (provider == "custom" and bool(base_url))
         has_key = bool(await ha_secrets.async_get_provider_key(self.hass, provider))
         # A legacy install may still have its credential in config.json only
         # (not yet relocated to secrets.yaml). Treat that as usable too, so
         # the entry gets created and async_setup_entry()'s migration can
         # relocate it instead of aborting an already-configured install.
-        has_legacy_key = bool(import_data.get(CONF_API_KEY) or import_data.get("groq_api_key"))
+        legacy_key = _legacy_provider_key(import_data, provider)
+        has_legacy_key = bool(legacy_key)
 
         # An LLM is required, but a local model counts: proceed if we have either
         # a cloud key (in secrets.yaml) OR a local endpoint (ollama/custom + URL).
         if not has_key and not has_legacy_key and not local_ok:
             _LOGGER.warning("JARVIS: config found but no API key and no local LLM")
             return self.async_abort(reason="import_failed")
+
+        if not has_key and legacy_key:
+            has_key = await ha_secrets.async_set_provider_key(
+                self.hass, provider, legacy_key)
 
         await self.async_set_unique_id(DOMAIN)
         self._abort_if_unique_id_configured()
@@ -379,7 +394,7 @@ class JarvisOptionsFlow(OptionsFlow):
         configured provider drives the Main Agent. Each provider has its own
         dedicated credential field, so configuring one never overwrites
         another's key (e.g. Groq for the Main Agent, Gemini for Observer)."""
-        configured = [p for p in _PROVIDER_STEPS if self._provider_configured(p)]
+        configured = [p for p in _PROVIDER_STEPS if await self._provider_configured(p)]
         if configured:
             note = "Configured: " + ", ".join(configured) + ". Add/rotate another, or set the Main Agent."
         else:
@@ -390,7 +405,7 @@ class JarvisOptionsFlow(OptionsFlow):
             description_placeholders={"note": note},
         )
 
-    def _provider_configured(self, provider: str) -> bool:
+    async def _provider_configured(self, provider: str) -> bool:
         """Whether `provider` currently has a usable key/endpoint."""
         if provider == "ollama":
             return True   # no key needed; has a working default endpoint
@@ -401,14 +416,14 @@ class JarvisOptionsFlow(OptionsFlow):
             # OpenAI endpoint instead of the intended custom one.
             from .const import CONF_CUSTOM_BASE_URL
             return bool(self._cur(CONF_CUSTOM_BASE_URL, "")) or bool(self._cur("llm_base_url", ""))
-        return bool(self._cur_secret(provider))
+        return bool(await self._cur_secret(provider))
 
-    def _cur_secret(self, provider: str) -> str:
+    async def _cur_secret(self, provider: str) -> str:
         """Current API key for `provider`, read straight from secrets.yaml —
         the only place credentials live (never config.json/entry data)."""
         try:
             from . import ha_secrets
-            return ha_secrets.get_provider_key_sync(provider)
+            return await ha_secrets.async_get_provider_key(self.hass, provider)
         except Exception:
             return ""
 
@@ -427,10 +442,13 @@ class JarvisOptionsFlow(OptionsFlow):
                 if conn_err:
                     errors["base"] = conn_err
                 else:
-                    await ha_secrets.async_set_provider_key(self.hass, provider, api_key)
-                    return await self.async_step_llm()
+                    ok = await ha_secrets.async_set_provider_key(self.hass, provider, api_key)
+                    if not ok:
+                        errors["base"] = "unknown"
+                    else:
+                        return await self.async_step_llm()
         schema = vol.Schema({
-            vol.Required(CONF_API_KEY, description={"suggested_value": self._cur_secret(provider)}):
+            vol.Required(CONF_API_KEY, description={"suggested_value": await self._cur_secret(provider)}):
                 selector.TextSelector(selector.TextSelectorConfig(
                     type=selector.TextSelectorType.PASSWORD)),
         })
@@ -465,12 +483,16 @@ class JarvisOptionsFlow(OptionsFlow):
                     errors["base"] = conn_err
                 else:
                     if api_key:
-                        await ha_secrets.async_set_provider_key(self.hass, "custom", api_key)
-                    await self._persist({CONF_CUSTOM_BASE_URL: base_url})
-                    return await self.async_step_llm()
+                        ok = await ha_secrets.async_set_provider_key(self.hass, "custom", api_key)
+                        if not ok:
+                            errors["base"] = "unknown"
+                            api_key = ""
+                    if not errors:
+                        await self._persist({CONF_CUSTOM_BASE_URL: base_url})
+                        return await self.async_step_llm()
         schema = vol.Schema({
             vol.Required(CONF_CUSTOM_BASE_URL, description=self._sv(CONF_CUSTOM_BASE_URL, "")): str,
-            vol.Optional(CONF_API_KEY, description={"suggested_value": self._cur_secret("custom")}):
+            vol.Optional(CONF_API_KEY, description={"suggested_value": await self._cur_secret("custom")}):
                 selector.TextSelector(selector.TextSelectorConfig(
                     type=selector.TextSelectorType.PASSWORD)),
         })
@@ -496,7 +518,7 @@ class JarvisOptionsFlow(OptionsFlow):
 
     async def async_step_llm_main(self, user_input: dict[str, Any] | None = None) -> dict:
         """Pick which configured provider drives the Main Agent, and its model."""
-        configured = [p for p in _PROVIDER_STEPS if self._provider_configured(p)]
+        configured = [p for p in _PROVIDER_STEPS if await self._provider_configured(p)]
         if not configured:
             return await self.async_step_llm()
         errors: dict[str, str] = {}

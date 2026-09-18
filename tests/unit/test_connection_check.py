@@ -97,3 +97,10 @@ async def test_connection_still_fails_on_real_auth_error_with_model_in_message(l
                         lambda p, k, m, b=None: _RaiseClient(
                             Exception("401 Unauthorized: invalid api key for model access")))
     assert await lp.test_connection(fake_hass, "openai", "bad", "m", None) == "invalid_auth"
+
+
+async def test_connection_model_not_found_still_fails_for_ollama(lp, fake_hass, monkeypatch):
+    monkeypatch.setattr(lp, "create_provider",
+                        lambda p, k, m, b=None: _RaiseClient(
+                            Exception("404 model_not_found: no such model")))
+    assert await lp.test_connection(fake_hass, "ollama", "", "m", "http://x") == "unknown"

@@ -142,10 +142,33 @@ def provider_key_name(provider: str) -> Optional[str]:
     return PROVIDER_API_KEY_FIELDS.get(provider)
 
 
+def get_legacy_provider_key(config: dict[str, Any], provider: str) -> str:
+    """A provider's still-plaintext runtime credential, if one exists.
+
+    This is a bounded migration fallback only: secrets.yaml remains the source
+    of truth, but older installs may still have the selected provider's key in
+    config.json until relocation succeeds.
+    """
+    field = provider_key_name(provider)
+    if not field:
+        return ""
+    val = config.get(field)
+    if val:
+        return str(val)
+    if provider == "groq":
+        val = config.get("groq_api_key")
+        if val:
+            return str(val)
+    val = config.get("api_key") if config.get("llm_provider", "groq") == provider else ""
+    return str(val) if val else ""
+
+
 def get_provider_key_sync(provider: str, path: Path | None = None) -> str:
     """The API key for `provider`, read straight from secrets.yaml — the only
-    place credentials live now (never config.json/entry data). Blocking —
-    call via the executor from async code."""
+    place credentials live now once migration finishes. While an older install
+    still has its selected provider key in config.json and secrets.yaml cannot
+    yet be updated, fall back to that plaintext copy so auth keeps working.
+    Blocking — call via the executor from async code."""
     field = provider_key_name(provider)
     if not field:
         return ""
@@ -153,6 +176,12 @@ def get_provider_key_sync(provider: str, path: Path | None = None) -> str:
     if not val and provider == "groq":
         # Legacy secret name from before provider-specific fields existed.
         val = get_secret_sync(secret_key_for("groq_api_key"), "", path)
+    if not val and path is None:
+        try:
+            from . import jarvis_config
+            val = get_legacy_provider_key(jarvis_config.get_all(), provider)
+        except Exception:
+            val = ""
     return val or ""
 
 
@@ -321,4 +350,3 @@ async def relocate_plaintext_credentials(hass) -> int:
     if removed:
         _LOGGER.info("JARVIS: relocated %d plaintext credential(s) to secrets.yaml", removed)
     return removed
-

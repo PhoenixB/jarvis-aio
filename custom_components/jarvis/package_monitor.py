@@ -136,7 +136,7 @@ async def detect_on_camera(hass, groq_client, entity_id: str) -> Optional[dict]:
     img = cam._downscale_jpeg(img)
     provider = cam._cfg_opt(hass, "vision_provider", "groq") or "groq"
     model = cam._cfg_opt(hass, "vision_model", cam.VISION_MODEL) or cam.VISION_MODEL
-    client = cam._make_client(hass, provider, model, groq_client)
+    client = await cam.async_make_client(hass, provider, model, groq_client)
     b64 = base64.b64encode(img).decode()
     try:
         result = await hass.async_add_executor_job(

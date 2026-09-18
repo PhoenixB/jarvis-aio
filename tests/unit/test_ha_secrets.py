@@ -75,3 +75,21 @@ async def test_async_get_secret_no_hass(hs, tmp_path, monkeypatch):
 async def test_async_get_secret_missing_returns_default(hs, fake_hass, tmp_path, monkeypatch):
     monkeypatch.setattr(hs, "SECRETS_PATH", tmp_path / "none.yaml")
     assert await hs.async_get_secret(fake_hass, "k", default="DEF") == "DEF"
+
+
+def test_get_legacy_provider_key_prefers_selected_provider_field(hs):
+    cfg = {"llm_provider": "gemini", "gemini_api_key": "G", "api_key": "OLD"}
+    assert hs.get_legacy_provider_key(cfg, "gemini") == "G"
+
+
+def test_get_legacy_provider_key_does_not_reuse_shared_key_for_other_provider(hs):
+    cfg = {"llm_provider": "groq", "api_key": "GROQ"}
+    assert hs.get_legacy_provider_key(cfg, "openai") == ""
+
+
+def test_get_provider_key_sync_falls_back_to_runtime_plaintext(hs, monkeypatch, load):
+    jc = load("jarvis_config")
+    monkeypatch.setattr(jc, "get_all",
+                        lambda: {"llm_provider": "openai", "openai_api_key": "sk-openai"})
+    monkeypatch.setattr(hs, "get_secret_sync", lambda *a, **k: "")
+    assert hs.get_provider_key_sync("openai") == "sk-openai"

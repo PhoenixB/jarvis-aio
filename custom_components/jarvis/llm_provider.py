@@ -564,6 +564,6 @@ async def test_connection(hass, provider, api_key, model, base_url):
         await hass.async_add_executor_job(_ping)
         return None
     except Exception as exc:
-        if _is_model_not_found(exc):
+        if provider != "ollama" and _is_model_not_found(exc):
             return None
         return _classify_conn_error(exc)

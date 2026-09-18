@@ -76,6 +76,31 @@ def test_make_client_returns_fallback_without_key(cam):
     assert cam._make_client(hass, "groq", "m", fallback="FB") == "FB"
 
 
+def test_make_client_does_not_apply_shared_url_to_cloud_provider(cam, monkeypatch):
+    cam._PROVIDER_CACHE.clear()
+    seen = {}
+
+    def fake_create(provider, api_key, model, base_url):
+        seen["base_url"] = base_url
+        return types.SimpleNamespace(provider=provider, model=model)
+
+    import importlib
+    lp = importlib.import_module(cam.__name__.rsplit(".", 1)[0] + ".llm_provider")
+    monkeypatch.setattr(lp, "create_provider", fake_create)
+    hs = importlib.import_module(cam.__name__.rsplit(".", 1)[0] + ".ha_secrets")
+    monkeypatch.setattr(hs, "get_provider_key_sync", lambda provider: "k")
+
+    hass = _Hass()
+    _Entry.data = {"api_key": "k", "llm_base_url": "http://stale:11434/v1"}
+    cam._make_client(hass, "groq", "some/vision-model", fallback="FB")
+    assert seen["base_url"] is None
+
+
+async def test_async_make_client_uses_executor(cam, fake_hass, monkeypatch):
+    monkeypatch.setattr(cam, "_make_client", lambda *a, **k: "CLIENT")
+    assert await cam.async_make_client(fake_hass, "groq", "m", "FB") == "CLIENT"
+
+
 def test_vision_model_rejects_images_classifier(cam):
     groq_400 = ("Error code: 400 - {'error': {'message': "
                 "'messages[1].content must be a string', 'type': "
