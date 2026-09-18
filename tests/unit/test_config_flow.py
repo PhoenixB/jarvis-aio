@@ -206,6 +206,7 @@ async def test_finish_creates_entry_from_configured_provider(
 
     async def _fake_set(hass, provider, value):
         set_calls.append((provider, value))
+        return True
     monkeypatch.setattr(ha_secrets, "async_set_provider_key", _fake_set)
     flow = _user_flow(config_flow, fake_hass, monkeypatch, tmp_path)
     flow._provider_keys["groq"] = {"api_key": "gsk_x"}
@@ -265,6 +266,22 @@ async def test_step_observer_renders_fields(config_flow, fake_hass):
     assert len(res["data_schema"].schema) == 7
 
 
+async def test_step_observer_awaits_gemini_secret(config_flow, fake_hass, monkeypatch):
+    flow = _flow(config_flow, fake_hass)
+
+    async def _secret(provider):
+        assert provider == "gemini"
+        return "gkey"
+
+    monkeypatch.setattr(flow, "_cur_secret", _secret)
+    res = await flow.async_step_observer(None)
+    gemini_field = next(
+        marker for marker in res["data_schema"].schema
+        if getattr(marker, "schema", None) == "gemini_api_key"
+    )
+    assert gemini_field.description["suggested_value"] == "gkey"
+
+
 async def test_step_identity_renders_fields(config_flow, fake_hass):
     res = await _flow(config_flow, fake_hass).async_step_identity(None)
     assert len(res["data_schema"].schema) == 5   # enabled, voice-fp, source, auto-enroll, min-confidence
@@ -306,7 +323,11 @@ async def test_llm_groq_step_saves_and_loops_back_to_menu(
 
     async def _ok(hass, provider, api_key, model, base_url):
         return None
+    ha_secrets = load("ha_secrets")
+    async def _fake_set(hass, provider, value):
+        return True
     monkeypatch.setattr(llm_provider, "test_connection", _ok)
+    monkeypatch.setattr(ha_secrets, "async_set_provider_key", _fake_set)
     monkeypatch.setattr(jarvis_config, "set_many", lambda updates: None)
 
     flow = _flow(config_flow, fake_hass)
@@ -396,8 +417,9 @@ async def test_import_aborts_when_cloud_key_cannot_be_persisted(config_flow, fak
     ha_secrets = load("ha_secrets")
 
     monkeypatch.setattr(ha_secrets, "get_stored_provider_key_sync", lambda provider: "")
-    monkeypatch.setattr(ha_secrets, "async_set_provider_key",
-                        lambda hass, provider, value: False)
+    async def _fail_set(hass, provider, value):
+        return False
+    monkeypatch.setattr(ha_secrets, "async_set_provider_key", _fail_set)
 
     flow = config_flow.JarvisConfigFlow()
     flow.hass = fake_hass
@@ -412,8 +434,9 @@ async def test_import_aborts_when_custom_legacy_key_cannot_be_persisted(
     ha_secrets = load("ha_secrets")
 
     monkeypatch.setattr(ha_secrets, "get_stored_provider_key_sync", lambda provider: "")
-    monkeypatch.setattr(ha_secrets, "async_set_provider_key",
-                        lambda hass, provider, value: False)
+    async def _fail_set(hass, provider, value):
+        return False
+    monkeypatch.setattr(ha_secrets, "async_set_provider_key", _fail_set)
 
     flow = config_flow.JarvisConfigFlow()
     flow.hass = fake_hass

@@ -606,7 +606,7 @@ class JarvisOptionsFlow(OptionsFlow):
         schema = vol.Schema({
             vol.Optional(CONF_OBSERVER_ENABLED, description=self._sv(CONF_OBSERVER_ENABLED, False)):
                 selector.BooleanSelector(),
-            vol.Optional(CONF_GEMINI_API_KEY, description={"suggested_value": self._cur_secret("gemini")}):
+            vol.Optional(CONF_GEMINI_API_KEY, description={"suggested_value": await self._cur_secret("gemini")}):
                 selector.TextSelector(selector.TextSelectorConfig(
                     type=selector.TextSelectorType.PASSWORD)),
             vol.Optional(CONF_CLASSIFIER_MODEL,
