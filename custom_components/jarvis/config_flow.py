@@ -284,6 +284,13 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(
                 step_id="finish_model", data_schema=vol.Schema({}), errors={"base": "no_models"},
             )
+        model_schema = vol.Schema({
+            vol.Required(CONF_MODEL): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=models, mode=selector.SelectSelectorMode.DROPDOWN,
+                ),
+            ),
+        })
         if user_input is not None:
             await self.async_set_unique_id(DOMAIN)
             self._abort_if_unique_id_configured()
@@ -292,7 +299,14 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
             endpoint_updates: dict[str, str] = {}
             for prov, fields in self._provider_keys.items():
                 if fields.get("api_key"):
-                    await ha_secrets.async_set_provider_key(self.hass, prov, fields["api_key"])
+                    if not await ha_secrets.async_set_provider_key(
+                        self.hass, prov, fields["api_key"]
+                    ):
+                        return self.async_show_form(
+                            step_id="finish_model",
+                            data_schema=model_schema,
+                            errors={"base": "unknown"},
+                        )
                 endpoint_key = {"custom": CONF_CUSTOM_BASE_URL, "ollama": CONF_OLLAMA_BASE_URL}.get(prov)
                 if endpoint_key and fields.get(endpoint_key):
                     endpoint_updates[endpoint_key] = fields[endpoint_key]
@@ -311,13 +325,7 @@ class JarvisConfigFlow(ConfigFlow, domain=DOMAIN):
             )
         return self.async_show_form(
             step_id="finish_model",
-            data_schema=vol.Schema({
-                vol.Required(CONF_MODEL): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=models, mode=selector.SelectSelectorMode.DROPDOWN,
-                    ),
-                ),
-            }),
+            data_schema=model_schema,
         )
 
     async def async_step_import(

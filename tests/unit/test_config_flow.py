@@ -233,9 +233,11 @@ async def test_finish_stays_on_form_when_secret_write_fails(
     monkeypatch.setattr(ha_secrets, "async_set_provider_key", _fake_set)
     flow = _user_flow(config_flow, fake_hass, monkeypatch, tmp_path)
     flow._provider_keys["groq"] = {"api_key": "gsk_x"}
-    res = await flow.async_step_finish({
-        "llm_provider": "groq", "model": "m", "honorific": "sir",
+    monkeypatch.setattr(config_flow, "_fetch_available_models", _models)
+    await flow.async_step_finish({
+        "llm_provider": "groq", "honorific": "sir",
     })
+    res = await flow.async_step_finish_model({"model": "m"})
     assert res["type"] == "form"
     assert res["errors"]["base"] == "unknown"
 
