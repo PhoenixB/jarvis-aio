@@ -599,7 +599,7 @@ class JarvisAgent(conversation.ConversationEntity):
         Returns:
           {"type": "text", "text": "..."}               when no tool calls
           {"type": "tool_calls",
-           "raw_message": <provider-specific>,
+           "text": "...",
            "calls": [{"id", "name", "args"}, ...]}      when tools invoked
         """
         result = self._client.chat(
@@ -610,9 +610,9 @@ class JarvisAgent(conversation.ConversationEntity):
         )
         if result["tool_calls"]:
             return {
-                "type":        "tool_calls",
-                "raw_message": result["raw"],
-                "calls":       result["tool_calls"],
+                "type":  "tool_calls",
+                "text":  result["text"],
+                "calls": result["tool_calls"],
             }
         return {"type": "text", "text": result["text"]}
 
@@ -651,20 +651,19 @@ class JarvisAgent(conversation.ConversationEntity):
             if result["type"] == "text":
                 return result["text"]
 
-            raw_msg = result["raw_message"]
             working.append({
                 "role":       "assistant",
-                "content":    raw_msg.content or "",
+                "content":    result.get("text") or "",
                 "tool_calls": [
                     {
-                        "id":   tc.id,
+                        "id":   c["id"],
                         "type": "function",
                         "function": {
-                            "name":      tc.function.name,
-                            "arguments": tc.function.arguments,
+                            "name":      c["name"],
+                            "arguments": json.dumps(c["args"]),
                         },
                     }
-                    for tc in raw_msg.tool_calls
+                    for c in result["calls"]
                 ],
             })
 
