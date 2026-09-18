@@ -210,16 +210,17 @@ async def promote_shared_secret_for_provider(hass, provider: str, path: Path | N
     if not shared:
         return False
 
-    key_prefixes = {
-        "openai": ("sk-", "rk-"),
-        "anthropic": ("sk-ant-",),
-        "gemini": ("AIza", "gk_"),
-    }
-    allowed = key_prefixes.get(provider)
-    if not allowed:
-        return False
-    if not any(str(shared).startswith(p) for p in allowed):
-        return False
+    if provider != "custom":
+        key_prefixes = {
+            "openai": ("sk-", "rk-"),
+            "anthropic": ("sk-ant-",),
+            "gemini": ("AIza", "gk_"),
+        }
+        allowed = key_prefixes.get(provider)
+        if not allowed:
+            return False
+        if not any(str(shared).startswith(p) for p in allowed):
+            return False
 
     existing = await hass.async_add_executor_job(get_secret_sync, provider_secret, "", path)
     if existing:

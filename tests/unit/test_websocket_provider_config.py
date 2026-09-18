@@ -49,7 +49,6 @@ async def test_configured_providers_require_custom_endpoint(fake_hass, monkeypat
         "llm_base_url": "",
     }
     monkeypatch.setattr(websocket, "_runtime_opt", lambda hass, entry, key, default=None: values.get(key, default))
-    monkeypatch.setattr(websocket, "_runtime_opt", lambda hass, entry, key, default=None: values.get(key, default))
 
     async def _no_key(hass, provider):
         return ""

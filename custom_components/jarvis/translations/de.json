@@ -71,8 +71,8 @@
       "cannot_connect": "LLM nicht erreichbar. Prüfe, ob die URL/der Endpunkt korrekt ist und der Server (z. B. Ollama) läuft.",
       "invalid_auth": "Der API-Schlüssel wurde abgelehnt. Prüfe den Schlüssel und versuche es erneut.",
       "unknown": "LLM-Verbindung konnte nicht überprüft werden. Prüfe die Einstellungen und versuche es erneut.",
-      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
-      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
+      "no_models": "Für diesen Anbieter sind keine Modelle verfügbar. Prüfe den Anbieter-Endpunkt und versuche es erneut.",
+      "no_providers": "Keine LLM-Anbieter konfiguriert. Füge zuerst einen Anbieter-Schlüssel oder Endpunkt im Abschnitt LLM hinzu."
     },
     "abort": {
       "already_configured": "JARVIS ist bereits eingerichtet.",
