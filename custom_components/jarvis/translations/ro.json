@@ -48,7 +48,7 @@
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "ollama_base_url": "URL de bază (gol folosește http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "URL de bază"
         }
       },
       "finish": {
@@ -139,7 +139,7 @@
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "ollama_base_url": "URL de bază (gol folosește http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "URL de bază"
         }
       },
       "core": {

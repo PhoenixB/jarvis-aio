@@ -48,7 +48,7 @@
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "ollama_base_url": "Базова URL-адреса (порожньо використовує http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Базова URL-адреса"
         }
       },
       "finish": {
@@ -139,7 +139,7 @@
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "ollama_base_url": "Базова URL-адреса (порожньо використовує http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "Базова URL-адреса"
         }
       },
       "core": {

@@ -25,7 +25,7 @@ window.eval(fs.readFileSync(COMPONENT, "utf8"));
 const PANEL = {
   status: {
     observer: { state: "RUNNING", level: "live" }, sleep: { state: "ASLEEP", level: "warn" },
-    gemini: { state: "READY", level: "live" }, broadcast: { state: "ONLINE", level: "live" },
+    llm_providers: { state: "1 READY", level: "live" }, broadcast: { state: "ONLINE", level: "live" },
     notify: { state: "READY", level: "live" }, satellites: { state: "8 / 8", level: "live" },
   },
   meta: { bedrooms: 3, areas_monitored: 14, announcements_today: 0, est_cost: "—", uptime: "6m" },
