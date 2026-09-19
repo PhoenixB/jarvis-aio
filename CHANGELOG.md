@@ -1,3 +1,11 @@
+## [7.95.0] — multiple LLM providers, each with its own key, and a clearer configuration flow
+
+JARVIS now supports several LLM providers side by side — Groq, OpenAI, Anthropic, Gemini, a custom OpenAI-compatible endpoint, and Ollama — each with its own credential. Previously a single shared API-key field meant switching providers could send one provider's key to another; now every provider has its own key, stored only in Home Assistant's `secrets.yaml` (never written to the panel's `config.json`), and provider/model selection is independent of where the secret lives. Switching the Main Agent's provider no longer risks reusing a stale or wrong key.
+
+The configuration experience is cleaner too. Setup and the options menu are provider-aware with live model discovery, the dashboard only offers providers you've actually configured, and the LLM and Observer submenus have Back navigation to the main Configure menu. Observer tiers are now labelled by role and cost — Classifier (Tier 1, cheap), Reasoning (Tier 2, main), and Review (Tier 3, periodic) — and saving an Observer provider/model updates the running configuration immediately, so the dashboard reflects the change without a restart. Stale Gemini-only wording is gone, localized translations were updated to match the new flow, and the multi-provider setup is documented in the README.
+
+Thanks to @PhoenixB (Pascal Jerney) for this contribution (#32).
+
 ## [7.94.1] — modern OpenAI/Claude model compatibility and a web-research fix
 
 JARVIS now works with the current generation of OpenAI and Anthropic models. Agent turns that call tools — the ones that power most of what JARVIS actually does — previously failed against newer OpenAI reasoning models (o1/o3/gpt-5.x) and modern Claude tool-calling models because of provider-specific request differences. JARVIS now translates tool calls and results into each provider's format, retries automatically when a model rejects the older `temperature` or `max_tokens` parameters, and gives reasoning models room to think before giving up on an empty response. Simple prompts worked before; real tool-using turns now work too.
