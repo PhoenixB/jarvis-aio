@@ -35,5 +35,5 @@ echo "Updated:"
 echo "  manifest.json   -> $(python3 -c "import json;print(json.load(open('$COMP/manifest.json'))['version'])")"
 echo "  jarvis-panel.js -> $(grep -om1 "v${NEW}" "$PANEL" | head -1 || echo '(check manually)')"
 echo
-echo "Next: review CHANGELOG.md, then  git commit -am 'Release v$NEW' && git tag v$NEW && git push --tags"
-echo "(HACS publishes from the git tag/release — no add-on build.)"
+echo "Next: review CHANGELOG.md, then  git commit -am 'Release v$NEW' && git tag $NEW && git push --tags"
+echo "(Tags are X.Y.Z with no 'v' prefix. HACS publishes from the git tag/release — no add-on build.)"
