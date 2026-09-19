@@ -89,7 +89,8 @@
           "routing": "Roteamento — áreas de quarto, grupo de transmissão, serviço de notificação",
           "observer": "Observador — percepção proativa (usa provedores de LLM configurados)",
           "identity": "Identidade — reconhecimento por pessoa",
-          "email": "E-mail — caixa de entrada somente leitura (senha via secrets.yaml)"
+          "email": "E-mail — caixa de entrada somente leitura (senha via secrets.yaml)",
+          "agents": "Agents — specialised sub-agents (FRIDAY/HOMER), autonomy toggles"
         }
       },
       "llm": {
@@ -256,6 +257,16 @@
           "imap_ssl": "Usar SSL (recomendado)",
           "imap_secret_key": "Chave no secrets.yaml que contém a senha"
         }
+      },
+      "agents": {
+        "title": "JARVIS — Agents",
+        "description": "Specialised sub-agents and autonomy.\n\n⚠️ FRIDAY (background automator) can CONTROL DEVICES, run scenes, and run scripts on its own — unlike every other sub-agent, which is read-only. Leave it OFF unless you understand that it can actuate your home autonomously. To enable it you must also tick the acknowledgement box.",
+        "data": {
+          "friday_automator": "Enable FRIDAY automator (can control devices) — advanced",
+          "friday_confirm": "I understand FRIDAY can actuate my home; enable it",
+          "proximity_volume": "Dampen TTS volume when I'm close to the speaker (needs mmWave distance sensors)",
+          "host_telemetry": "Monitor host hardware (CPU temp, memory pressure, NVMe I/O)"
+        }
       }
     },
     "error": {
@@ -264,7 +275,8 @@
       "invalid_auth": "A chave de API foi rejeitada. Verifique a chave e tente novamente.",
       "unknown": "Não foi possível validar a conexão com o LLM. Verifique as configurações e tente novamente.",
       "no_models": "Não há modelos disponíveis para este provedor. Verifique o endpoint do provedor e tente novamente.",
-      "no_providers": "Não há provedores de LLM configurados. Adicione primeiro uma chave de provedor ou um endpoint na seção LLM."
+      "no_providers": "Não há provedores de LLM configurados. Adicione primeiro uma chave de provedor ou um endpoint na seção LLM.",
+      "friday_confirm_required": "You enabled FRIDAY but didn't tick the acknowledgement box. FRIDAY can actuate your home, so it stays off until you confirm."
     }
   },
   "issues": {

@@ -89,7 +89,8 @@
           "routing": "Routage — zones de chambre, groupe de diffusion, service de notification",
           "observer": "Observateur — conscience proactive (utilise les fournisseurs LLM configurés)",
           "identity": "Identité — reconnaissance par personne",
-          "email": "E-mail — boîte de réception en lecture seule (mot de passe via secrets.yaml)"
+          "email": "E-mail — boîte de réception en lecture seule (mot de passe via secrets.yaml)",
+          "agents": "Agents — specialised sub-agents (FRIDAY/HOMER), autonomy toggles"
         }
       },
       "llm": {
@@ -256,6 +257,16 @@
           "imap_ssl": "Utiliser SSL (recommandé)",
           "imap_secret_key": "Clé de secrets.yaml contenant le mot de passe"
         }
+      },
+      "agents": {
+        "title": "JARVIS — Agents",
+        "description": "Specialised sub-agents and autonomy.\n\n⚠️ FRIDAY (background automator) can CONTROL DEVICES, run scenes, and run scripts on its own — unlike every other sub-agent, which is read-only. Leave it OFF unless you understand that it can actuate your home autonomously. To enable it you must also tick the acknowledgement box.",
+        "data": {
+          "friday_automator": "Enable FRIDAY automator (can control devices) — advanced",
+          "friday_confirm": "I understand FRIDAY can actuate my home; enable it",
+          "proximity_volume": "Dampen TTS volume when I'm close to the speaker (needs mmWave distance sensors)",
+          "host_telemetry": "Monitor host hardware (CPU temp, memory pressure, NVMe I/O)"
+        }
       }
     },
     "error": {
@@ -264,7 +275,8 @@
       "invalid_auth": "La clé API a été refusée. Vérifiez la clé et réessayez.",
       "unknown": "Impossible de valider la connexion au LLM. Vérifiez les paramètres et réessayez.",
       "no_models": "Aucun modèle n'est disponible pour ce fournisseur. Vérifiez le point de terminaison du fournisseur, puis réessayez.",
-      "no_providers": "Aucun fournisseur LLM n'est configuré. Ajoutez d'abord une clé de fournisseur ou un point de terminaison dans la section LLM."
+      "no_providers": "Aucun fournisseur LLM n'est configuré. Ajoutez d'abord une clé de fournisseur ou un point de terminaison dans la section LLM.",
+      "friday_confirm_required": "You enabled FRIDAY but didn't tick the acknowledgement box. FRIDAY can actuate your home, so it stays off until you confirm."
     }
   },
   "issues": {

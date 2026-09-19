@@ -89,7 +89,8 @@
           "routing": "Yönlendirme — yatak odası alanları, yayın grubu, bildirim servisi",
           "observer": "Gözlemci — proaktif farkındalık (yapılandırılmış LLM sağlayıcılarını kullanır)",
           "identity": "Kimlik — kişi bazlı tanıma",
-          "email": "E-posta — salt okunur gelen kutusu (parola secrets.yaml üzerinden)"
+          "email": "E-posta — salt okunur gelen kutusu (parola secrets.yaml üzerinden)",
+          "agents": "Agents — specialised sub-agents (FRIDAY/HOMER), autonomy toggles"
         }
       },
       "llm": {
@@ -256,6 +257,16 @@
           "imap_ssl": "SSL kullan (önerilir)",
           "imap_secret_key": "Parolayı tutan secrets.yaml anahtarı"
         }
+      },
+      "agents": {
+        "title": "JARVIS — Agents",
+        "description": "Specialised sub-agents and autonomy.\n\n⚠️ FRIDAY (background automator) can CONTROL DEVICES, run scenes, and run scripts on its own — unlike every other sub-agent, which is read-only. Leave it OFF unless you understand that it can actuate your home autonomously. To enable it you must also tick the acknowledgement box.",
+        "data": {
+          "friday_automator": "Enable FRIDAY automator (can control devices) — advanced",
+          "friday_confirm": "I understand FRIDAY can actuate my home; enable it",
+          "proximity_volume": "Dampen TTS volume when I'm close to the speaker (needs mmWave distance sensors)",
+          "host_telemetry": "Monitor host hardware (CPU temp, memory pressure, NVMe I/O)"
+        }
       }
     },
     "error": {
@@ -264,7 +275,8 @@
       "invalid_auth": "API anahtarı reddedildi. Anahtarı kontrol edip tekrar deneyin.",
       "unknown": "LLM bağlantısı doğrulanamadı. Ayarları kontrol edip tekrar deneyin.",
       "no_models": "Bu sağlayıcı için kullanılabilir model yok. Sağlayıcı uç noktasını kontrol edip tekrar deneyin.",
-      "no_providers": "Henüz LLM sağlayıcısı yapılandırılmadı. Önce LLM bölümünden bir API anahtarı veya uç nokta ekleyin."
+      "no_providers": "Henüz LLM sağlayıcısı yapılandırılmadı. Önce LLM bölümünden bir API anahtarı veya uç nokta ekleyin.",
+      "friday_confirm_required": "You enabled FRIDAY but didn't tick the acknowledgement box. FRIDAY can actuate your home, so it stays off until you confirm."
     }
   },
   "issues": {

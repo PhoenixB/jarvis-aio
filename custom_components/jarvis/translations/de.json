@@ -89,7 +89,8 @@
           "routing": "Routing — Schlafzimmerbereiche, Broadcast-Gruppe, Benachrichtigungsdienst",
           "observer": "Beobachter — proaktive Wahrnehmung (verwendet konfigurierte LLM-Anbieter)",
           "identity": "Identität — Erkennung pro Person",
-          "email": "E-Mail — schreibgeschützter Posteingang (Passwort über secrets.yaml)"
+          "email": "E-Mail — schreibgeschützter Posteingang (Passwort über secrets.yaml)",
+          "agents": "Agents — specialised sub-agents (FRIDAY/HOMER), autonomy toggles"
         }
       },
       "llm": {
@@ -256,6 +257,16 @@
           "imap_ssl": "SSL verwenden (empfohlen)",
           "imap_secret_key": "secrets.yaml-Schlüssel mit dem Passwort"
         }
+      },
+      "agents": {
+        "title": "JARVIS — Agents",
+        "description": "Specialised sub-agents and autonomy.\n\n⚠️ FRIDAY (background automator) can CONTROL DEVICES, run scenes, and run scripts on its own — unlike every other sub-agent, which is read-only. Leave it OFF unless you understand that it can actuate your home autonomously. To enable it you must also tick the acknowledgement box.",
+        "data": {
+          "friday_automator": "Enable FRIDAY automator (can control devices) — advanced",
+          "friday_confirm": "I understand FRIDAY can actuate my home; enable it",
+          "proximity_volume": "Dampen TTS volume when I'm close to the speaker (needs mmWave distance sensors)",
+          "host_telemetry": "Monitor host hardware (CPU temp, memory pressure, NVMe I/O)"
+        }
       }
     },
     "error": {
@@ -264,7 +275,8 @@
       "invalid_auth": "Der API-Schlüssel wurde abgelehnt. Prüfe den Schlüssel und versuche es erneut.",
       "unknown": "LLM-Verbindung konnte nicht überprüft werden. Prüfe die Einstellungen und versuche es erneut.",
       "no_models": "Für diesen Anbieter sind keine Modelle verfügbar. Prüfe den Anbieter-Endpunkt und versuche es erneut.",
-      "no_providers": "Keine LLM-Anbieter konfiguriert. Füge zuerst einen Anbieter-Schlüssel oder Endpunkt im Abschnitt LLM hinzu."
+      "no_providers": "Keine LLM-Anbieter konfiguriert. Füge zuerst einen Anbieter-Schlüssel oder Endpunkt im Abschnitt LLM hinzu.",
+      "friday_confirm_required": "You enabled FRIDAY but didn't tick the acknowledgement box. FRIDAY can actuate your home, so it stays off until you confirm."
     }
   },
   "issues": {

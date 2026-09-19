@@ -157,9 +157,32 @@ class InfrastructureTriage:
             _LOGGER.exception("Triage binary check failed for %s", check.entity_id)
             return None
 
+    def _host_findings(self, host_metrics: dict | None) -> list[Finding]:
+        """Fold graded Zorin/Linux host telemetry (CPU temp, memory pressure,
+        NVMe I/O) into Findings so host stress is spoken through the same audit.
+
+        ``host_metrics`` is read off the event loop by the caller (the reads hit
+        /proc and /sys); grading is pure. Any malformed shape is ignored — host
+        telemetry must never be the thing that breaks the core infra audit."""
+        if not host_metrics:
+            return []
+        try:
+            from .. import host_telemetry
+            return [
+                Finding(int(g["severity"]), str(g["phrase"]), str(g.get("label", "")))
+                for g in host_telemetry.grade(host_metrics)
+            ]
+        except Exception:  # noqa: BLE001
+            _LOGGER.exception("Host telemetry grading failed")
+            return []
+
     # ── Aggregation ───────────────────────────────────────────────────────
-    def evaluate(self) -> dict:
+    def evaluate(self, host_metrics: dict | None = None) -> dict:
         """Run every probe and synthesise the verdict.
+
+        ``host_metrics`` (optional) is a dict from ``host_telemetry.read_metrics``,
+        already read off the event loop by the caller; when supplied, host stress
+        findings are graded and folded in alongside the entity probes.
 
         Returns a dict with:
             alert_required (bool) – any finding at warning severity or above
@@ -173,6 +196,7 @@ class InfrastructureTriage:
         for bcheck in self.BINARY_CHECKS:
             if (f := self._eval_binary(bcheck)) is not None:
                 findings.append(f)
+        findings.extend(self._host_findings(host_metrics))
 
         if not findings:
             return {"alert_required": False, "message": "", "critical": False, "tags": []}

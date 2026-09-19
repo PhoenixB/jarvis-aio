@@ -89,7 +89,8 @@
           "routing": "Routering — slaapkamergebieden, omroepgroep, meldingsdienst",
           "observer": "Waarnemer — proactief bewustzijn (gebruikt geconfigureerde LLM-providers)",
           "identity": "Identiteit — herkenning per persoon",
-          "email": "E-mail — alleen-lezen inbox (wachtwoord via secrets.yaml)"
+          "email": "E-mail — alleen-lezen inbox (wachtwoord via secrets.yaml)",
+          "agents": "Agents — specialised sub-agents (FRIDAY/HOMER), autonomy toggles"
         }
       },
       "llm": {
@@ -256,6 +257,16 @@
           "imap_ssl": "SSL gebruiken (aanbevolen)",
           "imap_secret_key": "secrets.yaml-sleutel met het wachtwoord"
         }
+      },
+      "agents": {
+        "title": "JARVIS — Agents",
+        "description": "Specialised sub-agents and autonomy.\n\n⚠️ FRIDAY (background automator) can CONTROL DEVICES, run scenes, and run scripts on its own — unlike every other sub-agent, which is read-only. Leave it OFF unless you understand that it can actuate your home autonomously. To enable it you must also tick the acknowledgement box.",
+        "data": {
+          "friday_automator": "Enable FRIDAY automator (can control devices) — advanced",
+          "friday_confirm": "I understand FRIDAY can actuate my home; enable it",
+          "proximity_volume": "Dampen TTS volume when I'm close to the speaker (needs mmWave distance sensors)",
+          "host_telemetry": "Monitor host hardware (CPU temp, memory pressure, NVMe I/O)"
+        }
       }
     },
     "error": {
@@ -264,7 +275,8 @@
       "invalid_auth": "De API-sleutel werd geweigerd. Controleer de sleutel en probeer opnieuw.",
       "unknown": "Kon de LLM-verbinding niet valideren. Controleer de instellingen en probeer opnieuw.",
       "no_models": "Er zijn geen modellen beschikbaar voor deze provider. Controleer het endpoint van de provider en probeer het opnieuw.",
-      "no_providers": "Er zijn geen LLM-providers geconfigureerd. Voeg eerst een providersleutel of endpoint toe in de LLM-sectie."
+      "no_providers": "Er zijn geen LLM-providers geconfigureerd. Voeg eerst een providersleutel of endpoint toe in de LLM-sectie.",
+      "friday_confirm_required": "You enabled FRIDAY but didn't tick the acknowledgement box. FRIDAY can actuate your home, so it stays off until you confirm."
     }
   },
   "issues": {

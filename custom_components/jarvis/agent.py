@@ -695,11 +695,15 @@ JARVIS_TOOLS = [
             "description": (
                 "Spin up a focused sub-agent for a self-contained slice of a "
                 "complex request — it works the objective with a narrow set of "
-                "read-only tools and reports back. Use for multi-step sub-goals "
-                "that benefit from a clean, focused context (e.g. gathering the "
-                "week's schedule and weather together). Sub-agents are read-only: "
-                "they cannot control devices or change settings — do that yourself "
-                "with the result. Do not delegate trivial single-tool lookups."
+                "tools and reports back. Use for multi-step sub-goals that benefit "
+                "from a clean, focused context (e.g. gathering the week's schedule "
+                "and weather together). Generic sub-agents (via 'capability') are "
+                "read-only: they cannot control devices or change settings — do "
+                "that yourself with the result. For a specialised sub-agent pass a "
+                "'profile' instead: HOMER for read-only root-cause diagnostics, or "
+                "FRIDAY, a background automator that CAN control devices (only if "
+                "the user has enabled it in Settings). Do not delegate trivial "
+                "single-tool lookups."
             ),
             "parameters": {
                 "type": "object",
@@ -711,14 +715,24 @@ JARVIS_TOOLS = [
                     "capability": {
                         "type": "string",
                         "enum": ["scheduling", "inbox", "home_state", "diagnostics", "research", "environment"],
-                        "description": "Which curated read-only tool group the sub-agent gets.",
+                        "description": "Which curated read-only tool group the sub-agent gets. Use this OR 'profile'.",
+                    },
+                    "profile": {
+                        "type": "string",
+                        "enum": ["HOMER", "FRIDAY"],
+                        "description": (
+                            "A specialised sub-agent profile instead of a capability group. "
+                            "HOMER: read-only diagnostic specialist for root-causing a fault. "
+                            "FRIDAY: terse background automator that can control devices, run "
+                            "scenes/scripts (opt-in; blocked unless enabled in Settings)."
+                        ),
                     },
                     "max_turns": {
                         "type": "integer",
-                        "description": "Optional cap on the sub-agent's tool steps (default 6, max 6).",
+                        "description": "Optional cap on the sub-agent's tool steps (default/max depends on profile).",
                     },
                 },
-                "required": ["objective", "capability"],
+                "required": ["objective"],
             },
         },
     },
@@ -2753,6 +2767,104 @@ def _resolve_capability(capability: str) -> set:
     return CAPABILITY_GROUPS.get(str(capability or ""), set()) - _SUBAGENT_DENY
 
 
+# ── Named sub-agent profiles (FRIDAY / HOMER) ────────────────────────────────
+# Specialised sub-agents with a deterministic constraint core (a system-prompt
+# inject) and a tightly scoped tool set, on top of the generic delegate_task
+# machinery. Two profiles:
+#
+#   HOMER — read-only System Diagnostic Specialist. Fits the existing safety
+#           model exactly (no actuation), so it is always available.
+#   FRIDAY — Background Automator with WRITE access to a small set of actuators.
+#           This deliberately breaches the "sub-agents never actuate" invariant,
+#           so it is OFF by default and gated behind an explicit, warned opt-in
+#           (jarvis_config "friday_automator"); see _resolve_profile / the
+#           config-flow Agents screen.
+#
+# The exact actuators FRIDAY may use — and only these — are lifted out of the
+# generic denylist for FRIDAY alone.
+_FRIDAY_GRANTS: set = {"control_device", "bulk_control", "run_scene_or_script"}
+
+AGENT_PROFILES: dict = {
+    "HOMER": {
+        "actuating": False,
+        "max_turns": 4,
+        "tools": {
+            "system_diagnostics", "cognitive_status", "connectivity_status",
+            "energy_status", "activity_history", "get_entity_state", "root_cause",
+            "search_entities",
+        },
+        "directive": (
+            "## Profile: HOMER — System Diagnostic Specialist\n"
+            "You are a focused diagnostic sub-agent. Your sole job is to find the "
+            "ROOT CAUSE of a fault or degraded behaviour and report it. You are "
+            "strictly READ-ONLY: you observe host telemetry, entity states, "
+            "connectivity, and diagnostic tables — you never actuate a device, "
+            "change a setting, or write to any store. Investigate methodically, "
+            "separate what you OBSERVE from what you INFER, and report the "
+            "likeliest cause with the evidence for it, plus a recommended fix for "
+            "the parent to carry out. No conversational filler.\n\n"
+        ),
+    },
+    "FRIDAY": {
+        "actuating": True,
+        "max_turns": 3,
+        "tools": {
+            "control_device", "bulk_control", "run_scene_or_script",
+            "get_entity_state", "search_entities", "get_area_devices",
+        },
+        "directive": (
+            "## Profile: FRIDAY — Background Automator\n"
+            "You are a terse background automator. Execute the given automation "
+            "objective directly with the minimum number of tool calls, then stop. "
+            "No conversational fillers, no persona banter, no TTS flourishes — you "
+            "are not speaking to the user, you are getting a job done. You may "
+            "control devices, run scenes/scripts, and query state ONLY. Search for "
+            "an entity_id before acting if unsure; never guess at locks or alarms. "
+            "Confirm what you changed in one line and finish.\n\n"
+        ),
+    },
+}
+
+
+def _profile_enabled(name: str) -> bool:
+    """Whether an actuating profile is switched on. Read-only profiles are always
+    enabled; FRIDAY (and any future actuating profile) requires an explicit,
+    warned opt-in stored in jarvis_config."""
+    prof = AGENT_PROFILES.get(name)
+    if not prof or not prof.get("actuating"):
+        return True
+    try:
+        from . import jarvis_config
+        return bool(jarvis_config.get("friday_automator", False))
+    except Exception:
+        return False
+
+
+def _resolve_profile(name: str):
+    """Resolve a named profile to ``(tools, max_turns, directive)`` or return a
+    JSON error string the caller can hand straight back.
+
+    A read-only profile's tools still pass through the generic denylist. An
+    actuating profile (FRIDAY) is gated: disabled → an actionable error; enabled
+    → its explicit tool set, with only its own granted actuators lifted out of
+    the denylist (everything else stays denied, defence in depth)."""
+    prof = AGENT_PROFILES.get(str(name or "").upper())
+    if not prof:
+        return json.dumps({"error": "unknown profile '%s'. Options: %s"
+                                    % (name, ", ".join(sorted(AGENT_PROFILES)))})
+    key = str(name).upper()
+    if prof["actuating"] and not _profile_enabled(key):
+        return json.dumps({"error": (
+            "the %s automator profile is disabled. It can actuate devices, so it "
+            "is off by default — enable it in Settings → JARVIS → Configure → "
+            "Agents after reading the warning, then try again." % key)})
+    if prof["actuating"]:
+        allowed = set(prof["tools"]) - (_SUBAGENT_DENY - _FRIDAY_GRANTS)
+    else:
+        allowed = set(prof["tools"]) - _SUBAGENT_DENY
+    return allowed, int(prof["max_turns"]), str(prof["directive"])
+
+
 def _scoped_tool_list(allowed_tools: Optional[set]) -> list:
     """Full JARVIS_TOOLS, or — for a scoped sub-agent — only the named subset."""
     if allowed_tools is None:
@@ -2779,20 +2891,40 @@ async def _run_delegated(hass, args: dict, *, persona: str, provider_name: str,
     string (result or error) for the parent's tool-result slot. Never raises."""
     objective = str(args.get("objective", "")).strip()
     capability = str(args.get("capability", "")).strip()
+    profile = str(args.get("profile", "")).strip()
     if not objective:
         return json.dumps({"error": "delegate_task needs an objective"})
     if depth >= MAX_DELEGATION_DEPTH:
         return json.dumps({"error": "delegation depth limit reached — a sub-agent "
                                     "cannot delegate further; handle this directly"})
-    allowed = _resolve_capability(capability)
-    if not allowed:
-        return json.dumps({"error": "unknown capability '%s'. Options: %s"
-                                    % (capability, ", ".join(sorted(CAPABILITY_GROUPS)))})
-    try:
-        turns = int(args.get("max_turns", _DELEGATION_MAX_TURNS) or _DELEGATION_MAX_TURNS)
-    except Exception:
-        turns = _DELEGATION_MAX_TURNS
-    turns = max(1, min(turns, _DELEGATION_MAX_TURNS))
+
+    # A named profile (FRIDAY/HOMER) supplies its own tool set, turn cap, and a
+    # deterministic constraint-core directive. Otherwise fall back to the generic
+    # read-only capability groups.
+    directive = None
+    label = capability
+    if profile:
+        resolved = _resolve_profile(profile)
+        if isinstance(resolved, str):        # error JSON
+            return resolved
+        allowed, max_turns_cap, directive = resolved
+        label = profile.upper()
+        try:
+            turns = int(args.get("max_turns", max_turns_cap) or max_turns_cap)
+        except Exception:
+            turns = max_turns_cap
+        turns = max(1, min(turns, max_turns_cap))
+    else:
+        allowed = _resolve_capability(capability)
+        if not allowed:
+            return json.dumps({"error": "unknown capability '%s'. Options: %s"
+                                        % (capability, ", ".join(sorted(CAPABILITY_GROUPS)))})
+        try:
+            turns = int(args.get("max_turns", _DELEGATION_MAX_TURNS) or _DELEGATION_MAX_TURNS)
+        except Exception:
+            turns = _DELEGATION_MAX_TURNS
+        turns = max(1, min(turns, _DELEGATION_MAX_TURNS))
+
     try:
         result = await run_agent(
             hass,
@@ -2800,9 +2932,14 @@ async def _run_delegated(hass, args: dict, *, persona: str, provider_name: str,
             persona=persona, provider_name=provider_name, api_key=api_key,
             model=model, base_url=base_url, config=config,
             allowed_tools=allowed, max_iterations=turns, depth=depth + 1,
+            extra_directive=directive,
         )
-        return json.dumps({"capability": capability, "objective": objective,
-                           "result": result})
+        out = {"objective": objective, "result": result}
+        if profile:
+            out["profile"] = label
+        else:
+            out["capability"] = label
+        return json.dumps(out)
     except Exception as exc:
         return json.dumps({"error": "sub-agent failed: %s" % exc})
 
@@ -2858,6 +2995,7 @@ async def run_agent(
     allowed_tools: Optional[set] = None,
     max_iterations: Optional[int] = None,
     depth: int = 0,
+    extra_directive: Optional[str] = None,
 ) -> str:
     """
     Run the JARVIS agentic LLM loop (v5.7.07).
@@ -2905,8 +3043,14 @@ async def run_agent(
     except Exception:
         pass
 
+    # A named sub-agent profile (FRIDAY/HOMER) injects its deterministic
+    # constraint core right after the persona, so its narrower rules frame
+    # everything that follows.
+    profile_block = f"{extra_directive}\n" if extra_directive else ""
+
     system_prompt = (
         f"{persona}\n\n"
+        f"{profile_block}"
         f"{_language_directive(hass)}"
         f"## Current home state\n{home_context}\n\n"
         f"{situation_block}"
