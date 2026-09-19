@@ -1,3 +1,9 @@
+## [7.95.1] — SweetHome3D floor-plan import helper
+
+Importing a floor plan into the Residence tab's `floor_plan_rooms` config no longer means hand-escaping JSON. A new helper, `scripts/sweethome3d_to_floorplan.py`, converts a SweetHome3D JSON export into the exact `{floor: {rooms: [{name, x, y, w, h}], labels: []}}` shape JARVIS reads for room adjacency — turning each SweetHome3D `room` polygon into its bounding box, grouping by level, with options to rescale centimetres (`--scale`), shift the plan to a `(0,0)` origin (`--origin-zero`), and emit a paste-ready escaped string (`--as-config-string`). If an export contains only walls and furniture with no rooms drawn, the tool says so plainly instead of producing an empty plan.
+
+The new `docs/floor-plan-import.md` documents the `floor_plan_rooms` format and clarifies that the config field already accepts either a JSON object or a stringified JSON string — no double-escaping needed. This addresses #34. No change to the integration's runtime behaviour.
+
 ## [7.95.0] — multiple LLM providers, each with its own key, and a clearer configuration flow
 
 JARVIS now supports several LLM providers side by side — Groq, OpenAI, Anthropic, Gemini, a custom OpenAI-compatible endpoint, and Ollama — each with its own credential. Previously a single shared API-key field meant switching providers could send one provider's key to another; now every provider has its own key, stored only in Home Assistant's `secrets.yaml` (never written to the panel's `config.json`), and provider/model selection is independent of where the secret lives. Switching the Main Agent's provider no longer risks reusing a stale or wrong key.
