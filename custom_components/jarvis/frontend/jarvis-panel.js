@@ -2003,7 +2003,9 @@ class JarvisPanel extends HTMLElement {
     const cfg = d.config || {};
     // Only offer providers with a stored key/endpoint — picking an
     // unconfigured one just fails to fetch models (v7.9x.0).
-    const configured = cfg.configured_providers || ALL_PROVIDERS;
+    const configured = (Array.isArray(cfg.configured_providers) && cfg.configured_providers.length)
+      ? cfg.configured_providers
+      : ALL_PROVIDERS;
     const defaultProvider = configured[0] || 'groq';
     const cfgSet = new Set(configured);
     return this._modelRoles().map(r => {
