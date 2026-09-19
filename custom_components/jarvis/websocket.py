@@ -727,6 +727,9 @@ async def ws_get_panel_data(
                 "excluded_labels": _get_runtime_json(hass, entry, "excluded_labels", []),
                 "available_labels": _available_labels(hass),
                 "cognition_enabled": bool(_runtime_opt(hass, entry, "cognition_enabled", True)),
+                "friday_automator": bool(_runtime_opt(hass, entry, "friday_automator", False)),
+                "proximity_volume": bool(_runtime_opt(hass, entry, "proximity_volume", True)),
+                "host_telemetry": bool(_runtime_opt(hass, entry, "host_telemetry", True)),
                 "camera_auto_analyze": bool(_runtime_opt(hass, entry, "camera_auto_analyze", True)),
                 "camera_auto_analyze_motion": bool(_runtime_opt(hass, entry, "camera_auto_analyze_motion", False)),
                 "camera_important_only": bool(_runtime_opt(hass, entry, "camera_important_only", True)),
@@ -1391,6 +1394,9 @@ PANEL_WRITABLE_KEYS = {
     "satellite_start_action",     # dict: satellite → esphome start action
     "intrusion_response_timeout", # float: secs before unanswered alert escalates
     "onboarding_dismissed",       # bool: user dismissed the first-run welcome card
+    "friday_automator",           # bool: enable the FRIDAY actuating sub-agent (off by default; v7.96.0)
+    "proximity_volume",           # bool: mmWave distance-based TTS volume dampening (v7.96.0)
+    "host_telemetry",             # bool: read host CPU temp / memory pressure / NVMe I/O (v7.96.0)
     # Multi-hazard monitor (v6.71.0)
     "hazard_monitor_enabled",     # bool: master on/off for hazard polling
     "hazard_lat",                 # float|"": location override latitude

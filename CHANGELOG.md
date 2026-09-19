@@ -1,3 +1,12 @@
+## [7.96.1] — the 7.96.0 toggles now appear in the panel's Settings tab
+
+The FRIDAY, proximity-TTS and host-telemetry controls shipped in 7.96.0 were only wired into Home Assistant's *Configure* dialog, not the JARVIS panel's **Settings** tab where everything else is managed — so FRIDAY, in particular, looked missing. A new **Sub-Agents & Automation** card under Settings → General now exposes all three:
+
+- **FRIDAY automator** — off by default, and turning it on prompts a confirmation warning that it can control devices on its own (the panel equivalent of the Configure dialog's acknowledgement). Backend behaviour is unchanged: even enabled, FRIDAY only gets its three actuators.
+- **Proximity TTS volume** and **Host hardware monitoring** — both on by default and switchable.
+
+These keys are now on the panel's writable-config allowlist and echoed back in the panel state with their correct defaults, so the toggles save and reflect their state on re-render. No behaviour change to the features themselves.
+
 ## [7.96.0] — specialised sub-agents, proximity-aware speech, and host hardware telemetry
 
 Four capabilities from the JARVIS architecture roadmap, built to fit the existing design rather than the roadmap's imagined file layout.
