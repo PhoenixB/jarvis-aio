@@ -48,7 +48,7 @@
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "ollama_base_url": "Temel URL (boş bırakılırsa http://homeassistant.local:11434/v1 kullanılır)"
+          "ollama_base_url": "Temel URL"
         }
       },
       "finish": {
@@ -139,7 +139,7 @@
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "ollama_base_url": "Temel URL (boş bırakılırsa http://homeassistant.local:11434/v1 kullanılır)"
+          "ollama_base_url": "Temel URL"
         }
       },
       "core": {

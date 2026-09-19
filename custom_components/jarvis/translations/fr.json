@@ -48,7 +48,7 @@
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "ollama_base_url": "URL de base (vide = http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "URL de base"
         }
       },
       "finish": {
@@ -139,7 +139,7 @@
       "ollama": {
         "title": "JARVIS — Ollama",
         "data": {
-          "ollama_base_url": "URL de base (vide = http://homeassistant.local:11434/v1)"
+          "ollama_base_url": "URL de base"
         }
       },
       "core": {
