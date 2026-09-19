@@ -77,6 +77,21 @@ class _Bus:
         self.fired.append((event_type, dict(event_data or {})))
 
 
+class _ConfigEntries:
+    """Records updates so tests can assert an entry was stripped/rewritten,
+    and mutates the (fake) entry the same way HA's real implementation does."""
+
+    def __init__(self):
+        self.updated: list = []
+
+    def async_update_entry(self, entry, data=None, options=None):
+        if data is not None:
+            entry.data = data
+        if options is not None:
+            entry.options = options
+        self.updated.append((entry, data, options))
+
+
 class FakeHass:
     """A fake Home Assistant core exposing only the surfaces enumerated from
     cognitive_core.py and reasoning_loop.py:
@@ -97,6 +112,7 @@ class FakeHass:
         self.bus = _Bus()
         self.config = types.SimpleNamespace(time_zone="America/New_York")
         self._services = _Services(self.service_calls)
+        self.config_entries = _ConfigEntries()
 
     @property
     def services(self):

@@ -1,100 +1,167 @@
 {
   "config": {
+    "step": {
+      "provider_menu": {
+        "title": "JARVIS — Dodaj dostawcę",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Niestandardowy (zgodny z OpenAI)",
+          "ollama": "Ollama (lokalny)",
+          "finish": "Zakończ konfigurację"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Klucz API Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "Klucz API OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Klucz API Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Klucz API Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Niestandardowy dostawca",
+        "data": {
+          "api_key": "Klucz API (opcjonalny, jeśli endpoint go wymaga)",
+          "custom_base_url": "Podstawowy URL API (zgodny z OpenAI)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "Podstawowy URL (puste użyje http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Zakończ konfigurację",
+        "description": "{note}",
+        "data": {
+          "llm_provider": "Dostawca Głównego agenta",
+          "honorific": "Zwracaj się do mnie"
+        }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
+      }
+    },
+    "error": {
+      "need_llm": "Wprowadź klucz API chmury albo adres URL lokalnego LLM.",
+      "cannot_connect": "Nie można połączyć się z LLM. Sprawdź, czy adres URL/punkt końcowy jest poprawny, a serwer (np. Ollama) działa.",
+      "invalid_auth": "Klucz API został odrzucony. Sprawdź klucz i spróbuj ponownie.",
+      "unknown": "Nie udało się zweryfikować połączenia z LLM. Sprawdź ustawienia i spróbuj ponownie.",
+      "no_models": "Dla tego dostawcy nie ma dostępnych modeli. Sprawdź endpoint dostawcy i spróbuj ponownie.",
+      "no_providers": "Nie skonfigurowano żadnych dostawców LLM. Najpierw dodaj klucz dostawcy lub endpoint w sekcji LLM."
+    },
     "abort": {
       "already_configured": "JARVIS jest już skonfigurowany.",
       "import_failed": "Znaleziono konfigurację JARVIS, ale brak działającego LLM (bez klucza API i bez lokalnego punktu końcowego)."
-    },
-    "error": {
-      "cannot_connect": "Nie można połączyć się z LLM. Sprawdź, czy adres URL/punkt końcowy jest poprawny, a serwer (np. Ollama) działa.",
-      "invalid_auth": "Klucz API został odrzucony. Sprawdź klucz i spróbuj ponownie.",
-      "need_llm": "Wprowadź klucz API chmury albo adres URL lokalnego LLM.",
-      "unknown": "Nie udało się zweryfikować połączenia z LLM. Sprawdź ustawienia i spróbuj ponownie."
-    },
-    "step": {
-      "user": {
-        "data": {
-          "api_key": "Klucz API chmurowego LLM (np. Groq)",
-          "honorific": "Zwracaj się do mnie",
-          "llm_base_url": "Bazowy adres URL lokalnego LLM — dla Ollama użyj hosta homeassistant.local, portu 11434, ścieżki /v1",
-          "model": "Model konwersacji"
-        },
-        "description": "{note}",
-        "title": "Konfiguracja JARVIS"
-      }
-    }
-  },
-  "issues": {
-    "llm_unavailable": {
-      "description": "JARVIS nie mógł połączyć się ze swoim modelem rozumowania, więc działa w trybie ograniczonym — sterowanie urządzeniami, status i sceny nadal działają. Powód: {detail}\n\nOtwórz panel JARVIS → Ustawienia i sprawdź dostawcę, model oraz klucz API. Jeśli dostawca wycofał model, wybierz go ponownie z listy. To powiadomienie zniknie automatycznie, gdy rozumowanie znów zadziała.",
-      "title": "Zaplecze rozumowania JARVIS niedostępne"
     }
   },
   "options": {
     "step": {
-      "core": {
-        "data": {
-          "directive": "Własna dyrektywa (opcjonalnie, zastępuje ustawienie wstępne)",
-          "directive_preset": "Ustawienie wstępne dyrektywy",
-          "honorific": "Zwracaj się do mnie",
-          "model": "Model konwersacji",
-          "use_hass_api": "Włącz sterowanie domem (światła, klimat, zamki itp.)"
-        },
-        "description": "Osobowość, dyrektywa i model konwersacji.",
-        "title": "JARVIS — Rdzeń"
-      },
-      "email": {
-        "data": {
-          "imap_enabled": "Włącz odczyt e-maili",
-          "imap_folder": "Folder skrzynki (domyślnie INBOX)",
-          "imap_host": "Host IMAP (np. imap.gmail.com)",
-          "imap_port": "Port IMAP (SSL: 993)",
-          "imap_secret_key": "Klucz w secrets.yaml przechowujący hasło",
-          "imap_ssl": "Użyj SSL (zalecane)",
-          "imap_user": "Nazwa użytkownika IMAP / adres e-mail"
-        },
-        "description": "Dostęp do skrzynki tylko do odczytu. Hasło IMAP jest odczytywane z pliku secrets.yaml Home Assistanta — dodaj je tam pod poniższym kluczem (domyślnie jarvis_imap_password); nigdy nie jest zapisywane w konfiguracji panelu.",
-        "title": "JARVIS — E-mail"
-      },
-      "identity": {
-        "data": {
-          "identity_enabled": "Rozpoznawaj, kto mówi",
-          "identity_min_confidence": "Minimalna pewność przed przypisaniem do osoby",
-          "identity_voice_fingerprint": "Odcisk głosu (wymaga lokalnego GPU)",
-          "voice_recognition_auto_enroll": "Automatycznie oznaczaj głosy do rejestracji w miarę mówienia",
-          "voice_recognition_source": "Źródło rozpoznawania głosu (encja z usługi rozpoznawania mówcy, np. binary_sensor.*_voice)"
-        },
-        "data_description": {
-          "identity_enabled": "Wykorzystuje to, kto jest w domu, + niedawne rozpoznanie twarzy z kamery. GPU nie jest wymagane.",
-          "identity_min_confidence": "Wyżej = ostrożniej; pozostaje neutralny w razie niepewności.",
-          "identity_voice_fingerprint": "Pozostaw wyłączone, chyba że masz serwer GPU z modelem identyfikacji głosu."
-        },
-        "description": "rozpoznawanie poszczególnych osób, dzięki czemu JARVIS dostosowuje się do tego, kto mówi. Działa bez specjalnego sprzętu, używając obecności i (jeśli skonfigurowano) rozpoznawania twarzy z kamery. Odcisk głosu jest najdokładniejszy, ale wymaga lokalnego GPU, więc jest domyślnie wyłączony.",
-        "title": "JARVIS — Tożsamość"
-      },
       "init": {
+        "title": "JARVIS — Konfiguracja",
         "menu_options": {
+          "llm": "LLM — zarządzaj kluczami dostawców",
           "core": "Rdzeń — osobowość, dyrektywa, model konwersacji",
-          "email": "E-mail — skrzynka tylko do odczytu (hasło przez secrets.yaml)",
+          "routing": "Trasowanie — obszary sypialni, grupa rozgłaszania, usługa powiadomień",
+          "observer": "Obserwator — proaktywna świadomość (używa skonfigurowanych dostawców LLM)",
           "identity": "Tożsamość — rozpoznawanie poszczególnych osób",
-          "observer": "Obserwator — proaktywna świadomość (wymaga klucza Gemini)",
-          "routing": "Trasowanie — obszary sypialni, grupa rozgłaszania, usługa powiadomień"
-        },
-        "title": "JARVIS — Konfiguracja"
+          "email": "E-mail — skrzynka tylko do odczytu (hasło przez secrets.yaml)"
+        }
       },
-      "observer": {
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Niestandardowy (zgodny z OpenAI)",
+          "ollama": "Ollama (lokalny)",
+          "back": "Wróć do menu konfiguracji"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
         "data": {
-          "classifier_model": "Model klasyfikujący (poziom 1 — tani)",
-          "gemini_api_key": "Klucz API Gemini",
-          "observer_enabled": "Włącz tryb obserwatora",
-          "observer_quiet_end": "Koniec godzin ciszy (HH:MM)",
-          "observer_quiet_start": "Początek godzin ciszy (HH:MM)",
-          "reasoning_model": "Model rozumowania (poziom 2 — główny)",
-          "review_model": "Model przeglądu (poziom 3 — okresowy)"
-        },
-        "description": "proaktywna świadomość. JARVIS obserwuje Twój dom i odzywa się, gdy coś jest warte uwagi. Wymaga klucza API Gemini (zalecane włączone rozliczenia).",
-        "title": "JARVIS — Tryb obserwatora"
+          "api_key": "Klucz API Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "Klucz API OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Klucz API Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Klucz API Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Niestandardowy dostawca",
+        "data": {
+          "api_key": "Klucz API (opcjonalny, jeśli endpoint go wymaga)",
+          "custom_base_url": "Podstawowy URL API (zgodny z OpenAI)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "Podstawowy URL (puste użyje http://homeassistant.local:11434/v1)"
+        }
+      },
+      "core": {
+        "title": "JARVIS — Rdzeń",
+        "description": "Osobowość, dyrektywa i model konwersacji.",
+        "data": {
+          "honorific": "Zwracaj się do mnie",
+          "directive_preset": "Ustawienie wstępne dyrektywy",
+          "directive": "Własna dyrektywa (opcjonalnie, zastępuje ustawienie wstępne)",
+          "llm_provider": "Conversation model provider",
+          "use_hass_api": "Włącz sterowanie domem (światła, klimat, zamki itp.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       },
       "routing": {
+        "title": "JARVIS — Trasowanie",
+        "description": "wybierz, które obszary HA są sypialniami (do wykrywania snu), której grupy media_player użyć do rozgłaszania oraz usługę powiadomień telefonu.",
         "data": {
           "bedroom_areas": "Obszary sypialni (do wykrywania snu w godzinach ciszy)",
           "broadcast_group": "Grupa głośników rozgłaszania (zwykle domowa grupa Cast)",
@@ -104,10 +171,106 @@
           "bedroom_areas": "Dowolny czujnik obecności w tych obszarach uruchamia tryb snu w godzinach ciszy.",
           "broadcast_group": "Używane do krytycznych i bardzo pilnych komunikatów.",
           "notify_service": "Używane, gdy jesteś poza domem lub śpisz."
+        }
+      },
+      "observer": {
+        "title": "JARVIS — Tryb obserwatora",
+        "description": "proaktywna świadomość. JARVIS obserwuje Twój dom i odzywa się, gdy coś jest warte uwagi.",
+        "menu_options": {
+          "classifier": "Classifier (Tier 1 — cheap)",
+          "reasoning": "Reasoning (Tier 2 — main)",
+          "review": "Review (Tier 3 — periodic)",
+          "observer_settings": "Observer settings",
+          "back": "Wróć do menu konfiguracji"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
+        "data": {
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
+        "data": {
+          "observer_enabled": "Enable observer mode",
+          "observer_quiet_start": "Quiet hours start (HH:MM)",
+          "observer_quiet_end": "Quiet hours end (HH:MM)"
+        }
+      },
+      "identity": {
+        "title": "JARVIS — Tożsamość",
+        "description": "rozpoznawanie poszczególnych osób, dzięki czemu JARVIS dostosowuje się do tego, kto mówi. Działa bez specjalnego sprzętu, używając obecności i (jeśli skonfigurowano) rozpoznawania twarzy z kamery. Odcisk głosu jest najdokładniejszy, ale wymaga lokalnego GPU, więc jest domyślnie wyłączony.",
+        "data": {
+          "identity_enabled": "Rozpoznawaj, kto mówi",
+          "identity_voice_fingerprint": "Odcisk głosu (wymaga lokalnego GPU)",
+          "identity_min_confidence": "Minimalna pewność przed przypisaniem do osoby",
+          "voice_recognition_source": "Źródło rozpoznawania głosu (encja z usługi rozpoznawania mówcy, np. binary_sensor.*_voice)",
+          "voice_recognition_auto_enroll": "Automatycznie oznaczaj głosy do rejestracji w miarę mówienia"
         },
-        "description": "wybierz, które obszary HA są sypialniami (do wykrywania snu), której grupy media_player użyć do rozgłaszania oraz usługę powiadomień telefonu.",
-        "title": "JARVIS — Trasowanie"
+        "data_description": {
+          "identity_enabled": "Wykorzystuje to, kto jest w domu, + niedawne rozpoznanie twarzy z kamery. GPU nie jest wymagane.",
+          "identity_voice_fingerprint": "Pozostaw wyłączone, chyba że masz serwer GPU z modelem identyfikacji głosu.",
+          "identity_min_confidence": "Wyżej = ostrożniej; pozostaje neutralny w razie niepewności."
+        }
+      },
+      "email": {
+        "title": "JARVIS — E-mail",
+        "description": "Dostęp do skrzynki tylko do odczytu. Hasło IMAP jest odczytywane z pliku secrets.yaml Home Assistanta — dodaj je tam pod poniższym kluczem (domyślnie jarvis_imap_password); nigdy nie jest zapisywane w konfiguracji panelu.",
+        "data": {
+          "imap_enabled": "Włącz odczyt e-maili",
+          "imap_host": "Host IMAP (np. imap.gmail.com)",
+          "imap_port": "Port IMAP (SSL: 993)",
+          "imap_user": "Nazwa użytkownika IMAP / adres e-mail",
+          "imap_folder": "Folder skrzynki (domyślnie INBOX)",
+          "imap_ssl": "Użyj SSL (zalecane)",
+          "imap_secret_key": "Klucz w secrets.yaml przechowujący hasło"
+        }
       }
+    },
+    "error": {
+      "need_llm": "Wprowadź klucz API chmury albo adres URL lokalnego LLM.",
+      "cannot_connect": "Nie można połączyć się z LLM. Sprawdź, czy adres URL/punkt końcowy jest poprawny, a serwer (np. Ollama) działa.",
+      "invalid_auth": "Klucz API został odrzucony. Sprawdź klucz i spróbuj ponownie.",
+      "unknown": "Nie udało się zweryfikować połączenia z LLM. Sprawdź ustawienia i spróbuj ponownie.",
+      "no_models": "Dla tego dostawcy nie ma dostępnych modeli. Sprawdź endpoint dostawcy i spróbuj ponownie.",
+      "no_providers": "Nie skonfigurowano żadnych dostawców LLM. Najpierw dodaj klucz dostawcy lub endpoint w sekcji LLM."
+    }
+  },
+  "issues": {
+    "llm_unavailable": {
+      "title": "Zaplecze rozumowania JARVIS niedostępne",
+      "description": "JARVIS nie mógł połączyć się ze swoim modelem rozumowania, więc działa w trybie ograniczonym — sterowanie urządzeniami, status i sceny nadal działają. Powód: {detail}\n\nOtwórz panel JARVIS → Ustawienia i sprawdź dostawcę, model oraz klucz API. Jeśli dostawca wycofał model, wybierz go ponownie z listy. To powiadomienie zniknie automatycznie, gdy rozumowanie znów zadziała."
     }
   }
 }

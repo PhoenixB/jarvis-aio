@@ -12,7 +12,6 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_change
 
 from .const import (
-    CONF_API_KEY,
     CONF_BEDROOM_AREAS,
     CONF_BROADCAST_GROUP,
     CONF_HONORIFIC,
@@ -147,15 +146,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # wins over stale entry data/options) so the boot client, conversation, and
     # agent never diverge on which model to run. ───────────────────────────
     from . import jarvis_config as _jc
+    from . import ha_secrets as _hs
+    await hass.async_add_executor_job(
+        _jc.init_from_entry,
+        dict(entry.data), dict(entry.options),
+    )
+    await _hs.relocate_entry_credentials(hass, entry)
+    await _hs.relocate_plaintext_credentials(hass, entry)
     _eff = await hass.async_add_executor_job(_jc.effective_config, entry)
     # Warm the remaining persisted-state caches off the event loop too, so the
     # hot paths that read them (observer tick, panel data, intrusion log) don't
     # trip Home Assistant's blocking-I/O detector on first access.
     await hass.async_add_executor_job(_prewarm_persisted_state)
-    api_key           = _eff.get(CONF_API_KEY, "") or entry.data.get(CONF_API_KEY, "")
     llm_provider_name = _eff.get("llm_provider", "groq")
     llm_model         = _eff.get("model", "openai/gpt-oss-120b")
-    llm_base_url      = _eff.get("llm_base_url", "") or None
+    from .const import resolve_provider_base_url
+    llm_base_url = resolve_provider_base_url(_eff, llm_provider_name)
+    await _hs.promote_shared_secret_for_provider(hass, llm_provider_name)
+    # Credentials live only in secrets.yaml — each provider has its own entry
+    # (PROVIDER_API_KEY_FIELDS) so switching the Main Agent's provider can't
+    # reuse a stale/different provider's key.
+    api_key = await _hs.async_get_provider_key(hass, llm_provider_name)
 
     try:
         llm_client = await hass.async_add_executor_job(
@@ -171,6 +182,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     sentinel = JarvisSentinel(hass, llm_client, honorific, entry=entry)
+    client_ref = {"client": llm_client}
+
+    def _current_client():
+        return client_ref["client"]
 
     # Register camera event listeners (nest_event, frigate_event)
     camera_unsubs = register_event_listeners(hass)
@@ -213,7 +228,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         spk = _get_speakers(hass, entry)
         hass.async_create_task(
             async_auto_analyze_on_event(
-                hass, llm_client, honorific, tts, spk, entity_id, reason, doorbell=doorbell
+                hass, _current_client(), honorific, tts, spk, entity_id, reason, doorbell=doorbell
             )
         )
 
@@ -242,7 +257,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
                     from .camera import async_visitor_observation
                     hass.async_create_task(
-                        async_visitor_observation(hass, llm_client, honorific, entity_id)
+                        async_visitor_observation(hass, _current_client(), honorific, entity_id)
                     )
                 return
             entity_id = _nest2cam(hass, device_id)
@@ -311,7 +326,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             tts = _get_tts(hass, entry, context="package")
             spk = _get_speakers(hass, entry)
             report = await package_monitor.periodic_check(
-                hass, llm_client, honorific, tts, spk, configured_camera=None
+                hass, _current_client(), honorific, tts, spk, configured_camera=None
             )
             _LOGGER.debug("JARVIS package check: %s", report)
         except Exception as exc:
@@ -440,7 +455,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 # morning looks back overnight; evening looks back over the day
                 "hours": 12 if kind == "morning" else 14,
             })
-            await async_briefing(hass, call, llm_client, honorific, tts, spk)
+            await async_briefing(hass, call, _current_client(), honorific, tts, spk)
             _LOGGER.info("JARVIS: delivered %s briefing", kind)
         except Exception as exc:
             # A scheduled briefing failing must be VISIBLE — this was
@@ -487,6 +502,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN][entry.entry_id] = {
         "client":             llm_client,
+        "client_ref":         client_ref,
         "sentinel":           sentinel,
         "camera_unsubs":      camera_unsubs,
         "recognition_unsubs": recognition_unsubs,
@@ -503,8 +519,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # cognition tunables, floor plan, etc.) so choices made in the panel win
     # over addon-config defaults and survive reboots/updates. runtime_config
     # takes precedence over entry.options/data, so this is authoritative.
-    # Secrets (api_key, gemini_api_key) are intentionally NOT panel-writable and
-    # therefore stay addon-controlled via the reconcile above.
+    # Secrets (api_key, gemini_api_key, etc.) live only in secrets.yaml — never
+    # panel-writable, never restored from/to config.json (jarvis_config refuses
+    # to store them; see ha_secrets.py).
     try:
         from . import jarvis_config
         from .websocket import PANEL_WRITABLE_KEYS
@@ -549,16 +566,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as exc:
         _LOGGER.debug("Config restore: %s", exc)
 
-    # Register services — guard against double-registration on reload
-    # Move any plaintext LLM credentials into secrets.yaml (v6.83.0). Safe:
-    # verify-before-strip; config.json is left untouched on any failure.
-    try:
-        from . import ha_secrets as _hs
-        await _hs.relocate_plaintext_credentials(hass)
-    except Exception as exc:
-        _LOGGER.debug("Credential relocation: %s", exc)
-
-    _register_services(hass, entry, llm_client, sentinel)
+    # Register services — guard against double-registration on reload.
+    _register_services(hass, entry, _current_client, sentinel)
 
     # Reload services when options change
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -799,7 +808,7 @@ def _get_speakers(hass: HomeAssistant, entry: ConfigEntry) -> list[str]:
 def _register_services(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    groq_client,
+    client_getter,
     sentinel: JarvisSentinel,
 ) -> None:
     """Register all JARVIS services. Called once per entry setup."""
@@ -820,7 +829,7 @@ def _register_services(
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="camera")
         spk = _get_speakers(hass, entry)
-        await async_analyze_camera(hass, call, groq_client, honorific, tts, spk)
+        await async_analyze_camera(hass, call, client_getter(), honorific, tts, spk)
 
     _register_service(
         "analyze_camera",
@@ -840,7 +849,7 @@ def _register_services(
         entity_id = call.data["entity_id"]
         reason    = call.data.get("reason", "Activity detected")
         await async_auto_analyze_on_event(
-            hass, groq_client, honorific, tts, spk, entity_id, reason
+            hass, client_getter(), honorific, tts, spk, entity_id, reason
         )
 
     _register_service(
@@ -879,7 +888,7 @@ def _register_services(
             )
             fc = _FakeCall({"entity_id": doorbell_entity, "prompt": prompt, "announce": False})
             return await async_analyze_camera(
-                hass, fc, groq_client, honorific, None, [],
+                hass, fc, client_getter(), honorific, None, [],
                 gate_announce=True, force_images=[image_bytes],
             )
 
@@ -911,7 +920,7 @@ def _register_services(
         from . import package_monitor
         cam = call.data.get("entity_id")
         report = await package_monitor.periodic_check(
-            hass, groq_client, honorific, tts, spk, configured_camera=cam
+            hass, client_getter(), honorific, tts, spk, configured_camera=cam
         )
         _LOGGER.info("JARVIS manual package check: %s", report)
 
@@ -927,7 +936,7 @@ def _register_services(
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="briefing")
         spk = _get_speakers(hass, entry)
-        await async_briefing(hass, call, groq_client, honorific, tts, spk)
+        await async_briefing(hass, call, client_getter(), honorific, tts, spk)
 
     async def _jarvis_backup(call):
         from .backup import create_backup
@@ -978,7 +987,7 @@ def _register_services(
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="chat")
         spk = _get_speakers(hass, entry)
-        await async_activate_by_intent(hass, call, groq_client, honorific, tts, spk)
+        await async_activate_by_intent(hass, call, client_getter(), honorific, tts, spk)
 
     _register_service(
         "scene_by_intent",
@@ -1025,7 +1034,7 @@ def _register_services(
         honorific = entry.options.get(CONF_HONORIFIC, entry.data.get(CONF_HONORIFIC, DEFAULT_HONORIFIC))
         tts = _get_tts(hass, entry, context="summary")
         spk = _get_speakers(hass, entry)
-        await async_summarise(hass, call, groq_client, honorific, tts, spk)
+        await async_summarise(hass, call, client_getter(), honorific, tts, spk)
 
     _register_service(
         "conversation_summary",

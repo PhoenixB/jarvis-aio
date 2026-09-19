@@ -21,17 +21,17 @@ It installs as a Home Assistant **custom integration** via HACS and runs entirel
 
 ## Quick start (5 minutes, no cameras required)
 
-JARVIS looks elaborate, but the floor is low — you can be talking to it in five minutes with nothing but Home Assistant and one free API key. Cameras, voice hardware, and local GPU inference are all **optional** upgrades you add later.
+JARVIS looks elaborate, but the floor is low — you can be talking to it in five minutes with nothing but Home Assistant and one configured LLM provider. Cameras, voice hardware, and local GPU inference are all **optional** upgrades you add later.
 
 1. **Install via HACS** — add this repo ([badge below](#installation)), install "JARVIS AI Assistant," restart Home Assistant.
-2. **Add the integration** — *Settings → Devices & Services → Add Integration → JARVIS*. Paste a [Groq API key](https://console.groq.com) (free tier, generous) — or leave it blank and point it at a local Ollama URL to run with no cloud account at all.
+2. **Add the integration** — *Settings → Devices & Services → Add Integration → JARVIS*. Choose one or more providers in the setup menu, enter and validate each provider's key or endpoint, then choose the Main Agent provider and model. You can use [Groq](https://console.groq.com) (free tier, generous), OpenAI, Anthropic, Gemini, a custom OpenAI-compatible endpoint, or local Ollama.
 3. **That's it.** JARVIS registers its conversation agent and appears in your sidebar. Ask it about your home, your calendar, or the outside world.
 
 Everything past this point — vision, doorbell analysis, the Iron Man HUD's live floor plan, proactive safety — layers on top as you connect cameras and voice. Nothing below is required to start. Jump to [Installation](#installation) for the full walkthrough.
 
 ## What it does
 
-**Voice & conversation.** A pluggable LLM brain (Groq, Gemini, OpenAI, Anthropic, or a local Ollama server) drives natural conversation through the Home Assistant voice pipeline, answered in a custom Piper TTS voice. Works with ESP32-S3 satellites, Wyoming, and Google speakers.
+**Voice & conversation.** A pluggable LLM brain (Groq, OpenAI, Anthropic, Gemini, a custom OpenAI-compatible endpoint, or a local Ollama server) drives natural conversation through the Home Assistant voice pipeline, answered in a custom Piper TTS voice. Works with ESP32-S3 satellites, Wyoming, and Google speakers.
 
 **Web research & schedule awareness.** Ask about the outside world — current events, facts, "what's the latest on…" — and JARVIS looks it up (DuckDuckGo out of the box, no key; or a self-hosted SearXNG). It reads your `calendar.*` entities too, surfacing upcoming events and flagging conflicts — overlaps and tight back-to-back transitions.
 
@@ -112,19 +112,19 @@ tools the agent invokes on its own; most also have a panel control.
 **Resilience & privacy**
 - The **Local Mind** replicates the full decision procedure offline, so JARVIS stays sharp with no internet at all.
 - All LLM credentials live in Home Assistant's `secrets.yaml`, never in plaintext panel config; any existing plaintext keys are relocated automatically and safely (verify-before-strip) on upgrade.
-- A single config resolver makes the panel the one source of truth for which model every part of JARVIS runs.
+- A single config resolver makes the panel the one source of truth for which model every part of JARVIS runs; provider credentials remain exclusively in Home Assistant's `secrets.yaml`.
 
 ## Requirements
 
 **To start, you need exactly two things:**
 
 - **Home Assistant** with [HACS](https://hacs.xyz) installed.
-- **One LLM API key** — [Groq](https://console.groq.com) has a generous free tier and is the recommended starting point (or run fully local with Ollama, no key at all).
+- **At least one LLM provider** — [Groq](https://console.groq.com) has a generous free tier and is the recommended starting point. You can add multiple providers; each provider keeps its own key so the Main Agent and Observer tiers can use different providers. Ollama needs no key, only a reachable endpoint.
 
 **Optional add-ons** (each unlocks more, none required to begin):
 
 - *Voice* — HA OS / Supervised recommended; JARVIS auto-installs the Piper / Whisper / openWakeWord voice stack via the Supervisor. On Container/Core you'd add those yourself.
-- *Vision* — a Gemini API key for camera reasoning, plus cameras. Any HA camera works; **Frigate** is the recommended backbone (detection + snapshots), and Nest cameras/doorbells are supported through it.
+- *Vision* — a key for the provider selected for the Vision or Camera Reasoning role, plus cameras. Any HA camera works; **Frigate** is the recommended backbone (detection + snapshots), and Nest cameras/doorbells are supported through it.
 - *Voice hardware* — ESP32-S3 satellites and a Piper TTS voice.
 - *Fully local inference* — a GPU box running Ollama; point `llm_base_url` at it and JARVIS runs entirely on your own hardware, no cloud account.
 
@@ -142,11 +142,11 @@ https://github.com/sam3gp8/jarvis-aio
 
 **2. Install "JARVIS AI Assistant"** from HACS, then restart Home Assistant.
 
-**3. Add the integration.** Go to **Settings → Devices & Services → Add Integration → JARVIS**. Enter a cloud API key (e.g. Groq), *or* leave it blank and enter a local LLM URL (e.g. `http://homeassistant.local:11434/v1`) to run Ollama with no cloud account. JARVIS registers its conversation agent and appears in the sidebar.
+**3. Add the integration.** Go to **Settings → Devices & Services → Add Integration → JARVIS**. The flow lets you add and validate multiple providers one at a time, then choose the Main Agent provider and model from that provider's available model list. For local Ollama, enter a URL such as `http://homeassistant.local:11434/v1` instead of an API key. JARVIS registers its conversation agent and appears in the sidebar.
 
 **4. Set up voice (optional).** On Home Assistant OS / Supervised, JARVIS bootstraps the voice stack itself on first run — it installs and starts the **Piper**, **Whisper**, and **openWakeWord** add-ons, downloads the JARVIS voice, and creates an Assist pipeline with JARVIS as the conversation agent. On Container/Core installs (no Supervisor), install those pieces yourself and create the pipeline via Settings → Voice Assistants.
 
-**5. Fine-tune (optional).** Advanced routing, observer mode, camera watching, and the AI-model-per-role assignments are all configured from the JARVIS panel → **Settings**.
+**5. Fine-tune (optional).** Advanced routing, observer mode, camera watching, and AI-model-per-role assignments are configured from the JARVIS panel → **Settings**. The **LLM** submenu manages provider keys. **Core** selects the Conversation provider and model. **Observer** lets you choose a provider and live model for each tier: Classifier (Tier 1 — cheap), Reasoning (Tier 2 — main), and Review (Tier 3 — periodic).
 
 > **Hard-refresh after updates.** The dashboard JavaScript is cached aggressively — after upgrading, refresh with `Ctrl+Shift+R` so the new panel loads.
 
@@ -213,7 +213,7 @@ This lives in `/config/jarvis/config.json` (merge it into the existing object �
 
 | Setting | What it does |
 | --- | --- |
-| `llm_provider` / per-role models | Choose Groq, Gemini, OpenAI, Anthropic, Ollama, or custom — independently for the main agent, classifier, reasoning, review, vision, and camera-reasoning roles. |
+| `llm_provider` / per-role models | Choose Groq, Gemini, OpenAI, Anthropic, Ollama, or custom — independently for the Main Agent, Classifier, Reasoning, Review, Vision, and Camera Reasoning roles. The config flow offers live model dropdowns for each selected provider. |
 | `llm_base_url` | Point the Ollama/custom providers at your local GPU server (e.g. `http://gpu-server:11434/v1`). |
 | `observer_enabled` | Let JARVIS watch the event stream and decide what's worth surfacing. |
 | `rich_reasoning` | Cloud-first judgment for medium/high-urgency events (cheap, sharper). |
@@ -254,7 +254,7 @@ What's stored, and where:
 - **Camera & vision** — snapshots are analyzed on demand and not retained by JARVIS; recording is Frigate's job, under your control.
 - **Biometrics** — **off by default and opt-in.** When enabled, JARVIS *reads* wearable entities Home Assistant already exposes for comfort context (e.g. being quieter when a sleep sensor says you're resting). It does not copy, store, or transmit health data, and it is explicitly **not medical** — it never diagnoses, alarms on, or clinically interprets a reading; anything concerning is deferred to your own device or a medical professional.
 
-What leaves your network is only what you choose: requests to whichever LLM provider (Groq/OpenAI/Anthropic) and vision model you configure, or nothing at all if you run everything locally through Ollama. Swap any provider for a local model to keep the whole pipeline on-premises. Sensitive integration credentials are held by Home Assistant, not JARVIS.
+What leaves your network is only what you choose: requests to whichever LLM provider (Groq/OpenAI/Anthropic/Gemini or a custom endpoint) and vision model you configure, or nothing at all if you run everything locally through Ollama. Swap any provider for a local model to keep the whole pipeline on-premises. Sensitive integration credentials are held by Home Assistant, not JARVIS.
 
 ## Support
 

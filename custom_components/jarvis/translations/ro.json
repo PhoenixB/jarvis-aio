@@ -1,100 +1,167 @@
 {
   "config": {
+    "step": {
+      "provider_menu": {
+        "title": "JARVIS — Adaugă un Furnizor",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Personalizat (compatibil OpenAI)",
+          "ollama": "Ollama (local)",
+          "finish": "Finalizează configurarea"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Cheie API Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "Cheie API OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Cheie API Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Cheie API Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Furnizor Personalizat",
+        "data": {
+          "api_key": "Cheie API (opțională, dacă endpoint-ul o cere)",
+          "custom_base_url": "URL de bază API (compatibil OpenAI)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "URL de bază (gol folosește http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Finalizează Configurarea",
+        "description": "{note}",
+        "data": {
+          "llm_provider": "Furnizorul Agentului Principal",
+          "honorific": "Adresează-mi-te cu"
+        }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
+      }
+    },
+    "error": {
+      "need_llm": "Introdu fie o cheie API cloud, fie un URL LLM local.",
+      "cannot_connect": "Nu s-a putut contacta LLM-ul. Verifică dacă URL-ul/endpointul este corect și dacă serverul (de ex. Ollama) rulează.",
+      "invalid_auth": "Cheia API a fost respinsă. Verifică cheia și încearcă din nou.",
+      "unknown": "Nu s-a putut valida conexiunea LLM. Verifică setările și încearcă din nou.",
+      "no_models": "Nu sunt disponibile modele pentru acest furnizor. Verificați endpoint-ul furnizorului și încercați din nou.",
+      "no_providers": "Nu este configurat niciun furnizor LLM. Adăugați mai întâi o cheie de furnizor sau un endpoint în secțiunea LLM."
+    },
     "abort": {
       "already_configured": "JARVIS este deja configurat.",
       "import_failed": "S-a găsit o configurație JARVIS, dar niciun LLM utilizabil (fără cheie API și fără endpoint local)."
-    },
-    "error": {
-      "cannot_connect": "Nu s-a putut contacta LLM-ul. Verifică dacă URL-ul/endpointul este corect și dacă serverul (de ex. Ollama) rulează.",
-      "invalid_auth": "Cheia API a fost respinsă. Verifică cheia și încearcă din nou.",
-      "need_llm": "Introdu fie o cheie API cloud, fie un URL LLM local.",
-      "unknown": "Nu s-a putut valida conexiunea LLM. Verifică setările și încearcă din nou."
-    },
-    "step": {
-      "user": {
-        "data": {
-          "api_key": "Cheie API LLM cloud (de ex. Groq)",
-          "honorific": "Adresează-mi-te cu",
-          "llm_base_url": "URL de bază LLM local — pentru Ollama folosește gazda homeassistant.local, portul 11434, calea /v1",
-          "model": "Model de conversație"
-        },
-        "description": "{note}",
-        "title": "Configurare JARVIS"
-      }
-    }
-  },
-  "issues": {
-    "llm_unavailable": {
-      "description": "JARVIS nu a putut contacta modelul său de raționament, așa că rulează în mod limitat — controlul dispozitivelor, starea și scenele funcționează în continuare. Motiv: {detail}\n\nDeschide panoul JARVIS → Setări și verifică furnizorul, modelul și cheia API. Dacă furnizorul a retras modelul, selectează-l din nou din listă. Această notificare dispare automat când raționamentul funcționează din nou.",
-      "title": "Backend-ul de raționament JARVIS este indisponibil"
     }
   },
   "options": {
     "step": {
-      "core": {
-        "data": {
-          "directive": "Directivă personalizată (opțional, suprascrie presetarea)",
-          "directive_preset": "Presetare directivă",
-          "honorific": "Adresează-mi-te cu",
-          "model": "Model de conversație",
-          "use_hass_api": "Activează controlul casei (lumini, climat, încuietori etc.)"
-        },
-        "description": "Personalitate, directivă și model de conversație.",
-        "title": "JARVIS — Nucleu"
-      },
-      "email": {
-        "data": {
-          "imap_enabled": "Activează citirea e-mailurilor",
-          "imap_folder": "Folder căsuță (implicit INBOX)",
-          "imap_host": "Gazdă IMAP (de ex. imap.gmail.com)",
-          "imap_port": "Port IMAP (SSL: 993)",
-          "imap_secret_key": "Cheia din secrets.yaml care conține parola",
-          "imap_ssl": "Folosește SSL (recomandat)",
-          "imap_user": "Nume utilizator IMAP / adresă de e-mail"
-        },
-        "description": "Acces la căsuță doar pentru citire. Parola IMAP este citită din secrets.yaml al Home Assistant — adaug-o acolo sub cheia de mai jos (implicit jarvis_imap_password); nu este niciodată stocată în configurația panoului.",
-        "title": "JARVIS — E-mail"
-      },
-      "identity": {
-        "data": {
-          "identity_enabled": "Recunoaște cine vorbește",
-          "identity_min_confidence": "Încredere minimă înainte de a atribui unei persoane",
-          "identity_voice_fingerprint": "Amprentă vocală (necesită un GPU local)",
-          "voice_recognition_auto_enroll": "Marchează automat vocile pentru înregistrare pe măsură ce oamenii vorbesc",
-          "voice_recognition_source": "Sursă de recunoaștere vocală (entitate dintr-un serviciu de recunoaștere a vorbitorului, de ex. binary_sensor.*_voice)"
-        },
-        "data_description": {
-          "identity_enabled": "Folosește cine e acasă + recunoașterea facială recentă de la cameră. Nu necesită GPU.",
-          "identity_min_confidence": "Mai mare = mai precaut; rămâne neutru când nu e sigur.",
-          "identity_voice_fingerprint": "Lasă dezactivat dacă nu ai un server GPU care rulează un model de identificare vocală."
-        },
-        "description": "recunoaștere per persoană, astfel încât JARVIS se adaptează la cine vorbește. Funcționează fără hardware special, folosind prezența și (dacă e configurată) recunoașterea facială de la cameră. Amprenta vocală este cea mai precisă, dar necesită un GPU local, așa că este dezactivată implicit.",
-        "title": "JARVIS — Identitate"
-      },
       "init": {
+        "title": "JARVIS — Configurează",
         "menu_options": {
+          "llm": "LLM — gestionează cheile furnizorilor",
           "core": "Nucleu — personalitate, directivă, model de conversație",
-          "email": "E-mail — căsuță doar pentru citire (parolă prin secrets.yaml)",
+          "routing": "Rutare — zone de dormitor, grup de difuzare, serviciu de notificare",
+          "observer": "Observator — conștientizare proactivă (folosește furnizorii LLM configurați)",
           "identity": "Identitate — recunoaștere per persoană",
-          "observer": "Observator — conștientizare proactivă (necesită o cheie Gemini)",
-          "routing": "Rutare — zone de dormitor, grup de difuzare, serviciu de notificare"
-        },
-        "title": "JARVIS — Configurează"
+          "email": "E-mail — căsuță doar pentru citire (parolă prin secrets.yaml)"
+        }
       },
-      "observer": {
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Personalizat (compatibil OpenAI)",
+          "ollama": "Ollama (local)",
+          "back": "Înapoi la meniul de configurare"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
         "data": {
-          "classifier_model": "Model de clasificare (nivel 1 — ieftin)",
-          "gemini_api_key": "Cheie API Gemini",
-          "observer_enabled": "Activează modul observator",
-          "observer_quiet_end": "Sfârșitul orelor de liniște (HH:MM)",
-          "observer_quiet_start": "Începutul orelor de liniște (HH:MM)",
-          "reasoning_model": "Model de raționament (nivel 2 — principal)",
-          "review_model": "Model de revizuire (nivel 3 — periodic)"
-        },
-        "description": "conștientizare proactivă. JARVIS îți supraveghează casa și intervine când ceva merită semnalat. Necesită o cheie API Gemini (se recomandă cu facturare activată).",
-        "title": "JARVIS — Mod observator"
+          "api_key": "Cheie API Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "Cheie API OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Cheie API Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Cheie API Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Furnizor Personalizat",
+        "data": {
+          "api_key": "Cheie API (opțională, dacă endpoint-ul o cere)",
+          "custom_base_url": "URL de bază API (compatibil OpenAI)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "URL de bază (gol folosește http://homeassistant.local:11434/v1)"
+        }
+      },
+      "core": {
+        "title": "JARVIS — Nucleu",
+        "description": "Personalitate, directivă și model de conversație.",
+        "data": {
+          "honorific": "Adresează-mi-te cu",
+          "directive_preset": "Presetare directivă",
+          "directive": "Directivă personalizată (opțional, suprascrie presetarea)",
+          "llm_provider": "Conversation model provider",
+          "use_hass_api": "Activează controlul casei (lumini, climat, încuietori etc.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       },
       "routing": {
+        "title": "JARVIS — Rutare",
+        "description": "alege ce zone HA sunt dormitoare (pentru detectarea somnului), ce grup media_player să folosești pentru difuzări și serviciul de notificare al telefonului.",
         "data": {
           "bedroom_areas": "Zone de dormitor (pentru detectarea somnului în orele de liniște)",
           "broadcast_group": "Grup de difuzoare pentru difuzare (de obicei grupul Cast de acasă)",
@@ -104,10 +171,106 @@
           "bedroom_areas": "Orice senzor de prezență din aceste zone declanșează modul de somn în orele de liniște.",
           "broadcast_group": "Folosit pentru anunțuri critice și foarte urgente.",
           "notify_service": "Folosit când ești plecat de acasă sau dormi."
+        }
+      },
+      "observer": {
+        "title": "JARVIS — Mod observator",
+        "description": "conștientizare proactivă. JARVIS îți supraveghează casa și intervine când ceva merită semnalat.",
+        "menu_options": {
+          "classifier": "Classifier (Tier 1 — cheap)",
+          "reasoning": "Reasoning (Tier 2 — main)",
+          "review": "Review (Tier 3 — periodic)",
+          "observer_settings": "Observer settings",
+          "back": "Înapoi la meniul de configurare"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
+        "data": {
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
+        "data": {
+          "observer_enabled": "Enable observer mode",
+          "observer_quiet_start": "Quiet hours start (HH:MM)",
+          "observer_quiet_end": "Quiet hours end (HH:MM)"
+        }
+      },
+      "identity": {
+        "title": "JARVIS — Identitate",
+        "description": "recunoaștere per persoană, astfel încât JARVIS se adaptează la cine vorbește. Funcționează fără hardware special, folosind prezența și (dacă e configurată) recunoașterea facială de la cameră. Amprenta vocală este cea mai precisă, dar necesită un GPU local, așa că este dezactivată implicit.",
+        "data": {
+          "identity_enabled": "Recunoaște cine vorbește",
+          "identity_voice_fingerprint": "Amprentă vocală (necesită un GPU local)",
+          "identity_min_confidence": "Încredere minimă înainte de a atribui unei persoane",
+          "voice_recognition_source": "Sursă de recunoaștere vocală (entitate dintr-un serviciu de recunoaștere a vorbitorului, de ex. binary_sensor.*_voice)",
+          "voice_recognition_auto_enroll": "Marchează automat vocile pentru înregistrare pe măsură ce oamenii vorbesc"
         },
-        "description": "alege ce zone HA sunt dormitoare (pentru detectarea somnului), ce grup media_player să folosești pentru difuzări și serviciul de notificare al telefonului.",
-        "title": "JARVIS — Rutare"
+        "data_description": {
+          "identity_enabled": "Folosește cine e acasă + recunoașterea facială recentă de la cameră. Nu necesită GPU.",
+          "identity_voice_fingerprint": "Lasă dezactivat dacă nu ai un server GPU care rulează un model de identificare vocală.",
+          "identity_min_confidence": "Mai mare = mai precaut; rămâne neutru când nu e sigur."
+        }
+      },
+      "email": {
+        "title": "JARVIS — E-mail",
+        "description": "Acces la căsuță doar pentru citire. Parola IMAP este citită din secrets.yaml al Home Assistant — adaug-o acolo sub cheia de mai jos (implicit jarvis_imap_password); nu este niciodată stocată în configurația panoului.",
+        "data": {
+          "imap_enabled": "Activează citirea e-mailurilor",
+          "imap_host": "Gazdă IMAP (de ex. imap.gmail.com)",
+          "imap_port": "Port IMAP (SSL: 993)",
+          "imap_user": "Nume utilizator IMAP / adresă de e-mail",
+          "imap_folder": "Folder căsuță (implicit INBOX)",
+          "imap_ssl": "Folosește SSL (recomandat)",
+          "imap_secret_key": "Cheia din secrets.yaml care conține parola"
+        }
       }
+    },
+    "error": {
+      "need_llm": "Introdu fie o cheie API cloud, fie un URL LLM local.",
+      "cannot_connect": "Nu s-a putut contacta LLM-ul. Verifică dacă URL-ul/endpointul este corect și dacă serverul (de ex. Ollama) rulează.",
+      "invalid_auth": "Cheia API a fost respinsă. Verifică cheia și încearcă din nou.",
+      "unknown": "Nu s-a putut valida conexiunea LLM. Verifică setările și încearcă din nou.",
+      "no_models": "Nu sunt disponibile modele pentru acest furnizor. Verificați endpoint-ul furnizorului și încercați din nou.",
+      "no_providers": "Nu este configurat niciun furnizor LLM. Adăugați mai întâi o cheie de furnizor sau un endpoint în secțiunea LLM."
+    }
+  },
+  "issues": {
+    "llm_unavailable": {
+      "title": "Backend-ul de raționament JARVIS este indisponibil",
+      "description": "JARVIS nu a putut contacta modelul său de raționament, așa că rulează în mod limitat — controlul dispozitivelor, starea și scenele funcționează în continuare. Motiv: {detail}\n\nDeschide panoul JARVIS → Setări și verifică furnizorul, modelul și cheia API. Dacă furnizorul a retras modelul, selectează-l din nou din listă. Această notificare dispare automat când raționamentul funcționează din nou."
     }
   }
 }

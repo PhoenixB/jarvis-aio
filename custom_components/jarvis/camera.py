@@ -85,13 +85,20 @@ def _make_client(hass: HomeAssistant, provider: str, model: str, fallback):
     try:
         if not provider or not model:
             return fallback
-        if provider == "gemini":
-            api_key = _cfg_opt(hass, "gemini_api_key", "") or ""
-        else:
-            api_key = _cfg_opt(hass, "api_key", "") or _cfg_opt(hass, "groq_api_key", "") or ""
-        if not api_key:
+        from . import ha_secrets
+        api_key = ha_secrets.get_provider_key_sync(provider)
+        from .const import resolve_provider_base_url
+        base_url = resolve_provider_base_url({
+            "custom_base_url": _cfg_opt(hass, "custom_base_url", ""),
+            "ollama_base_url": _cfg_opt(hass, "ollama_base_url", ""),
+            "llm_base_url": _cfg_opt(hass, "llm_base_url", ""),
+        }, provider)
+        # Ollama needs no key at all; Custom is explicitly allowed to have
+        # none as long as its endpoint is configured.
+        if not api_key and provider not in ("ollama", "custom"):
             return fallback
-        base_url = _cfg_opt(hass, "llm_base_url", "") or None
+        if not api_key and provider == "custom" and not base_url:
+            return fallback
         key = (provider, model, api_key, base_url or "")
         cached = _PROVIDER_CACHE.get(key)
         if cached is not None:
@@ -106,6 +113,12 @@ def _make_client(hass: HomeAssistant, provider: str, model: str, fallback):
             provider, model, exc,
         )
         return fallback
+
+
+async def async_make_client(hass: HomeAssistant, provider: str, model: str, fallback):
+    """Executor wrapper for :func:`_make_client` so async callers avoid blocking
+    secrets/config file I/O on Home Assistant's event loop."""
+    return await hass.async_add_executor_job(_make_client, hass, provider, model, fallback)
 
 
 def _vision_model_rejects_images(exc) -> bool:

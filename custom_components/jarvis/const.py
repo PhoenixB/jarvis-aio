@@ -40,12 +40,47 @@ CONF_BROADCAST_GROUP          = "broadcast_group"          # media_player entity
 
 # Per-tier LLM provider selection. Each tier can use a different provider.
 CONF_GEMINI_API_KEY           = "gemini_api_key"
+CONF_OPENAI_API_KEY           = "openai_api_key"
+CONF_ANTHROPIC_API_KEY        = "anthropic_api_key"
+CONF_CUSTOM_API_KEY           = "custom_api_key"
+CONF_CUSTOM_BASE_URL          = "custom_base_url"
+CONF_OLLAMA_BASE_URL          = "ollama_base_url"
 CONF_CLASSIFIER_PROVIDER      = "classifier_provider"
 CONF_CLASSIFIER_MODEL         = "classifier_model"
 CONF_REASONING_PROVIDER       = "reasoning_provider"
 CONF_REASONING_MODEL          = "reasoning_model"
 CONF_REVIEW_PROVIDER          = "review_provider"
 CONF_REVIEW_MODEL             = "review_model"
+
+# Every cloud/self-hosted provider gets its own credential field, so keys for
+# multiple providers can coexist (e.g. Groq for the Main Agent, Gemini for the
+# Observer tiers) instead of one shared field clobbering whichever was there.
+# ollama has no key — only a reachable llm_base_url.
+PROVIDER_API_KEY_FIELDS = {
+    "groq":      CONF_API_KEY,
+    "openai":    CONF_OPENAI_API_KEY,
+    "anthropic": CONF_ANTHROPIC_API_KEY,
+    "gemini":    CONF_GEMINI_API_KEY,
+    "custom":    CONF_CUSTOM_API_KEY,
+    "ollama":    None,
+}
+
+# Custom and Ollama each keep their own endpoint so configuring one can't
+# overwrite the other; every other provider uses its canonical cloud endpoint.
+PROVIDER_BASE_URL_FIELDS = {
+    "custom": CONF_CUSTOM_BASE_URL,
+    "ollama": CONF_OLLAMA_BASE_URL,
+}
+
+
+def resolve_provider_base_url(config: dict, provider: str) -> str | None:
+    """The base URL `provider` should use: its own field first (falls back to
+    the legacy shared `llm_base_url` for installs migrating off it), else None
+    for cloud providers with a canonical endpoint."""
+    field = PROVIDER_BASE_URL_FIELDS.get(provider)
+    if not field:
+        return None
+    return config.get(field) or config.get("llm_base_url") or None
 
 CONF_NOTIFY_SERVICE           = "notify_service"
 

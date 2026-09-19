@@ -14,8 +14,8 @@ It returns either:
   - A "speak" decision: {"speak": true, "message": "...", "urgency": "..."}
   - A "stay silent" decision: {"speak": false, "reason": "..."}
 
-The model is Gemini Flash by default — more capable than Flash-Lite but
-still cheap. Uses thinking_budget normally (lets it reason).
+The reasoning-tier model is provider-configurable. Uses thinking_budget
+normally (lets it reason).
 
 The observer calls this, then hands the result (if speak=true) to the
 output gate for rate limiting and routing.
@@ -665,3 +665,40 @@ async def decide(
         except Exception as exc:
             _LOGGER.debug("Local Mind error (%s) — basic fallback", exc)
             return _local_fallback(classifier_urgency, friendly_name, to_state, honorific)
+
+
+async def review_decision(hass, provider, *, event_summary: str, decision: dict) -> bool:
+    """Periodically validate a reasoning decision with the Review tier.
+
+    Review is veto-only and fails open, so an unavailable review provider does
+    not disable the primary Observer path.
+    """
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are JARVIS's periodic safety reviewer. Return JSON only: "
+                '{"approve": true} or {"approve": false}. Approve only if the '
+                "proposed announcement is justified by the event and urgency."
+            ),
+        },
+        {
+            "role": "user",
+            "content": json.dumps({"event": event_summary, "decision": decision}),
+        },
+    ]
+    try:
+        response = await hass.async_add_executor_job(
+            lambda: provider.chat(messages, temperature=0.0, max_tokens=30)
+        )
+        content = (
+            response.get("text") if isinstance(response, dict)
+            else (getattr(response, "content", None)
+                  or getattr(response, "text", None)
+                  or str(response))
+        )
+        parsed = json.loads(str(content).strip())
+        return bool(parsed.get("approve", True))
+    except Exception as exc:
+        _LOGGER.debug("Review tier unavailable; approving primary decision: %s", exc)
+        return True

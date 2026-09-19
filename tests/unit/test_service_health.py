@@ -13,7 +13,7 @@ COMP = pathlib.Path(__file__).resolve().parents[2] / "custom_components" / "jarv
 
 
 @pytest.fixture
-def sh():
+def sh(monkeypatch):
     """Load diagnostics.service_health with a stub parent package so its
     `from .. import jarvis_config` resolves without pulling the whole tree."""
     # stub parent 'jc' with a jarvis_config that reads an overridable dict
@@ -24,7 +24,7 @@ def sh():
     cfg_store = {}
     jc_cfg = types.ModuleType("jc.jarvis_config")
     jc_cfg.get = lambda k, d=None: cfg_store.get(k, d)
-    sys.modules["jc.jarvis_config"] = jc_cfg
+    monkeypatch.setitem(sys.modules, "jc.jarvis_config", jc_cfg)
     # diagnostics subpackage
     if "jc.diagnostics" not in sys.modules:
         dpkg = types.ModuleType("jc.diagnostics")

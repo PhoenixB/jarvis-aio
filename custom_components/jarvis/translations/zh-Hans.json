@@ -1,100 +1,167 @@
 {
   "config": {
+    "step": {
+      "provider_menu": {
+        "title": "JARVIS — 添加提供商",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "自定义（兼容 OpenAI）",
+          "ollama": "Ollama（本地）",
+          "finish": "完成设置"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq API 密钥"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API 密钥"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API 密钥"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API 密钥"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — 自定义提供商",
+        "data": {
+          "api_key": "API 密钥（可选，若端点需要）",
+          "custom_base_url": "API 基础 URL（兼容 OpenAI）"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "基础 URL（留空使用 http://homeassistant.local:11434/v1）"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — 完成设置",
+        "description": "{note}",
+        "data": {
+          "llm_provider": "主代理提供商",
+          "honorific": "称呼我为"
+        }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
+      }
+    },
+    "error": {
+      "need_llm": "请输入云端 API 密钥或本地 LLM URL。",
+      "cannot_connect": "无法连接到 LLM。请检查 URL/端点是否正确，以及服务器（例如 Ollama）是否正在运行。",
+      "invalid_auth": "API 密钥被拒绝。请检查密钥后重试。",
+      "unknown": "无法验证 LLM 连接。请检查设置后重试。",
+      "no_models": "此提供商没有可用模型。请检查端点后重试。",
+      "no_providers": "尚未配置 LLM 提供商。请先在 LLM 部分添加 API 密钥或端点。"
+    },
     "abort": {
       "already_configured": "JARVIS 已配置。",
       "import_failed": "找到了 JARVIS 配置，但没有可用的 LLM（没有 API 密钥，也没有本地端点）。"
-    },
-    "error": {
-      "cannot_connect": "无法连接到 LLM。请检查 URL/端点是否正确，以及服务器（例如 Ollama）是否正在运行。",
-      "invalid_auth": "API 密钥被拒绝。请检查密钥后重试。",
-      "need_llm": "请输入云端 API 密钥或本地 LLM URL。",
-      "unknown": "无法验证 LLM 连接。请检查设置后重试。"
-    },
-    "step": {
-      "user": {
-        "data": {
-          "api_key": "云端 LLM API 密钥（例如 Groq）",
-          "honorific": "称呼我为",
-          "llm_base_url": "本地 LLM 基础 URL——Ollama 请使用主机 homeassistant.local、端口 11434、路径 /v1",
-          "model": "对话模型"
-        },
-        "description": "{note}",
-        "title": "JARVIS 设置"
-      }
-    }
-  },
-  "issues": {
-    "llm_unavailable": {
-      "description": "JARVIS 无法连接到其推理模型，因此正在以受限模式运行——设备控制、状态和场景仍可使用。原因：{detail}\n\n请打开 JARVIS 面板 → 设置，检查你的提供商、模型和 API 密钥。如果提供商已停用该模型，请从列表中重新选择。推理恢复正常后，此通知会自动消失。",
-      "title": "JARVIS 推理后端不可用"
     }
   },
   "options": {
     "step": {
-      "core": {
-        "data": {
-          "directive": "自定义指令（可选，会覆盖预设）",
-          "directive_preset": "指令预设",
-          "honorific": "称呼我为",
-          "model": "对话模型",
-          "use_hass_api": "启用家居控制（灯光、空调、门锁等）"
-        },
-        "description": "人格、指令和对话模型。",
-        "title": "JARVIS — 核心"
-      },
-      "email": {
-        "data": {
-          "imap_enabled": "启用邮件读取",
-          "imap_folder": "邮箱文件夹（默认 INBOX）",
-          "imap_host": "IMAP 主机（例如 imap.gmail.com）",
-          "imap_port": "IMAP 端口（SSL：993）",
-          "imap_secret_key": "存放密码的 secrets.yaml 键",
-          "imap_ssl": "使用 SSL（推荐）",
-          "imap_user": "IMAP 用户名 / 电子邮件地址"
-        },
-        "description": "只读收件箱访问。IMAP 密码从 Home Assistant 的 secrets.yaml 中读取——请在其中以下面的键添加（默认 jarvis_imap_password）；它绝不会存储在面板配置中。",
-        "title": "JARVIS — 电子邮件"
-      },
-      "identity": {
-        "data": {
-          "identity_enabled": "识别正在说话的人",
-          "identity_min_confidence": "确定某个人之前所需的最低置信度",
-          "identity_voice_fingerprint": "声纹识别（需要本地 GPU）",
-          "voice_recognition_auto_enroll": "在人们说话时自动标记要登记的声音",
-          "voice_recognition_source": "语音识别来源（来自说话人识别服务的实体，例如 binary_sensor.*_voice）"
-        },
-        "data_description": {
-          "identity_enabled": "使用谁在家 + 最近的摄像头人脸识别。无需 GPU。",
-          "identity_min_confidence": "越高 = 越谨慎；不确定时保持中立。",
-          "identity_voice_fingerprint": "除非你有运行声纹识别模型的 GPU 服务器，否则请保持关闭。"
-        },
-        "description": "按人识别，让 JARVIS 根据说话的人进行调整。无需特殊硬件，即可借助存在状态和（若已设置）摄像头人脸识别工作。声纹最为准确，但需要本地 GPU，因此默认关闭。",
-        "title": "JARVIS — 身份"
-      },
       "init": {
+        "title": "JARVIS — 配置",
         "menu_options": {
+          "llm": "LLM——管理提供商密钥",
           "core": "核心——人格、指令、对话模型",
-          "email": "电子邮件——只读收件箱（密码通过 secrets.yaml 提供）",
+          "routing": "路由——卧室区域、广播群组、通知服务",
+          "observer": "观察者——主动感知（使用已配置的 LLM 提供商）",
           "identity": "身份——按人识别",
-          "observer": "观察者——主动感知（需要 Gemini 密钥）",
-          "routing": "路由——卧室区域、广播群组、通知服务"
-        },
-        "title": "JARVIS — 配置"
+          "email": "电子邮件——只读收件箱（密码通过 secrets.yaml 提供）"
+        }
       },
-      "observer": {
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "自定义（兼容 OpenAI）",
+          "ollama": "Ollama（本地）",
+          "back": "返回配置菜单"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
         "data": {
-          "classifier_model": "分类模型（第 1 层——廉价）",
-          "gemini_api_key": "Gemini API 密钥",
-          "observer_enabled": "启用观察者模式",
-          "observer_quiet_end": "安静时段结束（HH:MM）",
-          "observer_quiet_start": "安静时段开始（HH:MM）",
-          "reasoning_model": "推理模型（第 2 层——主力）",
-          "review_model": "审阅模型（第 3 层——定期）"
-        },
-        "description": "主动感知。JARVIS 会关注你的家，并在有值得注意的情况时主动开口。需要 Gemini API 密钥（建议启用计费）。",
-        "title": "JARVIS — 观察者模式"
+          "api_key": "Groq API 密钥"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API 密钥"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API 密钥"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API 密钥"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — 自定义提供商",
+        "data": {
+          "api_key": "API 密钥（可选，若端点需要）",
+          "custom_base_url": "API 基础 URL（兼容 OpenAI）"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "基础 URL（留空使用 http://homeassistant.local:11434/v1）"
+        }
+      },
+      "core": {
+        "title": "JARVIS — 核心",
+        "description": "人格、指令和对话模型。",
+        "data": {
+          "honorific": "称呼我为",
+          "directive_preset": "指令预设",
+          "directive": "自定义指令（可选，会覆盖预设）",
+          "llm_provider": "Conversation model provider",
+          "use_hass_api": "启用家居控制（灯光、空调、门锁等）"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       },
       "routing": {
+        "title": "JARVIS — 路由",
+        "description": "选择哪些 HA 区域是卧室（用于睡眠检测）、广播使用哪个 media_player 群组，以及你的手机通知服务。",
         "data": {
           "bedroom_areas": "卧室区域（用于安静时段的睡眠检测）",
           "broadcast_group": "广播扬声器群组（通常是你的家庭 Cast 群组）",
@@ -104,10 +171,106 @@
           "bedroom_areas": "在安静时段，这些区域中的任何存在传感器都会触发睡眠模式。",
           "broadcast_group": "用于关键和高紧急度的通告。",
           "notify_service": "在你离家或睡觉时使用。"
+        }
+      },
+      "observer": {
+        "title": "JARVIS — 观察者模式",
+        "description": "配置各个 Observer 模型层级及其静默时段。Review 为可选项，仅在已配置时运行。",
+        "menu_options": {
+          "classifier": "分类器（第 1 层 — 低成本）",
+          "reasoning": "推理（第 2 层 — 主模型）",
+          "review": "审查（第 3 层 — 周期性，可选）",
+          "observer_settings": "观察者设置",
+          "back": "返回配置菜单"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
+        "data": {
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
+        "data": {
+          "observer_enabled": "Enable observer mode",
+          "observer_quiet_start": "Quiet hours start (HH:MM)",
+          "observer_quiet_end": "Quiet hours end (HH:MM)"
+        }
+      },
+      "identity": {
+        "title": "JARVIS — 身份",
+        "description": "按人识别，让 JARVIS 根据说话的人进行调整。无需特殊硬件，即可借助存在状态和（若已设置）摄像头人脸识别工作。声纹最为准确，但需要本地 GPU，因此默认关闭。",
+        "data": {
+          "identity_enabled": "识别正在说话的人",
+          "identity_voice_fingerprint": "声纹识别（需要本地 GPU）",
+          "identity_min_confidence": "确定某个人之前所需的最低置信度",
+          "voice_recognition_source": "语音识别来源（来自说话人识别服务的实体，例如 binary_sensor.*_voice）",
+          "voice_recognition_auto_enroll": "在人们说话时自动标记要登记的声音"
         },
-        "description": "选择哪些 HA 区域是卧室（用于睡眠检测）、广播使用哪个 media_player 群组，以及你的手机通知服务。",
-        "title": "JARVIS — 路由"
+        "data_description": {
+          "identity_enabled": "使用谁在家 + 最近的摄像头人脸识别。无需 GPU。",
+          "identity_voice_fingerprint": "除非你有运行声纹识别模型的 GPU 服务器，否则请保持关闭。",
+          "identity_min_confidence": "越高 = 越谨慎；不确定时保持中立。"
+        }
+      },
+      "email": {
+        "title": "JARVIS — 电子邮件",
+        "description": "只读收件箱访问。IMAP 密码从 Home Assistant 的 secrets.yaml 中读取——请在其中以下面的键添加（默认 jarvis_imap_password）；它绝不会存储在面板配置中。",
+        "data": {
+          "imap_enabled": "启用邮件读取",
+          "imap_host": "IMAP 主机（例如 imap.gmail.com）",
+          "imap_port": "IMAP 端口（SSL：993）",
+          "imap_user": "IMAP 用户名 / 电子邮件地址",
+          "imap_folder": "邮箱文件夹（默认 INBOX）",
+          "imap_ssl": "使用 SSL（推荐）",
+          "imap_secret_key": "存放密码的 secrets.yaml 键"
+        }
       }
+    },
+    "error": {
+      "need_llm": "请输入云端 API 密钥或本地 LLM URL。",
+      "cannot_connect": "无法连接到 LLM。请检查 URL/端点是否正确，以及服务器（例如 Ollama）是否正在运行。",
+      "invalid_auth": "API 密钥被拒绝。请检查密钥后重试。",
+      "unknown": "无法验证 LLM 连接。请检查设置后重试。",
+      "no_models": "此提供商没有可用模型。请检查端点后重试。",
+      "no_providers": "尚未配置 LLM 提供商。请先在 LLM 部分添加 API 密钥或端点。"
+    }
+  },
+  "issues": {
+    "llm_unavailable": {
+      "title": "JARVIS 推理后端不可用",
+      "description": "JARVIS 无法连接到其推理模型，因此正在以受限模式运行——设备控制、状态和场景仍可使用。原因：{detail}\n\n请打开 JARVIS 面板 → 设置，检查你的提供商、模型和 API 密钥。如果提供商已停用该模型，请从列表中重新选择。推理恢复正常后，此通知会自动消失。"
     }
   }
 }

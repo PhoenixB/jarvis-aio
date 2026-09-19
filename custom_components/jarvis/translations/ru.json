@@ -1,100 +1,167 @@
 {
   "config": {
+    "step": {
+      "provider_menu": {
+        "title": "JARVIS — Добавить провайдера",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Пользовательский (совместим с OpenAI)",
+          "ollama": "Ollama (локальный)",
+          "finish": "Завершить настройку"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "API-ключ Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "API-ключ OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "API-ключ Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "API-ключ Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Пользовательский провайдер",
+        "data": {
+          "api_key": "API-ключ (необязательно, если требуется конечной точкой)",
+          "custom_base_url": "Базовый URL API (совместим с OpenAI)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "Базовый URL (пусто использует http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Завершить настройку",
+        "description": "{note}",
+        "data": {
+          "llm_provider": "Провайдер Главного агента",
+          "honorific": "Обращаться ко мне"
+        }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
+      }
+    },
+    "error": {
+      "need_llm": "Введите либо облачный API-ключ, либо URL локальной LLM.",
+      "cannot_connect": "Не удалось связаться с LLM. Проверьте правильность URL/эндпоинта и работу сервера (например, Ollama).",
+      "invalid_auth": "API-ключ отклонён. Проверьте ключ и повторите попытку.",
+      "unknown": "Не удалось проверить подключение к LLM. Проверьте настройки и повторите попытку.",
+      "no_models": "Для этого провайдера нет доступных моделей. Проверьте конечную точку провайдера и попробуйте снова.",
+      "no_providers": "Не настроен ни один провайдер LLM. Сначала добавьте ключ провайдера или конечную точку в разделе LLM."
+    },
     "abort": {
       "already_configured": "JARVIS уже настроен.",
       "import_failed": "Найдена конфигурация JARVIS, но нет работающей LLM (нет API-ключа и локального эндпоинта)."
-    },
-    "error": {
-      "cannot_connect": "Не удалось связаться с LLM. Проверьте правильность URL/эндпоинта и работу сервера (например, Ollama).",
-      "invalid_auth": "API-ключ отклонён. Проверьте ключ и повторите попытку.",
-      "need_llm": "Введите либо облачный API-ключ, либо URL локальной LLM.",
-      "unknown": "Не удалось проверить подключение к LLM. Проверьте настройки и повторите попытку."
-    },
-    "step": {
-      "user": {
-        "data": {
-          "api_key": "API-ключ облачной LLM (например, Groq)",
-          "honorific": "Обращаться ко мне",
-          "llm_base_url": "Базовый URL локальной LLM — для Ollama используйте хост homeassistant.local, порт 11434, путь /v1",
-          "model": "Модель диалога"
-        },
-        "description": "{note}",
-        "title": "Настройка JARVIS"
-      }
-    }
-  },
-  "issues": {
-    "llm_unavailable": {
-      "description": "JARVIS не смог связаться со своей моделью рассуждений, поэтому работает в ограниченном режиме — управление устройствами, статус и сцены по-прежнему работают. Причина: {detail}\n\nОткройте панель JARVIS → Настройки и проверьте провайдера, модель и API-ключ. Если провайдер убрал модель, выберите её заново из списка. Это уведомление исчезнет автоматически, когда рассуждения снова заработают.",
-      "title": "Движок рассуждений JARVIS недоступен"
     }
   },
   "options": {
     "step": {
-      "core": {
-        "data": {
-          "directive": "Своя директива (необязательно, переопределяет предустановку)",
-          "directive_preset": "Предустановка директивы",
-          "honorific": "Обращаться ко мне",
-          "model": "Модель диалога",
-          "use_hass_api": "Включить управление домом (свет, климат, замки и т. д.)"
-        },
-        "description": "Личность, директива и модель диалога.",
-        "title": "JARVIS — Ядро"
-      },
-      "email": {
-        "data": {
-          "imap_enabled": "Включить чтение почты",
-          "imap_folder": "Папка почтового ящика (по умолчанию INBOX)",
-          "imap_host": "Хост IMAP (например, imap.gmail.com)",
-          "imap_port": "Порт IMAP (SSL: 993)",
-          "imap_secret_key": "Ключ в secrets.yaml, содержащий пароль",
-          "imap_ssl": "Использовать SSL (рекомендуется)",
-          "imap_user": "Имя пользователя IMAP / адрес эл. почты"
-        },
-        "description": "Доступ к почтовому ящику только для чтения. Пароль IMAP считывается из secrets.yaml в Home Assistant — добавьте его туда под указанным ниже ключом (по умолчанию jarvis_imap_password); он никогда не хранится в конфигурации панели.",
-        "title": "JARVIS — Эл. почта"
-      },
-      "identity": {
-        "data": {
-          "identity_enabled": "Распознавать, кто говорит",
-          "identity_min_confidence": "Минимальная уверенность перед привязкой к человеку",
-          "identity_voice_fingerprint": "Голосовой отпечаток (требует локального GPU)",
-          "voice_recognition_auto_enroll": "Автоматически отмечать голоса для регистрации по мере речи",
-          "voice_recognition_source": "Источник распознавания голоса (объект из службы распознавания говорящего, например binary_sensor.*_voice)"
-        },
-        "data_description": {
-          "identity_enabled": "Использует, кто дома, + недавнее распознавание лиц с камеры. GPU не требуется.",
-          "identity_min_confidence": "Выше = осторожнее; при неуверенности остаётся нейтральным.",
-          "identity_voice_fingerprint": "Оставьте выключенным, если у вас нет GPU-сервера с моделью идентификации голоса."
-        },
-        "description": "распознавание отдельных людей, чтобы JARVIS подстраивался под того, кто говорит. Работает без специального оборудования, используя присутствие и (если настроено) распознавание лиц с камеры. Голосовой отпечаток самый точный, но требует локального GPU, поэтому по умолчанию отключён.",
-        "title": "JARVIS — Личность"
-      },
       "init": {
+        "title": "JARVIS — Настройка",
         "menu_options": {
+          "llm": "LLM — управление ключами провайдеров",
           "core": "Ядро — личность, директива, модель диалога",
-          "email": "Эл. почта — почтовый ящик только для чтения (пароль через secrets.yaml)",
+          "routing": "Маршрутизация — зоны спален, группа вещания, служба уведомлений",
+          "observer": "Наблюдатель — проактивная осведомлённость (использует настроенных провайдеров LLM)",
           "identity": "Личность — распознавание отдельных людей",
-          "observer": "Наблюдатель — проактивная осведомлённость (нужен ключ Gemini)",
-          "routing": "Маршрутизация — зоны спален, группа вещания, служба уведомлений"
-        },
-        "title": "JARVIS — Настройка"
+          "email": "Эл. почта — почтовый ящик только для чтения (пароль через secrets.yaml)"
+        }
       },
-      "observer": {
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Пользовательский (совместим с OpenAI)",
+          "ollama": "Ollama (локальный)",
+          "back": "Назад в меню настройки"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
         "data": {
-          "classifier_model": "Модель-классификатор (уровень 1 — дешёвая)",
-          "gemini_api_key": "API-ключ Gemini",
-          "observer_enabled": "Включить режим наблюдателя",
-          "observer_quiet_end": "Конец тихих часов (ЧЧ:ММ)",
-          "observer_quiet_start": "Начало тихих часов (ЧЧ:ММ)",
-          "reasoning_model": "Модель рассуждений (уровень 2 — основная)",
-          "review_model": "Модель проверки (уровень 3 — периодическая)"
-        },
-        "description": "проактивная осведомлённость. JARVIS следит за вашим домом и сообщает, когда что-то заслуживает внимания. Требуется API-ключ Gemini (рекомендуется с включённой оплатой).",
-        "title": "JARVIS — Режим наблюдателя"
+          "api_key": "API-ключ Groq"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "API-ключ OpenAI"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "API-ключ Anthropic"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "API-ключ Gemini"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Пользовательский провайдер",
+        "data": {
+          "api_key": "API-ключ (необязательно, если требуется конечной точкой)",
+          "custom_base_url": "Базовый URL API (совместим с OpenAI)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "Базовый URL (пусто использует http://homeassistant.local:11434/v1)"
+        }
+      },
+      "core": {
+        "title": "JARVIS — Ядро",
+        "description": "Личность, директива и модель диалога.",
+        "data": {
+          "honorific": "Обращаться ко мне",
+          "directive_preset": "Предустановка директивы",
+          "directive": "Своя директива (необязательно, переопределяет предустановку)",
+          "llm_provider": "Conversation model provider",
+          "use_hass_api": "Включить управление домом (свет, климат, замки и т. д.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
+        }
       },
       "routing": {
+        "title": "JARVIS — Маршрутизация",
+        "description": "выберите, какие зоны HA являются спальнями (для определения сна), какую группу media_player использовать для вещания и службу уведомлений вашего телефона.",
         "data": {
           "bedroom_areas": "Зоны спален (для определения сна в тихие часы)",
           "broadcast_group": "Группа динамиков для вещания (обычно ваша домашняя группа Cast)",
@@ -104,10 +171,106 @@
           "bedroom_areas": "Любой датчик присутствия в этих зонах включает режим сна в тихие часы.",
           "broadcast_group": "Используется для критических и очень срочных оповещений.",
           "notify_service": "Используется, когда вас нет дома или вы спите."
+        }
+      },
+      "observer": {
+        "title": "JARVIS — Режим наблюдателя",
+        "description": "проактивная осведомлённость. JARVIS следит за вашим домом и сообщает, когда что-то заслуживает внимания.",
+        "menu_options": {
+          "classifier": "Classifier (Tier 1 — cheap)",
+          "reasoning": "Reasoning (Tier 2 — main)",
+          "review": "Review (Tier 3 — periodic)",
+          "observer_settings": "Observer settings",
+          "back": "Назад в меню настройки"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
+        "data": {
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
+        "data": {
+          "observer_enabled": "Enable observer mode",
+          "observer_quiet_start": "Quiet hours start (HH:MM)",
+          "observer_quiet_end": "Quiet hours end (HH:MM)"
+        }
+      },
+      "identity": {
+        "title": "JARVIS — Личность",
+        "description": "распознавание отдельных людей, чтобы JARVIS подстраивался под того, кто говорит. Работает без специального оборудования, используя присутствие и (если настроено) распознавание лиц с камеры. Голосовой отпечаток самый точный, но требует локального GPU, поэтому по умолчанию отключён.",
+        "data": {
+          "identity_enabled": "Распознавать, кто говорит",
+          "identity_voice_fingerprint": "Голосовой отпечаток (требует локального GPU)",
+          "identity_min_confidence": "Минимальная уверенность перед привязкой к человеку",
+          "voice_recognition_source": "Источник распознавания голоса (объект из службы распознавания говорящего, например binary_sensor.*_voice)",
+          "voice_recognition_auto_enroll": "Автоматически отмечать голоса для регистрации по мере речи"
         },
-        "description": "выберите, какие зоны HA являются спальнями (для определения сна), какую группу media_player использовать для вещания и службу уведомлений вашего телефона.",
-        "title": "JARVIS — Маршрутизация"
+        "data_description": {
+          "identity_enabled": "Использует, кто дома, + недавнее распознавание лиц с камеры. GPU не требуется.",
+          "identity_voice_fingerprint": "Оставьте выключенным, если у вас нет GPU-сервера с моделью идентификации голоса.",
+          "identity_min_confidence": "Выше = осторожнее; при неуверенности остаётся нейтральным."
+        }
+      },
+      "email": {
+        "title": "JARVIS — Эл. почта",
+        "description": "Доступ к почтовому ящику только для чтения. Пароль IMAP считывается из secrets.yaml в Home Assistant — добавьте его туда под указанным ниже ключом (по умолчанию jarvis_imap_password); он никогда не хранится в конфигурации панели.",
+        "data": {
+          "imap_enabled": "Включить чтение почты",
+          "imap_host": "Хост IMAP (например, imap.gmail.com)",
+          "imap_port": "Порт IMAP (SSL: 993)",
+          "imap_user": "Имя пользователя IMAP / адрес эл. почты",
+          "imap_folder": "Папка почтового ящика (по умолчанию INBOX)",
+          "imap_ssl": "Использовать SSL (рекомендуется)",
+          "imap_secret_key": "Ключ в secrets.yaml, содержащий пароль"
+        }
       }
+    },
+    "error": {
+      "need_llm": "Введите либо облачный API-ключ, либо URL локальной LLM.",
+      "cannot_connect": "Не удалось связаться с LLM. Проверьте правильность URL/эндпоинта и работу сервера (например, Ollama).",
+      "invalid_auth": "API-ключ отклонён. Проверьте ключ и повторите попытку.",
+      "unknown": "Не удалось проверить подключение к LLM. Проверьте настройки и повторите попытку.",
+      "no_models": "Для этого провайдера нет доступных моделей. Проверьте конечную точку провайдера и попробуйте снова.",
+      "no_providers": "Не настроен ни один провайдер LLM. Сначала добавьте ключ провайдера или конечную точку в разделе LLM."
+    }
+  },
+  "issues": {
+    "llm_unavailable": {
+      "title": "Движок рассуждений JARVIS недоступен",
+      "description": "JARVIS не смог связаться со своей моделью рассуждений, поэтому работает в ограниченном режиме — управление устройствами, статус и сцены по-прежнему работают. Причина: {detail}\n\nОткройте панель JARVIS → Настройки и проверьте провайдера, модель и API-ключ. Если провайдер убрал модель, выберите её заново из списка. Это уведомление исчезнет автоматически, когда рассуждения снова заработают."
     }
   }
 }

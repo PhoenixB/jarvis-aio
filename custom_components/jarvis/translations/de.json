@@ -1,14 +1,68 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "JARVIS-Einrichtung",
+      "provider_menu": {
+        "title": "JARVIS — Anbieter hinzufügen",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Benutzerdefiniert (OpenAI-kompatibel)",
+          "ollama": "Ollama (lokal)",
+          "finish": "Einrichtung abschließen"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq-API-Schlüssel"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI-API-Schlüssel"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic-API-Schlüssel"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini-API-Schlüssel"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Benutzerdefinierter Anbieter",
+        "data": {
+          "api_key": "API-Schlüssel (optional, falls der Endpunkt einen benötigt)",
+          "custom_base_url": "API-Basis-URL (OpenAI-kompatibel)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "Basis-URL (leer = http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Einrichtung abschließen",
         "description": "{note}",
         "data": {
-          "api_key": "Cloud-LLM-API-Schlüssel (z. B. Groq)",
-          "llm_base_url": "Basis-URL des lokalen LLM — für Ollama Host homeassistant.local, Port 11434, Pfad /v1",
-          "model": "Konversationsmodell",
+          "llm_provider": "Anbieter des Hauptagenten",
           "honorific": "Sprich mich an mit"
+        }
+      },
+      "finish_model": {
+        "title": "JARVIS — Gesprächsmodell",
+        "data": {
+          "model": "Gesprächsmodell"
         }
       }
     },
@@ -16,7 +70,9 @@
       "need_llm": "Gib entweder einen Cloud-API-Schlüssel oder eine lokale LLM-URL ein.",
       "cannot_connect": "LLM nicht erreichbar. Prüfe, ob die URL/der Endpunkt korrekt ist und der Server (z. B. Ollama) läuft.",
       "invalid_auth": "Der API-Schlüssel wurde abgelehnt. Prüfe den Schlüssel und versuche es erneut.",
-      "unknown": "LLM-Verbindung konnte nicht überprüft werden. Prüfe die Einstellungen und versuche es erneut."
+      "unknown": "LLM-Verbindung konnte nicht überprüft werden. Prüfe die Einstellungen und versuche es erneut.",
+      "no_models": "Für diesen Anbieter sind keine Modelle verfügbar. Prüfe den Anbieter-Endpunkt und versuche es erneut.",
+      "no_providers": "Keine LLM-Anbieter konfiguriert. Füge zuerst einen Anbieter-Schlüssel oder Endpunkt im Abschnitt LLM hinzu."
     },
     "abort": {
       "already_configured": "JARVIS ist bereits eingerichtet.",
@@ -28,11 +84,62 @@
       "init": {
         "title": "JARVIS — Konfigurieren",
         "menu_options": {
+          "llm": "LLM — Anbieter-Schlüssel verwalten",
           "core": "Kern — Persona, Direktive, Konversationsmodell",
           "routing": "Routing — Schlafzimmerbereiche, Broadcast-Gruppe, Benachrichtigungsdienst",
-          "observer": "Beobachter — proaktive Wahrnehmung (benötigt einen Gemini-Schlüssel)",
+          "observer": "Beobachter — proaktive Wahrnehmung (verwendet konfigurierte LLM-Anbieter)",
           "identity": "Identität — Erkennung pro Person",
           "email": "E-Mail — schreibgeschützter Posteingang (Passwort über secrets.yaml)"
+        }
+      },
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Benutzerdefiniert (OpenAI-kompatibel)",
+          "ollama": "Ollama (lokal)",
+          "back": "Zurück zum Konfigurationsmenü"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq-API-Schlüssel"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI-API-Schlüssel"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic-API-Schlüssel"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini-API-Schlüssel"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Benutzerdefinierter Anbieter",
+        "data": {
+          "api_key": "API-Schlüssel (optional, falls der Endpunkt einen benötigt)",
+          "custom_base_url": "API-Basis-URL (OpenAI-kompatibel)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "Basis-URL (leer = http://homeassistant.local:11434/v1)"
         }
       },
       "core": {
@@ -42,8 +149,14 @@
           "honorific": "Sprich mich an mit",
           "directive_preset": "Direktiven-Vorlage",
           "directive": "Eigene Direktive (optional, überschreibt Vorlage)",
-          "model": "Konversationsmodell",
+          "llm_provider": "Anbieter des Gesprächsmodells",
           "use_hass_api": "Haussteuerung aktivieren (Licht, Klima, Schlösser usw.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Gesprächsmodell",
+        "data": {
+          "model": "Gesprächsmodell"
         }
       },
       "routing": {
@@ -62,15 +175,57 @@
       },
       "observer": {
         "title": "JARVIS — Beobachter-Modus",
-        "description": "proaktive Wahrnehmung. JARVIS beobachtet dein Zuhause und meldet sich, wenn etwas erwähnenswert ist. Benötigt einen Gemini-API-Schlüssel (Abrechnung aktiviert empfohlen).",
+        "description": "proaktive Wahrnehmung. JARVIS beobachtet dein Zuhause und meldet sich, wenn etwas erwähnenswert ist.",
+        "menu_options": {
+          "classifier": "Classifier (Stufe 1 — günstig)",
+          "reasoning": "Reasoning (Stufe 2 — Hauptmodell)",
+          "review": "Review (Stufe 3 — regelmäßig)",
+          "observer_settings": "Beobachter-Einstellungen",
+          "back": "Zurück zum Konfigurationsmenü"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier-Anbieter",
+        "data": {
+          "classifier_provider": "Classifier-Modellanbieter"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier-Modell",
+        "data": {
+          "classifier_model": "Classifier-Modell"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning-Anbieter",
+        "data": {
+          "reasoning_provider": "Reasoning-Modellanbieter"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning-Modell",
+        "data": {
+          "reasoning_model": "Reasoning-Modell"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review-Anbieter",
+        "data": {
+          "review_provider": "Review-Modellanbieter"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review-Modell",
+        "data": {
+          "review_model": "Review-Modell"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Beobachter-Einstellungen",
         "data": {
           "observer_enabled": "Beobachter-Modus aktivieren",
-          "gemini_api_key": "Gemini-API-Schlüssel",
-          "classifier_model": "Klassifizierer-Modell (Stufe 1 — günstig)",
-          "reasoning_model": "Reasoning-Modell (Stufe 2 — Haupt)",
-          "review_model": "Review-Modell (Stufe 3 — periodisch)",
-          "observer_quiet_start": "Beginn der Ruhezeiten (HH:MM)",
-          "observer_quiet_end": "Ende der Ruhezeiten (HH:MM)"
+          "observer_quiet_start": "Start der Ruhezeit (HH:MM)",
+          "observer_quiet_end": "Ende der Ruhezeit (HH:MM)"
         }
       },
       "identity": {
@@ -102,6 +257,14 @@
           "imap_secret_key": "secrets.yaml-Schlüssel mit dem Passwort"
         }
       }
+    },
+    "error": {
+      "need_llm": "Gib entweder einen Cloud-API-Schlüssel oder eine lokale LLM-URL ein.",
+      "cannot_connect": "LLM nicht erreichbar. Prüfe, ob die URL/der Endpunkt korrekt ist und der Server (z. B. Ollama) läuft.",
+      "invalid_auth": "Der API-Schlüssel wurde abgelehnt. Prüfe den Schlüssel und versuche es erneut.",
+      "unknown": "LLM-Verbindung konnte nicht überprüft werden. Prüfe die Einstellungen und versuche es erneut.",
+      "no_models": "Für diesen Anbieter sind keine Modelle verfügbar. Prüfe den Anbieter-Endpunkt und versuche es erneut.",
+      "no_providers": "Keine LLM-Anbieter konfiguriert. Füge zuerst einen Anbieter-Schlüssel oder Endpunkt im Abschnitt LLM hinzu."
     }
   },
   "issues": {

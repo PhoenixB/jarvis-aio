@@ -1,14 +1,68 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "JARVIS Setup",
+      "provider_menu": {
+        "title": "JARVIS — Add a Provider",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Custom (OpenAI-compatible)",
+          "ollama": "Ollama (local)",
+          "finish": "Finish setup"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq API key"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API key"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API key"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API key"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Custom Provider",
+        "data": {
+          "custom_base_url": "API base URL (OpenAI-compatible)",
+          "api_key": "API key (optional, if the endpoint requires one)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "Base URL (blank uses http://homeassistant.local:11434/v1)"
+        }
+      },
+      "finish": {
+        "title": "JARVIS — Finish Setup",
         "description": "{note}",
         "data": {
-          "api_key": "Cloud LLM API key (e.g. Groq)",
-          "llm_base_url": "Local LLM base URL — for Ollama use host homeassistant.local, port 11434, path /v1",
-          "model": "Conversation model",
+          "llm_provider": "Main Agent provider",
           "honorific": "Address me as"
+        }
+      },
+      "finish_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
         }
       }
     },
@@ -16,7 +70,9 @@
       "need_llm": "Enter either a cloud API key or a local LLM URL.",
       "cannot_connect": "Couldn't reach the LLM. Check the URL/endpoint is correct and the server (e.g. Ollama) is running.",
       "invalid_auth": "The API key was rejected. Check the key and try again.",
-      "unknown": "Couldn't validate the LLM connection. Check the settings and try again."
+      "unknown": "Couldn't validate the LLM connection. Check the settings and try again.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     },
     "abort": {
       "already_configured": "JARVIS is already configured.",
@@ -28,11 +84,62 @@
       "init": {
         "title": "JARVIS — Configure",
         "menu_options": {
+          "llm": "LLM — manage provider keys",
           "core": "Core — persona, directive, conversation model",
           "routing": "Routing — bedroom areas, broadcast group, notify service",
-          "observer": "Observer — proactive awareness (needs a Gemini key)",
+          "observer": "Observer — proactive awareness (uses configured LLM providers)",
           "identity": "Identity — per-person recognition",
           "email": "Email — read-only inbox (password via secrets.yaml)"
+        }
+      },
+      "llm": {
+        "title": "JARVIS — LLM",
+        "description": "{note}",
+        "menu_options": {
+          "groq": "Groq",
+          "openai": "OpenAI",
+          "anthropic": "Anthropic",
+          "gemini": "Gemini",
+          "custom": "Custom (OpenAI-compatible)",
+          "ollama": "Ollama (local)",
+          "back": "Back to Configure menu"
+        }
+      },
+      "groq": {
+        "title": "JARVIS — Groq",
+        "data": {
+          "api_key": "Groq API key"
+        }
+      },
+      "openai": {
+        "title": "JARVIS — OpenAI",
+        "data": {
+          "api_key": "OpenAI API key"
+        }
+      },
+      "anthropic": {
+        "title": "JARVIS — Anthropic",
+        "data": {
+          "api_key": "Anthropic API key"
+        }
+      },
+      "gemini": {
+        "title": "JARVIS — Gemini",
+        "data": {
+          "api_key": "Gemini API key"
+        }
+      },
+      "custom": {
+        "title": "JARVIS — Custom Provider",
+        "data": {
+          "custom_base_url": "API base URL (OpenAI-compatible)",
+          "api_key": "API key (optional, if the endpoint requires one)"
+        }
+      },
+      "ollama": {
+        "title": "JARVIS — Ollama",
+        "data": {
+          "ollama_base_url": "Base URL (blank uses http://homeassistant.local:11434/v1)"
         }
       },
       "core": {
@@ -42,8 +149,14 @@
           "honorific": "Address me as",
           "directive_preset": "Directive preset",
           "directive": "Custom directive (optional, overrides preset)",
-          "model": "Conversation model",
+          "llm_provider": "Conversation model provider",
           "use_hass_api": "Enable home control (lights, climate, locks, etc.)"
+        }
+      },
+      "core_model": {
+        "title": "JARVIS — Conversation Model",
+        "data": {
+          "model": "Conversation model"
         }
       },
       "routing": {
@@ -53,17 +166,64 @@
           "bedroom_areas": "Bedroom areas (for sleep detection during quiet hours)",
           "broadcast_group": "Broadcast speaker group (typically your home Cast group)",
           "notify_service": "Phone notify service (e.g. notify.mobile_app_yourphone)"
+        },
+        "data_description": {
+          "bedroom_areas": "Any presence sensor in these areas fires sleep mode during quiet hours.",
+          "broadcast_group": "Used for critical and high-urgency announcements.",
+          "notify_service": "Used when you're away from home or asleep."
         }
       },
       "observer": {
         "title": "JARVIS — Observer Mode",
-        "description": "Proactive awareness. Requires a Gemini API key.",
+        "description": "Configure each Observer model tier and its quiet hours. Review is optional and only runs when configured.",
+        "menu_options": {
+          "classifier": "Classifier (Tier 1 — cheap)",
+          "reasoning": "Reasoning (Tier 2 — main)",
+          "review": "Review (Tier 3 — periodic, optional)",
+          "observer_settings": "Observer settings",
+          "back": "Back to Configure menu"
+        }
+      },
+      "classifier": {
+        "title": "JARVIS — Classifier Provider",
+        "data": {
+          "classifier_provider": "Classifier model provider"
+        }
+      },
+      "classifier_model": {
+        "title": "JARVIS — Classifier Model",
+        "data": {
+          "classifier_model": "Classifier model"
+        }
+      },
+      "reasoning": {
+        "title": "JARVIS — Reasoning Provider",
+        "data": {
+          "reasoning_provider": "Reasoning model provider"
+        }
+      },
+      "reasoning_model": {
+        "title": "JARVIS — Reasoning Model",
+        "data": {
+          "reasoning_model": "Reasoning model"
+        }
+      },
+      "review": {
+        "title": "JARVIS — Review Provider",
+        "data": {
+          "review_provider": "Review model provider"
+        }
+      },
+      "review_model": {
+        "title": "JARVIS — Review Model",
+        "data": {
+          "review_model": "Review model"
+        }
+      },
+      "observer_settings": {
+        "title": "JARVIS — Observer Settings",
         "data": {
           "observer_enabled": "Enable observer mode",
-          "gemini_api_key": "Gemini API key",
-          "classifier_model": "Classifier model (Tier 1 — cheap)",
-          "reasoning_model": "Reasoning model (Tier 2 — main)",
-          "review_model": "Review model (Tier 3 — periodic)",
           "observer_quiet_start": "Quiet hours start (HH:MM)",
           "observer_quiet_end": "Quiet hours end (HH:MM)"
         }
@@ -77,6 +237,11 @@
           "identity_min_confidence": "Minimum confidence before committing to a person",
           "voice_recognition_source": "Voice recognition source (entity from a speaker-recognition service, e.g. binary_sensor.*_voice)",
           "voice_recognition_auto_enroll": "Auto-flag voices to enroll as people speak"
+        },
+        "data_description": {
+          "identity_enabled": "Uses who's home + recent camera face recognition. No GPU required.",
+          "identity_voice_fingerprint": "Leave off unless you have a GPU server running a voice-ID model.",
+          "identity_min_confidence": "Higher = more cautious; stays neutral when unsure."
         }
       },
       "email": {
@@ -92,6 +257,14 @@
           "imap_secret_key": "secrets.yaml key holding the password"
         }
       }
+    },
+    "error": {
+      "need_llm": "Enter either a cloud API key or a local LLM URL.",
+      "cannot_connect": "Couldn't reach the LLM. Check the URL/endpoint is correct and the server (e.g. Ollama) is running.",
+      "invalid_auth": "The API key was rejected. Check the key and try again.",
+      "unknown": "Couldn't validate the LLM connection. Check the settings and try again.",
+      "no_models": "No models are available for this provider. Check the provider endpoint and try again.",
+      "no_providers": "No LLM providers are configured. Add a provider key or endpoint in the LLM section first."
     }
   },
   "issues": {

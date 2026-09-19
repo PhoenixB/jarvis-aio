@@ -6,7 +6,8 @@ Handles 95%+ of user requests locally with pattern matching, HA entity
 resolution, contextual state queries, multi-entity commands, scene/script
 activation, media control, and conversational responses.
 
-Only genuinely complex or ambiguous requests fall through to Groq/Gemini.
+Only genuinely complex or ambiguous requests fall through to the configured
+cloud LLM provider.
 
 Architecture:
   1. Regex intent matching (commands, queries, greetings)

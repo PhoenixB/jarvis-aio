@@ -14,8 +14,8 @@ v5.3 changes from v5.2:
 Pipeline:
   1. Pre-filter (domain whitelist + device_class filtering)
   2. Debounce per entity (no repeats within 30s)
-  3. Classifier (Gemini Flash-Lite) — worth considering?
-  4. Reasoning (Gemini Flash) — speak or stay silent, in character
+    3. Classifier tier — worth considering?
+    4. Reasoning tier — speak or stay silent, in character
   5. Output gate (rate limits, dedupe, mute memory)
   6. Routing (audio_routing.observer_speak_target)
   7. Speak (tts.speak to selected targets) or notify (phone push)
@@ -45,7 +45,7 @@ _LOGGER = logging.getLogger(__name__)
 # ─── Pre-filter rules (no LLM cost) ──────────────────────────────────────────
 #
 # Philosophy: PRE-FILTER AGGRESSIVELY, classify EXPENSIVELY.
-# It costs zero dollars to pre-filter an event. It costs real Gemini quota
+# It costs zero dollars to pre-filter an event. It costs real provider quota
 # every time we let one through. Bias STRONGLY toward dropping.
 
 # Domains we ignore entirely — too noisy or not observation-worthy
@@ -62,7 +62,7 @@ IGNORED_DOMAINS = {
 
 # Sensor device_classes we DO care about. ONLY discrete-state / safety sensors.
 # Numeric sensors (power/energy/voltage/current/temperature/humidity/etc.) are
-# EXCLUDED because they fire constantly and would burn Gemini quota.
+# EXCLUDED because they fire constantly and would burn provider quota.
 INTERESTING_SENSOR_CLASSES = {
     "moisture",         # water leak
     "smoke",
@@ -140,6 +140,35 @@ def _entity_id_looks_noisy(entity_id: str) -> bool:
     return False
 
 
+def _refresh_config_with_credentials(base_config: dict, updates: dict | None = None) -> dict:
+    """Merge live updates and refresh secrets-backed credentials."""
+    from . import ha_secrets
+    return ha_secrets.overlay_credentials({**(base_config or {}), **(updates or {})})
+
+
+def _review_tier_is_configured(config: dict) -> bool:
+    """Whether the optional review tier has an explicitly configured provider."""
+    from .const import PROVIDER_API_KEY_FIELDS, resolve_provider_base_url
+
+    explicit_opt_in = bool(config.get("review_enabled"))
+    provider = str(config.get("review_provider") or "").strip().lower()
+    if not provider:
+        return False
+    if not explicit_opt_in:
+        # v5→v6 migrations used to seed Review with Gemini defaults even when the
+        # user had never opted in. Keep that migrated placeholder disabled until a
+        # user explicitly configures Review (or changes away from the old default).
+        review_model = str(config.get("review_model") or "").strip()
+        if provider == "gemini" and review_model in ("", "gemini-2.5-pro"):
+            return False
+    if provider == "ollama":
+        return True
+    if provider == "custom":
+        return bool(resolve_provider_base_url(config, "custom"))
+    key_field = PROVIDER_API_KEY_FIELDS.get(provider)
+    return bool(key_field and config.get(key_field))
+
+
 # ─── Module state ────────────────────────────────────────────────────────────
 
 class _ObserverState:
@@ -150,6 +179,8 @@ class _ObserverState:
         self.recent_events: deque = deque(maxlen=50)
         self.classifier_provider = None
         self.reasoning_provider = None
+        self.review_provider = None
+        self.review_count = 0
         self.hass = None
         self.config: dict = {}
         # Global rate limit tracking for classifier calls
@@ -163,6 +194,7 @@ class _ObserverState:
         self.recent_events.clear()
         self.classifier_timestamps.clear()
         self.rate_limit_warn_logged = False
+        self.review_count = 0
 
 
 _STATE = _ObserverState()
@@ -650,6 +682,26 @@ async def _process_event(event: Event) -> None:
             friendly_name=friendly_name,
         )
 
+        # Tier 3 periodically audits the primary decision. It is veto-only so
+        # Review can suppress an announcement but never create one.
+        _STATE.review_count += 1
+        if (
+            decision.get("speak")
+            and _STATE.review_provider is not None
+            and _STATE.review_count % 10 == 0
+        ):
+            approved = await reasoning_loop.review_decision(
+                _STATE.hass,
+                _STATE.review_provider,
+                event_summary=(
+                    f"{friendly_name} ({entity_id}) changed from "
+                    f"{old_state.state} to {new_state.state}"
+                ),
+                decision=decision,
+            )
+            if not approved:
+                decision = {"speak": False, "reason": "review tier veto"}
+
         if not decision.get("speak"):
             _LOGGER.debug(
                 "Observer silent for %s: %s",
@@ -943,12 +995,7 @@ async def start(hass: HomeAssistant, config: dict) -> None:
     try:
         # Both providers instantiate HTTPS clients which load SSL certs from
         # disk — a blocking operation. Must run in executor, not event loop.
-        _STATE.classifier_provider = await hass.async_add_executor_job(
-            create_tier_provider, config, "classifier"
-        )
-        _STATE.reasoning_provider = await hass.async_add_executor_job(
-            create_tier_provider, config, "reasoning"
-        )
+        await refresh_tier_providers(hass, config)
     except Exception as exc:
         _LOGGER.error("Observer: failed to create tier providers: %s", exc)
         return
@@ -1010,6 +1057,39 @@ async def stop() -> None:
         pass
     _STATE.reset()
     _LOGGER.info("JARVIS Observer stopped")
+
+
+async def refresh_tier_providers(hass: HomeAssistant, updates: dict | None = None) -> bool:
+    """Rebuild all cached tier clients and replace them atomically.
+
+    Provider construction can perform blocking certificate/file I/O and either
+    tier may fail, so build all clients before changing the live state. This
+    lets configuration-flow changes take effect without interrupting the
+    Observer or leaving one tier on a mixed configuration.
+    """
+    config = await hass.async_add_executor_job(
+        _refresh_config_with_credentials, _STATE.config, updates,
+    )
+    review_task = (
+        hass.async_add_executor_job(create_tier_provider, config, "review")
+        if _review_tier_is_configured(config)
+        else asyncio.sleep(0, result=None)
+    )
+    classifier_provider, reasoning_provider, review_provider = await asyncio.gather(
+        hass.async_add_executor_job(create_tier_provider, config, "classifier"),
+        hass.async_add_executor_job(create_tier_provider, config, "reasoning"),
+        review_task,
+    )
+    _STATE.config = config
+    try:
+        from . import proactive_briefing
+        proactive_briefing._STATE.config = config
+    except Exception:
+        pass
+    _STATE.classifier_provider = classifier_provider
+    _STATE.reasoning_provider = reasoning_provider
+    _STATE.review_provider = review_provider
+    return True
 
 
 def is_running() -> bool:

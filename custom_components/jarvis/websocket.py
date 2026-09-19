@@ -25,14 +25,16 @@ from . import audio_routing, sleep_detection
 from .const import (
     CONF_BEDROOM_AREAS,
     CONF_BROADCAST_GROUP,
-    CONF_GEMINI_API_KEY,
+    CONF_CUSTOM_BASE_URL,
     CONF_NOTIFY_SERVICE,
     CONF_OBSERVER_ENABLED,
     CONF_OBSERVER_QUIET_END,
     CONF_OBSERVER_QUIET_START,
+    CONF_OLLAMA_BASE_URL,
     DEFAULT_OBSERVER_QUIET_END,
     DEFAULT_OBSERVER_QUIET_START,
     DOMAIN,
+    PROVIDER_API_KEY_FIELDS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -564,6 +566,7 @@ async def ws_get_panel_data(
 ) -> None:
     """Return all data the panel needs for one render."""
     try:
+        from . import ha_secrets
         entry = _get_entry(hass)
 
         # ── Status flags ────────────────────────────────────────────────────
@@ -583,7 +586,7 @@ async def ws_get_panel_data(
             quiet_end=quiet_end,
         )
 
-        gemini_key = bool(_entry_opt(entry, CONF_GEMINI_API_KEY, ""))
+        configured_providers = await _configured_providers(hass, entry)
         broadcast_group = _entry_opt(entry, CONF_BROADCAST_GROUP, "") or ""
         notify_service = _entry_opt(entry, CONF_NOTIFY_SERVICE, "") or ""
         observer_enabled_cfg = bool(_runtime_opt(hass, entry, CONF_OBSERVER_ENABLED, False))
@@ -657,9 +660,9 @@ async def ws_get_panel_data(
                 "state": "ASLEEP" if sleeping else "AWAKE",
                 "level": "warn" if sleeping else "live",
             },
-            "gemini": {
-                "state": "READY" if gemini_key else "UNSET",
-                "level": "live" if gemini_key else "warn",
+            "llm_providers": {
+                "state": f"{len(configured_providers)} READY" if configured_providers else "UNSET",
+                "level": "live" if configured_providers else "warn",
             },
             "broadcast": {
                 "state": "ONLINE" if broadcast_group else "UNSET",
@@ -768,6 +771,8 @@ async def ws_get_panel_data(
                 "movie_media_player": str(_runtime_opt(hass, entry, "movie_media_player", "") or ""),
                 "movie_dim_pct": int(_runtime_opt(hass, entry, "movie_dim_pct", 15) or 15),
                 "llm_base_url": str(_runtime_opt(hass, entry, "llm_base_url", "") or ""),
+                "custom_base_url": str(_runtime_opt(hass, entry, "custom_base_url", "") or ""),
+                "ollama_base_url": str(_runtime_opt(hass, entry, "ollama_base_url", "") or ""),
                 "notify_service": current_notify,
                 "notify_services_available": notify_services,
                 "onboarding": _get_onboarding_state(hass, entry, current_notify),
@@ -791,17 +796,18 @@ async def ws_get_panel_data(
                 "door_mapping": _get_runtime_json(hass, entry, "door_mapping", {}),
                 # AI model selection (provider + model per role) — for the
                 # Settings "AI Models" section's live-fetched dropdowns.
+                "configured_providers": configured_providers,
                 "llm_provider":        str(_runtime_opt(hass, entry, "llm_provider", "groq") or "groq"),
                 "model":               str(_runtime_opt(hass, entry, "model", "") or ""),
-                "classifier_provider": str(_runtime_opt(hass, entry, "classifier_provider", "groq") or "groq"),
+                "classifier_provider": str(_runtime_opt(hass, entry, "classifier_provider", "") or ""),
                 "classifier_model":    str(_runtime_opt(hass, entry, "classifier_model", "") or ""),
-                "reasoning_provider":  str(_runtime_opt(hass, entry, "reasoning_provider", "groq") or "groq"),
+                "reasoning_provider":  str(_runtime_opt(hass, entry, "reasoning_provider", "") or ""),
                 "reasoning_model":     str(_runtime_opt(hass, entry, "reasoning_model", "") or ""),
-                "review_provider":     str(_runtime_opt(hass, entry, "review_provider", "groq") or "groq"),
+                "review_provider":     str(_runtime_opt(hass, entry, "review_provider", "") or ""),
                 "review_model":        str(_runtime_opt(hass, entry, "review_model", "") or ""),
-                "vision_provider":     str(_runtime_opt(hass, entry, "vision_provider", "groq") or "groq"),
+                "vision_provider":     str(_runtime_opt(hass, entry, "vision_provider", "") or ""),
                 "vision_model":        str(_runtime_opt(hass, entry, "vision_model", "") or ""),
-                "camera_reasoning_provider": str(_runtime_opt(hass, entry, "camera_reasoning_provider", "groq") or "groq"),
+                "camera_reasoning_provider": str(_runtime_opt(hass, entry, "camera_reasoning_provider", "") or ""),
                 "camera_reasoning_model":    str(_runtime_opt(hass, entry, "camera_reasoning_model", "") or ""),
                 # JARVIS Character & Research — these must be surfaced here or
                 # the panel's selects snap back to their defaults on every
@@ -1414,6 +1420,8 @@ PANEL_WRITABLE_KEYS = {
     "llm_provider",
     "model",
     "llm_base_url",
+    "custom_base_url",
+    "ollama_base_url",
     "classifier_provider",
     "classifier_model",
     "reasoning_provider",
@@ -1825,13 +1833,16 @@ async def ws_update_config(
             connection.send_error(msg["id"], "no_data", "JARVIS runtime data not found")
             return
         rc = data.setdefault("runtime_config", {})
-        rc[key] = value
+        updates = {key: value}
+        if key in {"review_provider", "review_model"} and value not in (None, ""):
+            updates["review_enabled"] = True
+        rc.update(updates)
         _LOGGER.info("JARVIS panel: set %s = %s", key, str(value)[:80])
 
         # Persist via centralized config module (survives restarts)
         try:
             from . import jarvis_config
-            await hass.async_add_executor_job(jarvis_config.set, key, value)
+            await hass.async_add_executor_job(jarvis_config.set_many, updates)
         except Exception as exc:
             _LOGGER.debug("Config persist note: %s", exc)
 
@@ -1847,6 +1858,32 @@ async def ws_update_config(
             else:
                 await observer_mod.stop()
                 data["observer_running"] = False
+        elif set(updates) & {
+            "llm_provider",
+            "model",
+            "llm_base_url",
+            "custom_base_url",
+            "ollama_base_url",
+            "classifier_provider",
+            "classifier_model",
+            "reasoning_provider",
+            "reasoning_model",
+            "review_provider",
+            "review_model",
+        }:
+            from . import observer as observer_mod
+            from .llm_provider import async_refresh_main_client
+
+            if set(updates) & {
+                "llm_provider",
+                "model",
+                "llm_base_url",
+                "custom_base_url",
+                "ollama_base_url",
+            }:
+                await async_refresh_main_client(hass, entry)
+            if observer_mod.is_running():
+                await observer_mod.refresh_tier_providers(hass, updates)
 
         connection.send_result(msg["id"], {"key": key, "value": value})
     except Exception as exc:
@@ -1855,14 +1892,56 @@ async def ws_update_config(
 
 
 def _resolve_provider_key(hass: HomeAssistant, entry, provider: str) -> str:
-    """Resolve the stored API key for a provider from config."""
-    if provider == "gemini":
-        return str(_runtime_opt(hass, entry, "gemini_api_key", "") or "")
-    # groq/openai/anthropic/custom all use the primary key field
-    key = _runtime_opt(hass, entry, "api_key", None)
-    if not key:
-        key = _runtime_opt(hass, entry, "groq_api_key", "")
-    return str(key or "")
+    """Deprecated synchronous shim — kept only so any stray caller doesn't hard
+    crash. Credentials live in secrets.yaml now; use ha_secrets.async_get_provider_key
+    (or get_provider_key_sync from the executor) instead, which this cannot be
+    since secrets.yaml reads are blocking file I/O."""
+    return ""
+
+
+async def _configured_providers(hass: HomeAssistant, entry) -> list[str]:
+    """Providers with a usable credential/endpoint today — drives the AI
+    Models role dropdowns so you can't pick a provider with nothing to call.
+    Ollama needs no key and uses the same default endpoint as create_provider;
+    a Custom endpoint is likewise valid with no key at all.
+    Credentials are read straight from secrets.yaml — the only place they live."""
+    from . import ha_secrets
+    out = []
+    from .const import resolve_provider_base_url
+    ollama_selected = False
+    ollama_base_url = _runtime_opt(hass, entry, CONF_OLLAMA_BASE_URL, "")
+    ollama_config = {
+        CONF_OLLAMA_BASE_URL: ollama_base_url,
+        "llm_base_url": "",
+    }
+    selected_providers = {
+        str(_runtime_opt(hass, entry, key, "") or "")
+        for key in (
+            "llm_provider", "classifier_provider", "reasoning_provider",
+            "review_provider", "vision_provider", "camera_reasoning_provider",
+        )
+    }
+    ollama_selected = "ollama" in selected_providers
+    if ollama_selected:
+        ollama_config["llm_base_url"] = _runtime_opt(hass, entry, "llm_base_url", "")
+    if ollama_selected and not resolve_provider_base_url(ollama_config, "ollama"):
+        ollama_config[CONF_OLLAMA_BASE_URL] = "http://homeassistant.local:11434/v1"
+    if resolve_provider_base_url(ollama_config, "ollama"):
+        out.append("ollama")
+    custom_selected = "custom" in selected_providers
+    custom_config = {
+        CONF_CUSTOM_BASE_URL: _runtime_opt(hass, entry, CONF_CUSTOM_BASE_URL, ""),
+    }
+    if custom_selected:
+        custom_config["llm_base_url"] = _runtime_opt(hass, entry, "llm_base_url", "")
+    if resolve_provider_base_url(custom_config, "custom"):
+        out.append("custom")
+    for provider, field in PROVIDER_API_KEY_FIELDS.items():
+        if provider in out:
+            continue
+        if field and await ha_secrets.async_get_provider_key(hass, provider):
+            out.append(provider)
+    return out
 
 
 async def _fetch_models(hass, provider: str, api_key: str, base_url: str) -> list[str]:
@@ -1881,27 +1960,26 @@ async def _fetch_models(hass, provider: str, api_key: str, base_url: str) -> lis
 
     if provider == "groq":
         url = "https://api.groq.com/openai/v1/models"
-        headers = {"Authorization": f"Bearer {api_key}"}
+        headers = {"Authorization": "Bearer " + api_key}
     elif provider == "openai":
         url = "https://api.openai.com/v1/models"
-        headers = {"Authorization": f"Bearer {api_key}"}
+        headers = {"Authorization": "Bearer " + api_key}
     elif provider == "anthropic":
         url = "https://api.anthropic.com/v1/models"
         headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01"}
     elif provider == "gemini":
         url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
-    elif provider in ("ollama", "custom"):
+    elif provider == "ollama":
         base = (base_url or "").rstrip("/")
-        if not base and provider == "ollama":
+        if not base:
             base = "http://homeassistant.local:11434/v1"   # same default as create_provider
+        url = f"{base}/api/tags"
+    elif provider == "custom":
+        base = (base_url or "").rstrip("/")
         if not base:
             raise ValueError("base URL required for this provider")
-        # Ollama exposes /api/tags; an OpenAI-compatible base exposes /v1/models.
-        if base.endswith("/v1"):
-            url = f"{base}/models"
-            headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-        else:
-            url = f"{base}/api/tags"
+        url = f"{base}/models"
+        headers = {"Authorization": "Bearer " + api_key} if api_key else {}
     else:
         raise ValueError(f"unknown provider: {provider}")
 
@@ -1948,8 +2026,15 @@ async def ws_list_models(hass: HomeAssistant, connection, msg) -> None:
     """Return the live model list for a provider (Settings AI-Models dropdowns)."""
     provider = (msg.get("provider") or "").lower()
     entry = _get_entry(hass)
-    api_key = _resolve_provider_key(hass, entry, provider)
-    base_url = msg.get("base_url") or str(_runtime_opt(hass, entry, "llm_base_url", "") or "")
+    from . import ha_secrets
+    api_key = await ha_secrets.async_get_provider_key(hass, provider)
+    from .const import PROVIDER_BASE_URL_FIELDS
+    endpoint_field = PROVIDER_BASE_URL_FIELDS.get(provider)
+    base_url = msg.get("base_url") or str(
+        ((_runtime_opt(hass, entry, endpoint_field, "")
+          or _runtime_opt(hass, entry, "llm_base_url", "")) if endpoint_field else "")
+        or ""
+    )
     try:
         models = await _fetch_models(hass, provider, api_key, base_url)
         connection.send_result(msg["id"], {"provider": provider, "models": models})

@@ -8,7 +8,7 @@ Architecture:
   1. System prompt with JARVIS persona + home context injection
   2. Custom HA tool definitions (not generic HA LLM API)
   3. Multi-turn agentic loop: LLM reasons → calls tools → observes → responds
-  4. Provider cascade: Groq (fast) → Gemini (fallback) → local error
+    4. Provider cascade: primary provider → configured reasoning tier → local error
   5. Session memory: tracks conversation within a session
   6. Persistent learning: remembers entity aliases, user preferences,
      frequently-used commands across sessions
@@ -2533,7 +2533,7 @@ async def _create_provider_with_fallback(
     base_url: Optional[str],
     config: Optional[dict] = None,
 ):
-    """Create provider with fallback chain: primary → gemini → error."""
+    """Create provider with fallback chain: primary → reasoning tier → error."""
     from .llm_provider import create_provider, create_tier_provider
 
     try:
@@ -2541,18 +2541,24 @@ async def _create_provider_with_fallback(
             create_provider, provider_name, api_key, model, base_url,
         )
     except Exception as exc:
-        _LOGGER.warning("Primary provider '%s' failed: %s — trying Gemini", provider_name, exc)
+        _LOGGER.warning(
+            "Primary provider '%s' failed: %s — trying reasoning tier fallback",
+            provider_name, exc,
+        )
 
-    # Fallback to Gemini
+    # Fallback to the configured reasoning tier.
     if config:
         try:
             return await hass.async_add_executor_job(
                 create_tier_provider, config, "reasoning",
             )
         except Exception as exc2:
-            _LOGGER.warning("Gemini fallback also failed: %s", exc2)
+            _LOGGER.warning("Reasoning tier fallback also failed: %s", exc2)
+        raise RuntimeError(
+            f"No LLM providers available (tried {provider_name} + reasoning tier)"
+        )
 
-    raise RuntimeError(f"No LLM providers available (tried {provider_name} + Gemini)")
+    raise RuntimeError(f"No LLM providers available (tried {provider_name}; no reasoning tier configured)")
 
 
 # ── Main agent loop ─────────────────────────────────────────────────────────
@@ -2858,7 +2864,7 @@ async def run_agent(
 
     Multi-turn tool-calling agent with:
       - Custom HA tools + HA LLM API tools
-      - Provider fallback (Groq → Gemini)
+    - Provider fallback through the configured reasoning tier
       - Home context injection
       - Persistent learning
     """
@@ -3114,7 +3120,7 @@ async def run_agent(
                 # Genuine call failure (unreachable / 5xx / bad model / etc.)
                 # — try the fallback. v6.47.1: the fallback is the REASONING
                 # TIER (its own provider+model), not the same model replayed
-                # on gemini — a 404'd model 404s everywhere identically.
+                # on another provider — a missing model usually fails there too.
                 _LOGGER.warning(
                     "Agent LLM call failed (iter %d): %s — trying fallback",
                     iteration, exc,
@@ -3147,9 +3153,7 @@ async def run_agent(
                             create_tier_provider, config, "reasoning",
                         )
                     else:
-                        client = await _create_provider_with_fallback(
-                            hass, "gemini", api_key, model, base_url, config,
-                        )
+                        raise RuntimeError("No configured reasoning tier available")
                     result = await hass.async_add_executor_job(
                         client.chat, working, tools or None, 1024, temperature,
                     )

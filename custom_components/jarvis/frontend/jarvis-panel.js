@@ -1598,7 +1598,7 @@ class JarvisPanel extends HTMLElement {
     return {
       observer:   { state: "RUNNING", level: "live" },
       sleep:      { state: "AWAKE",   level: "live" },
-      gemini:     { state: "READY",   level: "live" },
+      llm_providers: { state: "UNSET", level: "warn" },
       broadcast:  { state: "ONLINE",  level: "live" },
       notify:     { state: "UNSET",   level: "warn" },
       satellites: { state: "8 / 8",   level: "live" },
@@ -1662,7 +1662,7 @@ class JarvisPanel extends HTMLElement {
     return {
       observer:   live.status.observer,
       sleep:      live.status.sleep,
-      gemini:     live.status.gemini,
+      llm_providers: live.status.llm_providers,
       broadcast:  live.status.broadcast,
       notify:     live.status.notify,
       satellites: live.status.satellites,
@@ -1755,7 +1755,7 @@ class JarvisPanel extends HTMLElement {
     const statusPanel = root.querySelector(".c-status");
     if (statusPanel) {
       const rows = statusPanel.querySelectorAll(".status-row");
-      const statusKeys = ["observer", "sleep", "gemini", "broadcast", "notify", "satellites"];
+      const statusKeys = ["observer", "sleep", "llm_providers", "broadcast", "notify", "satellites"];
       rows.forEach((row, i) => {
         const key = statusKeys[i];
         const st = live.status[key];
@@ -1999,12 +1999,27 @@ class JarvisPanel extends HTMLElement {
   }
 
   _renderModelRoles(d) {
-    const PROVIDERS = ['groq', 'openai', 'gemini', 'ollama', 'anthropic', 'custom'];
+    const ALL_PROVIDERS = ['groq', 'openai', 'gemini', 'ollama', 'anthropic', 'custom'];
     const cfg = d.config || {};
+    // Only offer providers with a stored key/endpoint — picking an
+    // unconfigured one just fails to fetch models (v7.9x.0).
+    const configured = (Array.isArray(cfg.configured_providers) && cfg.configured_providers.length)
+      ? cfg.configured_providers
+      : ALL_PROVIDERS;
+    const defaultProvider = configured[0] || 'groq';
+    const cfgSet = new Set(configured);
     return this._modelRoles().map(r => {
-      const curProv = cfg[r.provKey] || 'groq';
+      const storedProv = cfg[r.provKey];
+      const curProv = storedProv || defaultProvider;
       const curModel = cfg[r.modelKey] || '';
-      const provOpts = PROVIDERS.map(p =>
+      // Always include the role's current provider, even if unconfigured,
+      // so an existing selection doesn't silently vanish from the list.
+      // curProv comes from runtime/config data, so it must be validated
+      // against the known provider names before being used unescaped below.
+      const provList = cfgSet.has(curProv)
+        ? configured
+        : (storedProv && ALL_PROVIDERS.includes(curProv) ? [curProv, ...configured] : configured);
+      const provOpts = provList.map(p =>
         `<option value="${p}"${p === curProv ? ' selected' : ''}>${p}</option>`).join('');
       // Model select starts with the current value + a loading hint; it's
       // repopulated live from the provider via _loadModelsFor().
@@ -2022,6 +2037,16 @@ class JarvisPanel extends HTMLElement {
           ${r.role === 'vision' ? `<div class="model-hint">Needs an image-capable model — e.g. moondream on Ollama, or a Groq vision model. Text-only models (like gpt-oss) will fail on camera analysis.</div>` : ''}
         </div>`;
     }).join('');
+  }
+
+  _customLlmUrl(config) {
+    const cfg = config || {};
+    return cfg.custom_base_url || cfg.llm_base_url || '';
+  }
+
+  _ollamaLlmUrl(config) {
+    const cfg = config || {};
+    return cfg.ollama_base_url || cfg.llm_base_url || '';
   }
 
   _esc(s) {
@@ -4024,7 +4049,7 @@ class JarvisPanel extends HTMLElement {
       <div class="status-list">
         ${statusRow("Observer",   d.observer)}
         ${statusRow("Sleep",      d.sleep)}
-        ${statusRow("Gemini",     d.gemini)}
+        ${statusRow("LLM Providers", d.llm_providers)}
         ${statusRow("Broadcast",  d.broadcast)}
         ${statusRow("Notify",     d.notify)}
         ${statusRow("Satellites", d.satellites)}
@@ -4488,11 +4513,18 @@ class JarvisPanel extends HTMLElement {
           <span style="font-size:9px;color:var(--text-faint);font-style:italic;max-width:520px;">Lower this (0 = counts only) if your LLM provider rejects requests for being too large \u2014 e.g. Groq\'s free tier caps tokens-per-minute. The assistant still discovers entities on demand, so nothing breaks.</span>
         </div>
         <div class="llm-url-row">
-          <span class="llm-url-label">LOCAL LLM URL</span>
-          <input class="llm-url-input" type="text"
+          <span class="llm-url-label">CUSTOM URL</span>
+          <input class="custom-llm-url-input llm-url-input" type="text"
             placeholder="http://gpu-server:11434/v1"
-            value="${this._esc(d.config?.llm_base_url || '')}"
-            title="OpenAI-compatible endpoint for the ollama/custom providers — your GPU server. Leave empty for the default."/>
+            value="${this._esc(this._customLlmUrl(d.config))}"
+            title="OpenAI-compatible endpoint for the custom provider."/>
+        </div>
+        <div class="llm-url-row">
+          <span class="llm-url-label">OLLAMA URL</span>
+          <input class="ollama-llm-url-input llm-url-input" type="text"
+            placeholder="http://gpu-server:11434/v1"
+            value="${this._esc(this._ollamaLlmUrl(d.config))}"
+            title="Leave empty to use Ollama's default Home Assistant endpoint."/>
         </div>
         <div class="llm-url-row">
           <span class="llm-url-label">OLLAMA num_ctx</span>
@@ -5465,12 +5497,20 @@ ${this._renderExcludedEntities(d)}
     });
 
     // Local LLM base URL (Ollama / GPU server endpoint)
-    const llmUrl = this.shadowRoot.querySelector(".llm-url-input");
-    if (llmUrl) {
-      llmUrl.addEventListener("change", async () => {
-        const v = llmUrl.value.trim();
-        await this._saveConfig("llm_base_url", v);
-        this._toast(v ? `✓ local LLM endpoint → ${v}` : "✓ local LLM endpoint cleared", "ok");
+    const customLlmUrl = this.shadowRoot.querySelector(".custom-llm-url-input");
+    if (customLlmUrl) {
+      customLlmUrl.addEventListener("change", async () => {
+        const v = customLlmUrl.value.trim();
+        await this._saveConfig("custom_base_url", v);
+        this._toast(v ? `✓ custom endpoint → ${v}` : "✓ custom endpoint cleared", "ok");
+      });
+    }
+    const ollamaLlmUrl = this.shadowRoot.querySelector(".ollama-llm-url-input");
+    if (ollamaLlmUrl) {
+      ollamaLlmUrl.addEventListener("change", async () => {
+        const v = ollamaLlmUrl.value.trim();
+        await this._saveConfig("ollama_base_url", v);
+        this._toast(v ? `✓ ollama endpoint → ${v}` : "✓ ollama endpoint cleared", "ok");
       });
     }
 

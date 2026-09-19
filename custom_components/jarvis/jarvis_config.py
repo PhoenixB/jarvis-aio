@@ -1,7 +1,9 @@
 """
 JARVIS — Centralized Configuration.
 
-Single source of truth for all JARVIS settings.
+Single source of truth for all JARVIS settings EXCEPT credentials — API keys
+live only in secrets.yaml (see ha_secrets.py); set()/set_many()/init_from_entry()
+refuse to store them here, so config.json can never hold a plaintext key again.
 
 Config file: /config/jarvis/config.json
 
@@ -27,6 +29,7 @@ CONFIG_PATH = Path("/config/jarvis/config.json")
 _lock = threading.Lock()
 _cache: dict = {}
 _loaded = False
+_entry_credential_fallback: dict[str, str] = {}
 # v6.48.0 hardening: set when a hand-edited config.json couldn't be used
 # (invalid JSON, or valid JSON whose top level isn't an object). The bad
 # file is sidelined — never deleted — and defaults take over, so a typo in
@@ -137,6 +140,11 @@ def get_all() -> dict:
         return dict(_cache_dict())
 
 
+def get_entry_credential_fallback(provider: str) -> str:
+    """Return a legacy entry credential kept in memory until migration succeeds."""
+    return _entry_credential_fallback.get(provider, "")
+
+
 def effective_config(entry=None) -> dict:
     """The single source of truth for runtime config (v6.82.0).
 
@@ -223,11 +231,26 @@ def runtime_get(hass, entry, key: str, default=None):
     return default
 
 
+def _drop_credentials(updates: dict) -> dict:
+    """Strip any credential key (const.PROVIDER_API_KEY_FIELDS / legacy names) —
+    those live only in secrets.yaml now, never in config.json. Guards against a
+    future call site accidentally re-introducing the old plaintext leak."""
+    from . import ha_secrets
+    dropped = [k for k in updates if k in ha_secrets.CREDENTIAL_KEYS]
+    if dropped:
+        _LOGGER.warning(
+            "JARVIS config: refusing to store credential key(s) %s in config.json "
+            "— use ha_secrets.set_provider_key_sync instead", dropped)
+    return {k: v for k, v in updates.items() if k not in ha_secrets.CREDENTIAL_KEYS}
+
+
 def set(key: str, value: Any) -> None:
     """Set a config value and persist to disk."""
     global _loaded
     if not _loaded:
         load()
+    if not _drop_credentials({key: value}):
+        return
     with _lock:
         _cache_dict()[key] = value
     save()
@@ -239,6 +262,9 @@ def set_many(updates: dict) -> None:
     global _loaded
     if not _loaded:
         load()
+    updates = _drop_credentials(updates)
+    if not updates:
+        return
     with _lock:
         _cache_dict().update(updates)
     save()
@@ -266,17 +292,16 @@ def init_from_addon(addon_options: dict) -> None:
         load()
 
     updated = 0
+    from . import ha_secrets
     with _lock:
         for key, value in addon_options.items():
+            if key in ha_secrets.CREDENTIAL_KEYS:
+                if value:
+                    ha_secrets.set_secret_sync(ha_secrets.secret_key_for(key), value)
+                continue
             if key not in _cache_dict():
                 _cache_dict()[key] = value
                 updated += 1
-            # Always update API keys (user might change them in addon config)
-            elif key in ("groq_api_key", "api_key", "gemini_api_key",
-                         "anthropic_api_key", "openai_api_key"):
-                if value and value != _cache_dict().get(key):
-                    _cache_dict()[key] = value
-                    updated += 1
 
     if updated:
         save()
@@ -291,14 +316,35 @@ def init_from_entry(entry_data: dict, entry_options: dict) -> None:
     Called when the HA integration loads. Backfills any settings
     from the entry that aren't in config.json yet.
     """
-    global _loaded
+    global _loaded, _entry_credential_fallback
     if not _loaded:
         load()
 
-    merged = {**entry_data, **entry_options}
+    from . import ha_secrets
+    from .const import CONF_API_KEY, PROVIDER_API_KEY_FIELDS
+
+    merged = dict(entry_data or {})
+    for key, value in dict(entry_options or {}).items():
+        if key not in ha_secrets.CREDENTIAL_KEYS or value not in (None, ""):
+            merged[key] = value
+    provider = merged.get("llm_provider", "groq")
+    credential_providers = {
+        field: provider_name
+        for provider_name, field in PROVIDER_API_KEY_FIELDS.items()
+        if field
+    }
+    credential_providers["groq_api_key"] = "groq"
     updated = 0
     with _lock:
         for key, value in merged.items():
+            if key in ha_secrets.CREDENTIAL_KEYS:
+                if value:
+                    fallback_provider = (
+                        provider if key == CONF_API_KEY else credential_providers.get(key)
+                    )
+                    if fallback_provider:
+                        _entry_credential_fallback[fallback_provider] = str(value)
+                continue   # secrets.yaml only — never backfilled into config.json
             if key not in _cache_dict() and value:
                 _cache_dict()[key] = value
                 updated += 1
