@@ -4399,6 +4399,44 @@ class JarvisPanel extends HTMLElement {
         </div>
       </div>
 
+      <!-- SUB-AGENTS & AUTOMATION (v7.96.0) -->
+      <div class="panel">
+        <div class="head">
+          <span>Sub-Agents &amp; Automation</span>
+          <span class="side">AGENTS</span>
+        </div>
+        <div class="toggle-list">
+          <div class="toggle-row">
+            <span class="toggle-label">FRIDAY automator</span>
+            <span class="toggle-desc">⚠️ Advanced. A background sub-agent that can CONTROL devices, run scenes and scripts on its own — every other sub-agent is read-only. Off by default; enabling asks you to confirm.</span>
+            <button class="toggle-btn ${(d.config?.friday_automator === true) ? 'on' : 'off'}"
+              data-cfg-key="friday_automator"
+              data-cfg-val="${(d.config?.friday_automator === true) ? 'false' : 'true'}"
+              data-confirm="Enable the FRIDAY automator?&#10;&#10;Unlike every other sub-agent, FRIDAY can CONTROL your devices, run scenes and run scripts on its own. Only enable it if you want JARVIS to actuate your home autonomously.">
+              ${(d.config?.friday_automator === true) ? 'ON' : 'OFF'}
+            </button>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">Proximity TTS volume</span>
+            <span class="toggle-desc">Soften announcements when mmWave distance sensors show you're close to the speaker. No effect in rooms without distance sensors; never dampens critical alerts.</span>
+            <button class="toggle-btn ${(d.config?.proximity_volume !== false) ? 'on' : 'off'}"
+              data-cfg-key="proximity_volume"
+              data-cfg-val="${(d.config?.proximity_volume !== false) ? 'false' : 'true'}">
+              ${(d.config?.proximity_volume !== false) ? 'ON' : 'OFF'}
+            </button>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">Host hardware monitoring</span>
+            <span class="toggle-desc">Read the server's CPU temperature, memory pressure and NVMe I/O (from /proc and /sys) and fold critical stress into the infrastructure audit &amp; System Diagnostics.</span>
+            <button class="toggle-btn ${(d.config?.host_telemetry !== false) ? 'on' : 'off'}"
+              data-cfg-key="host_telemetry"
+              data-cfg-val="${(d.config?.host_telemetry !== false) ? 'false' : 'true'}">
+              ${(d.config?.host_telemetry !== false) ? 'ON' : 'OFF'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- ANTICIPATION & MEMORY (v7.94.0) -->
       <div class="panel">
         <div class="head">
@@ -5133,6 +5171,7 @@ ${this._renderExcludedEntities(d)}
     // disappears (a new/renamed card just shows under General until mapped).
     const MAP = {
       "Residence / Home": "general", "General": "general",
+      "Sub-Agents & Automation": "general",
       "Operational Mode": "general", "System Diagnostics": "general",
       "AI Models": "voice", "Briefings": "voice", "Voice Confirmation": "voice",
       "Satellite → Speaker": "voice", "Announcement Speakers": "voice",
@@ -5613,6 +5652,11 @@ ${this._renderExcludedEntities(d)}
         const rawVal = e.currentTarget.getAttribute("data-cfg-val");
         const value = rawVal === "true" ? true : rawVal === "false" ? false : rawVal;
         if (!key || !this._hass) return;
+        // Gate: a toggle carrying data-confirm must be explicitly acknowledged
+        // before it can be switched ON (e.g. FRIDAY, which can actuate the home).
+        // Only enabling (value === true) prompts; turning it back off never does.
+        const confirmMsg = e.currentTarget.getAttribute("data-confirm");
+        if (confirmMsg && value === true && !window.confirm(confirmMsg)) return;
         try {
           await this._hass.callWS({
             type: "jarvis/update_config",

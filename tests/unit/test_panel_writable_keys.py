@@ -126,3 +126,41 @@ def test_onboarding_steps_cover_key_setup():
     js = _WEBSOCKET.read_text()
     for step_id in ('"notify"', '"cameras"', '"voice"', '"banter"'):
         assert step_id in js, f"onboarding missing step {step_id}"
+
+
+# ── v7.96.0 Sub-Agents & Automation toggles ──────────────────────────────────
+
+_V796_KEYS = ("friday_automator", "proximity_volume", "host_telemetry")
+
+
+def test_v796_agent_keys_are_writable():
+    allow = _allowlist()
+    for key in _V796_KEYS:
+        assert key in allow, f"{key} missing from PANEL_WRITABLE_KEYS"
+
+
+def test_v796_agent_keys_have_panel_toggles():
+    saved = _panel_saved_keys()
+    for key in _V796_KEYS:
+        assert key in saved, f"panel has no toggle for {key}"
+
+
+def test_v796_keys_in_panel_config_payload_with_defaults():
+    # Each key must be echoed back in get_panel_data's config dict with the right
+    # default, or its toggle can't reflect a saved value on re-render. FRIDAY is
+    # off by default; proximity and host telemetry are on.
+    js = _WEBSOCKET.read_text()
+    assert 'bool(_runtime_opt(hass, entry, "friday_automator", False))' in js
+    assert 'bool(_runtime_opt(hass, entry, "proximity_volume", True))' in js
+    assert 'bool(_runtime_opt(hass, entry, "host_telemetry", True))' in js
+
+
+def test_friday_toggle_is_confirmation_gated():
+    # Enabling an actuating sub-agent from the panel must require an explicit
+    # confirm — the button carries data-confirm and the handler honours it.
+    js = _PANEL_JS.read_text()
+    friday_btn = re.search(r'data-cfg-key="friday_automator"[^>]*', js)
+    assert friday_btn and "data-confirm" in friday_btn.group(0), \
+        "FRIDAY toggle must carry data-confirm"
+    assert 'getAttribute("data-confirm")' in js
+    assert "window.confirm(confirmMsg)" in js
