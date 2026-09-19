@@ -69,6 +69,7 @@ def _install_ha_stubs() -> None:
     dr = types.ModuleType("homeassistant.helpers.device_registry")
     er.async_get = lambda hass: types.SimpleNamespace(
         entities={}, async_get=lambda eid: None)
+    dr.DeviceInfo = dict
     dr.async_get = lambda hass: types.SimpleNamespace(devices={})
     areg = types.ModuleType("homeassistant.helpers.area_registry")
     areg.async_get = lambda hass: types.SimpleNamespace(
@@ -86,12 +87,28 @@ def _install_ha_stubs() -> None:
         "__init__": lambda self, tool_name="", tool_args=None:
             (setattr(self, "tool_name", tool_name),
              setattr(self, "tool_args", tool_args or {}), None)[-1]})
+    intent_mod = types.ModuleType("homeassistant.helpers.intent")
+    intent_mod.IntentResponse = type(
+        "IntentResponse",
+        (),
+        {
+            "__init__": lambda self, language="en", **kw:
+                (setattr(self, "language", language), None)[-1],
+            "async_set_speech": lambda self, speech: setattr(self, "speech", speech),
+            "async_set_error": lambda self, code="", message="":
+                (setattr(self, "error_code", code), setattr(self, "error_message", message), None)[-1],
+        },
+    )
+    ep = types.ModuleType("homeassistant.helpers.entity_platform")
+    ep.AddEntitiesCallback = object
     helpers = types.ModuleType("homeassistant.helpers")
     helpers.entity_registry = er
     helpers.device_registry = dr
     helpers.area_registry = areg
     helpers.aiohttp_client = ac
     helpers.network = net
+    helpers.intent = intent_mod
+    helpers.llm = llm_mod
 
     # Repairs: enough surface for repair_notices to import + be monkeypatched.
     ireg = types.ModuleType("homeassistant.helpers.issue_registry")
@@ -105,6 +122,10 @@ def _install_ha_stubs() -> None:
     cfg.ConfigEntry = type("ConfigEntry", (), {})
 
     components = types.ModuleType("homeassistant.components")
+    comp_conversation = types.ModuleType("homeassistant.components.conversation")
+    comp_conversation.ConversationEntity = type("ConversationEntity", (), {})
+    comp_conversation.ConversationEntityFeature = types.SimpleNamespace(CONTROL=1)
+    components.conversation = comp_conversation
     comp_camera = types.ModuleType("homeassistant.components.camera")
 
     async def _stub_get_image(hass, entity_id, timeout=10):
@@ -135,7 +156,10 @@ def _install_ha_stubs() -> None:
         "homeassistant.config_entries": cfg,
         "homeassistant.const": const,
         "homeassistant.components": components,
+        "homeassistant.components.conversation": comp_conversation,
         "homeassistant.components.camera": comp_camera,
+        "homeassistant.helpers.intent": intent_mod,
+        "homeassistant.helpers.entity_platform": ep,
     }.items():
         sys.modules[name] = mod
 

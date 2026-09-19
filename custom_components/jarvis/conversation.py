@@ -37,6 +37,7 @@ from .const import (
     DOMAIN,
     JARVIS_PERSONA,
     get_directive,
+    resolve_provider_base_url,
 )
 from .audio_routing import reply_targets
 from .database import save_message
@@ -253,7 +254,22 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    async_add_entities([JarvisAgent(hass, config_entry)])
+    shared = hass.data.get(DOMAIN, {}).get(config_entry.entry_id, {})
+    client = shared.get("client")
+    if client is None:
+        # Unusual setup-order fallback: resolve config/secrets from async setup,
+        # never from the synchronous entity constructor.
+        from . import ha_secrets as _hs
+        from . import jarvis_config as _jc
+
+        eff = await hass.async_add_executor_job(_jc.effective_config, config_entry)
+        provider_name = eff.get("llm_provider", "groq")
+        api_key = await _hs.async_get_provider_key(hass, provider_name)
+        base_url = resolve_provider_base_url(eff, provider_name)
+        model = eff.get(CONF_MODEL, DEFAULT_MODEL)
+        client = create_provider(provider_name, api_key, model, base_url)
+
+    async_add_entities([JarvisAgent(hass, config_entry, client)])
 
 
 class JarvisAgent(conversation.ConversationEntity):
@@ -266,7 +282,12 @@ class JarvisAgent(conversation.ConversationEntity):
     _attr_name = None
     _attr_supported_features = ConversationEntityFeature.CONTROL
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        client,
+    ) -> None:
         self.hass  = hass
         self.entry = entry
         self._attr_unique_id = entry.entry_id
@@ -281,34 +302,13 @@ class JarvisAgent(conversation.ConversationEntity):
         self._threaded: set = set()   # conversations already seeded from history
         self._fallback_idx = 0
 
-        # Pull the shared LLM provider from hass.data (created in async_setup_entry).
-        # This way conversation automatically honours the user's chosen backend
-        # (Groq/OpenAI/Anthropic/Ollama/custom) without any code changes here.
-        shared = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
-        self._client = shared.get("client")
-        if self._client is None:
-            # Fallback — create a provider directly (should only happen in unusual
-            # setup order cases; the shared client is normally always present).
-            # Resolve from the single source of truth so this cannot diverge from
-            # the panel (jarvis_config wins over stale entry data/options).
-            from .llm_provider import create_provider as _cp
-            from . import jarvis_config as _jc
-            from . import ha_secrets as _hs
-            from .const import resolve_provider_base_url
-            _eff = _jc.effective_config(entry)
-            provider_name = _eff.get("llm_provider", "groq")
-            base_url = resolve_provider_base_url(_eff, provider_name)
-            api_key = _hs.get_provider_key_sync(provider_name)
-            self._client = _cp(
-                provider_name,
-                api_key,
-                self._model(),
-                base_url,
-            )
+        # Client resolution happens in async_setup_entry so any file-backed reads
+        # run in async-safe helpers/executor, never in this sync constructor.
+        self._client = client
         _LOGGER.info(
             "JARVIS agent initialised — provider=%s, model=%s",
             getattr(self._client, "name", "unknown"),
-            self._model(),
+            getattr(self._client, "model", "unknown"),
         )
 
     # ── Config helpers ────────────────────────────────────────────────────────
