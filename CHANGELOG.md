@@ -1,4 +1,14 @@
-## [7.94.0] — cameras: observe quietly, speak only when it's urgent
+## [7.94.1] — modern OpenAI/Claude model compatibility and a web-research fix
+
+JARVIS now works with the current generation of OpenAI and Anthropic models. Agent turns that call tools — the ones that power most of what JARVIS actually does — previously failed against newer OpenAI reasoning models (o1/o3/gpt-5.x) and modern Claude tool-calling models because of provider-specific request differences. JARVIS now translates tool calls and results into each provider's format, retries automatically when a model rejects the older `temperature` or `max_tokens` parameters, and gives reasoning models room to think before giving up on an empty response. Simple prompts worked before; real tool-using turns now work too.
+
+Web research is also more reliable: a search backend (or a cache/CDN in front of it) that answers with HTTP 202 and a valid result body is now used instead of being discarded as an outage.
+
+Under the hood, JARVIS service registration was consolidated around a single source of truth so the setup/unload lifecycle stays in sync as services are added — no user-facing change.
+
+Thanks to @PhoenixB (Pascal Jerney) for these contributions (#28, #29, #30).
+
+
 
 Automatic camera reviews now default to **urgent only** — JARVIS watches and logs everything but speaks up only for a genuine concern (an unrecognized person approaching or at a door, someone at an odd hour, an apparent attempt to enter). Routine footage — residents, empty scenes, parked or passing cars, pets, weather, normal indoor activity — is analyzed silently. A new **Camera alerts** control (General → by Camera Watch) lets you choose the threshold: Off (observe only), Urgent only (default), Important (adds deliveries and packages), or Everything notable. Manual camera analyses always report their result, and this doesn't change intrusion alerts, which are always spoken.
 

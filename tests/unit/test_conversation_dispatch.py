@@ -49,6 +49,17 @@ def test_handler_is_actually_a_method_of_jarvis_agent():
     raise AssertionError("JarvisAgent class not found")
 
 
+def test_agentic_loop_uses_standardized_result_fields_not_raw_message():
+    """Anthropic's `raw` is a Message with content blocks and no `.tool_calls` —
+    building the assistant turn from `raw_message.tool_calls`/`.content` (an
+    OpenAI-only shape) raised AttributeError on the first Anthropic tool turn.
+    The loop must build the assistant message from the standardized
+    result["text"]/result["calls"] fields instead."""
+    src = SRC.read_text()
+    assert "raw_message" not in src
+    assert 'result["calls"]' in src
+
+
 def test_context_includes_household_temperature_unit():
     """Freeform LLM output must follow Home Assistant's unit system rather than
     defaulting to Fahrenheit. The live-context builder reads the configured

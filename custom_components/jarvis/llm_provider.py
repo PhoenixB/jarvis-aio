@@ -158,8 +158,34 @@ class OpenAIProvider(LLMProvider):
         extra = self._extra_body()
         if extra:
             kwargs["extra_body"] = extra
-        resp = self._client.chat.completions.create(**kwargs)
+        for _attempt in range(3):
+            try:
+                resp = self._client.chat.completions.create(**kwargs)
+                break
+            except Exception as exc:
+                # Newer reasoning models may reject both legacy parameters;
+                # adapt each one once without maintaining a model-name list.
+                msg = str(exc).lower()
+                if ("max_tokens" in kwargs and "max_tokens" in msg
+                        and "max_completion_tokens" in msg):
+                    kwargs["max_completion_tokens"] = kwargs.pop("max_tokens")
+                    continue
+                if ("temperature" in kwargs and "temperature" in msg
+                        and ("unsupported" in msg or "deprecated" in msg)):
+                    kwargs.pop("temperature", None)
+                    continue
+                raise
         choice = resp.choices[0]
+        if (not choice.message.tool_calls and not (choice.message.content or "").strip()
+                and getattr(choice, "finish_reason", None) == "length"
+                and "max_completion_tokens" in kwargs):
+            # Reasoning models (o1/o3/gpt-5.x) spend the token budget on hidden
+            # reasoning before ever emitting visible content — a modest budget
+            # can be exhausted entirely by reasoning, leaving nothing to show
+            # and no error. Retry once with substantially more room.
+            kwargs["max_completion_tokens"] = max(kwargs["max_completion_tokens"] * 4, 2048)
+            resp = self._client.chat.completions.create(**kwargs)
+            choice = resp.choices[0]
         tool_calls = []
         # Check message.tool_calls directly — some providers set
         # finish_reason="stop" even when tool_calls are present.
@@ -266,10 +292,16 @@ class AnthropicProvider(LLMProvider):
     def chat(self, messages, tools=None, max_tokens=512, temperature=0.7, model_override=None):
         # Anthropic's API splits system vs user/assistant, and uses a different
         # image block format than the OpenAI-style image_url our callers send.
+        # It also has no "tool" role: a tool call is an assistant `tool_use`
+        # content block, and its result is a `tool_result` block inside a
+        # *user* message — our callers (agent.py) build history in OpenAI's
+        # shape (assistant.tool_calls + role="tool"), so translate it here
+        # rather than push Anthropic-specific shapes up into shared code.
         system = ""
         chat_msgs = []
         for m in messages:
-            if m["role"] == "system":
+            role = m["role"]
+            if role == "system":
                 sys_c = m["content"]
                 if isinstance(sys_c, list):
                     sys_c = " ".join(
@@ -277,11 +309,55 @@ class AnthropicProvider(LLMProvider):
                         if isinstance(p, dict) and p.get("type") == "text"
                     )
                 system = sys_c if not system else system + "\n\n" + sys_c
+            elif role == "assistant" and m.get("tool_calls"):
+                content = []
+                text = m.get("content") or ""
+                if text:
+                    content.append({"type": "text", "text": text})
+                for tc in m["tool_calls"]:
+                    fn = tc.get("function", {}) or {}
+                    args = fn.get("arguments", "{}")
+                    try:
+                        parsed_args = json.loads(args) if isinstance(args, str) else (args or {})
+                    except Exception:
+                        parsed_args = {}
+                    content.append({
+                        "type": "tool_use",
+                        "id": tc.get("id", ""),
+                        "name": fn.get("name", ""),
+                        "input": parsed_args,
+                    })
+                chat_msgs.append({"role": "assistant", "content": content})
+            elif role == "tool":
+                tool_result = {
+                    "type": "tool_result",
+                    "tool_use_id": m.get("tool_call_id", ""),
+                    "content": str(m.get("content", "")),
+                }
+                # Consecutive tool results (multiple calls in one turn) must
+                # collapse into ONE user message — Anthropic doesn't allow
+                # back-to-back messages with the same role.
+                if chat_msgs and self._is_pure_tool_result(chat_msgs[-1]):
+                    chat_msgs[-1]["content"].append(tool_result)
+                else:
+                    chat_msgs.append({"role": "user", "content": [tool_result]})
             else:
-                chat_msgs.append({
-                    "role": m["role"],
-                    "content": self._to_anthropic_content(m["content"]),
-                })
+                new_content = self._to_anthropic_content(m["content"])
+                # A plain user turn (e.g. the iteration-cap summary request)
+                # can immediately follow a tool_result user message — merge
+                # into it instead of emitting two consecutive "user" messages,
+                # which Anthropic rejects.
+                if role == "user" and chat_msgs and chat_msgs[-1]["role"] == "user":
+                    prev_content = chat_msgs[-1]["content"]
+                    if not isinstance(prev_content, list):
+                        prev_content = [{"type": "text", "text": prev_content}]
+                        chat_msgs[-1]["content"] = prev_content
+                    if isinstance(new_content, list):
+                        prev_content.extend(new_content)
+                    else:
+                        prev_content.append({"type": "text", "text": new_content})
+                else:
+                    chat_msgs.append({"role": role, "content": new_content})
 
         kwargs: dict[str, Any] = {
             "model": model_override or self.model,
@@ -301,7 +377,19 @@ class AnthropicProvider(LLMProvider):
                 for t in tools
             ]
 
-        resp = self._client.messages.create(**kwargs)
+        try:
+            resp = self._client.messages.create(**kwargs)
+        except Exception as exc:
+            # Newer Claude models (e.g. claude-sonnet-5) reject `temperature`
+            # outright ("temperature is deprecated for this model") rather
+            # than just clamping it — retry once without it instead of
+            # hardcoding a model list that will always be out of date.
+            msg = str(exc).lower()
+            if "temperature" in kwargs and "temperature" in msg and "deprecated" in msg:
+                kwargs.pop("temperature", None)
+                resp = self._client.messages.create(**kwargs)
+            else:
+                raise
 
         text_parts = []
         tool_calls = []
@@ -322,6 +410,14 @@ class AnthropicProvider(LLMProvider):
 
     def supports_vision(self) -> bool:
         return True  # all modern Claude models
+
+    @staticmethod
+    def _is_pure_tool_result(msg) -> bool:
+        """Whether `msg` is a user message made entirely of tool_result
+        blocks — the marker for "merge the next tool_result in here too"."""
+        c = msg.get("content")
+        return (msg.get("role") == "user" and isinstance(c, list) and bool(c)
+                and all(isinstance(p, dict) and p.get("type") == "tool_result" for p in c))
 
     @staticmethod
     def _to_anthropic_content(content):
