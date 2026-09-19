@@ -36,16 +36,17 @@ This project holds to senior+ engineering output:
 
 ## Local checks
 
+These are the same checks the `Validate` CI workflow runs on every push:
+
 ```bash
-# Python syntax across all integration modules
-cd custom_components/jarvis
-for f in *.py; do python3 -c "import ast; ast.parse(open('$f').read())" || echo "FAIL $f"; done
+# Full audit: bytecode compile + relative-import resolution + exported-name checks
+python3 scripts/audit.py
+
+# Unit tests
+python3 -m pytest tests/ -q
 
 # Dashboard JavaScript parses
-node -e "const fs=require('fs');new Function(fs.readFileSync('frontend/jarvis-panel.js','utf8'))"
-
-# Add-on shell script
-bash -n ../run.sh
+node --check custom_components/jarvis/frontend/jarvis-panel.js
 ```
 
 ## Releasing
@@ -56,9 +57,10 @@ Bump the version everywhere it appears with one command:
 ./scripts/bump_version.sh 6.3.3
 ```
 
-This updates `config.yaml`, `build.yaml`, `Dockerfile`, `run.sh`, the integration
-`manifest.json`, and the version string in `jarvis-panel.js`. Then commit, tag
-(`git tag v6.3.3`), and push the tag — the validation workflow runs on every push.
+This updates the integration `manifest.json` (the source of truth) and the version
+string in `jarvis-panel.js`. Then commit, tag (`git tag 6.3.3` — tags are `X.Y.Z`,
+no `v` prefix), and push the tag — the validation workflow runs on every push, and
+HACS publishes from the tag (no add-on/Docker build).
 
 After updating on a live system, hard-refresh the browser (`Ctrl+Shift+R`) so the
 cached dashboard JavaScript reloads.
