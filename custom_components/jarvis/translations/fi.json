@@ -89,7 +89,8 @@
           "routing": "Reititys — makuuhuonealueet, kuulutusryhmä, ilmoituspalvelu",
           "observer": "Tarkkailija — ennakoiva tietoisuus (käyttää määritettyjä LLM-palveluntarjoajia)",
           "identity": "Henkilöllisyys — henkilökohtainen tunnistus",
-          "email": "Sähköposti — vain luettava postilaatikko (salasana secrets.yaml:n kautta)"
+          "email": "Sähköposti — vain luettava postilaatikko (salasana secrets.yaml:n kautta)",
+          "agents": "Agents — specialised sub-agents (FRIDAY/HOMER), autonomy toggles"
         }
       },
       "llm": {
@@ -256,6 +257,16 @@
           "imap_ssl": "Käytä SSL:ää (suositeltu)",
           "imap_secret_key": "secrets.yaml-avain, joka sisältää salasanan"
         }
+      },
+      "agents": {
+        "title": "JARVIS — Agents",
+        "description": "Specialised sub-agents and autonomy.\n\n⚠️ FRIDAY (background automator) can CONTROL DEVICES, run scenes, and run scripts on its own — unlike every other sub-agent, which is read-only. Leave it OFF unless you understand that it can actuate your home autonomously. To enable it you must also tick the acknowledgement box.",
+        "data": {
+          "friday_automator": "Enable FRIDAY automator (can control devices) — advanced",
+          "friday_confirm": "I understand FRIDAY can actuate my home; enable it",
+          "proximity_volume": "Dampen TTS volume when I'm close to the speaker (needs mmWave distance sensors)",
+          "host_telemetry": "Monitor host hardware (CPU temp, memory pressure, NVMe I/O)"
+        }
       }
     },
     "error": {
@@ -264,7 +275,8 @@
       "invalid_auth": "API-avain hylättiin. Tarkista avain ja yritä uudelleen.",
       "unknown": "LLM-yhteyttä ei voitu vahvistaa. Tarkista asetukset ja yritä uudelleen.",
       "no_models": "Tälle palveluntarjoajalle ei ole saatavilla malleja. Tarkista palveluntarjoajan päätepiste ja yritä uudelleen.",
-      "no_providers": "LLM-palveluntarjoajia ei ole määritetty. Lisää ensin palveluntarjoajan avain tai päätepiste LLM-osioon."
+      "no_providers": "LLM-palveluntarjoajia ei ole määritetty. Lisää ensin palveluntarjoajan avain tai päätepiste LLM-osioon.",
+      "friday_confirm_required": "You enabled FRIDAY but didn't tick the acknowledgement box. FRIDAY can actuate your home, so it stays off until you confirm."
     }
   },
   "issues": {

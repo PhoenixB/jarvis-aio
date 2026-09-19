@@ -1,4 +1,14 @@
-## [7.95.1] — SweetHome3D floor-plan import helper
+## [7.96.0] — specialised sub-agents, proximity-aware speech, and host hardware telemetry
+
+Four capabilities from the JARVIS architecture roadmap, built to fit the existing design rather than the roadmap's imagined file layout.
+
+**Named sub-agent profiles.** `delegate_task` now accepts a `profile` alongside the read-only capability groups. **HOMER** is a read-only System Diagnostic Specialist with a deterministic constraint-core prompt and a tools set scoped to diagnostics/telemetry/state — it root-causes a fault and reports back, never actuating. **FRIDAY** is a terse background automator that *can* control devices, run scenes, and run scripts. Because that deliberately breaches the invariant that keeps every other sub-agent read-only, FRIDAY is **off by default** and can only be enabled from Settings → JARVIS → Configure → **Agents**, which requires ticking an explicit acknowledgement — enabling it without the acknowledgement is rejected. Even when enabled, FRIDAY is granted only its three actuators; every other write/management tool stays denied, and sub-agents still cannot re-delegate.
+
+**Proximity-aware TTS volume.** Where a room has high-resolution mmWave distance arrays (`sensor.*_distance` / `sensor.*_presence_coordinates`), proactive announcements now dampen their volume when you're right next to the speaker instead of projecting at a fixed level, on a smooth near→quiet, far→full ramp. It's strictly additive — a no-op wherever no distance array is readable, never applied to a critical alert — and can be switched off in the Agents screen.
+
+**Zorin/Linux host telemetry.** The infrastructure audit and the `system_diagnostics` tool now read the physical server's stress signals straight from the kernel — CPU package temperature, system memory pressure (where a runaway local model shows up first), and NVMe I/O saturation — with **zero new dependencies** (stdlib `/proc` and `/sys` reads, done off the event loop). Critical host stress is spoken through the same audit that already surfaces infrastructure faults, so a hot or thrashing host that would otherwise only show up as sluggish AI latency becomes an explicit alert. It's self-limiting: on a host that doesn't expose those kernel files, every metric simply reads as unavailable and nothing is graded.
+
+
 
 Importing a floor plan into the Residence tab's `floor_plan_rooms` config no longer means hand-escaping JSON. A new helper, `scripts/sweethome3d_to_floorplan.py`, converts a SweetHome3D JSON export into the exact `{floor: {rooms: [{name, x, y, w, h}], labels: []}}` shape JARVIS reads for room adjacency — turning each SweetHome3D `room` polygon into its bounding box, grouping by level, with options to rescale centimetres (`--scale`), shift the plan to a `(0,0)` origin (`--origin-zero`), and emit a paste-ready escaped string (`--as-config-string`). If an export contains only walls and furniture with no rooms drawn, the tool says so plainly instead of producing an empty plan.
 

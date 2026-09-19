@@ -89,7 +89,8 @@
           "routing": "Smerovanie — spálňové oblasti, skupina na vysielanie, oznamovacia služba",
           "observer": "Pozorovateľ — proaktívne vnímanie (používa nakonfigurovaných poskytovateľov LLM)",
           "identity": "Identita — rozpoznávanie jednotlivých osôb",
-          "email": "E-mail — schránka len na čítanie (heslo cez secrets.yaml)"
+          "email": "E-mail — schránka len na čítanie (heslo cez secrets.yaml)",
+          "agents": "Agents — specialised sub-agents (FRIDAY/HOMER), autonomy toggles"
         }
       },
       "llm": {
@@ -256,6 +257,16 @@
           "imap_ssl": "Použiť SSL (odporúča sa)",
           "imap_secret_key": "Kľúč v secrets.yaml obsahujúci heslo"
         }
+      },
+      "agents": {
+        "title": "JARVIS — Agents",
+        "description": "Specialised sub-agents and autonomy.\n\n⚠️ FRIDAY (background automator) can CONTROL DEVICES, run scenes, and run scripts on its own — unlike every other sub-agent, which is read-only. Leave it OFF unless you understand that it can actuate your home autonomously. To enable it you must also tick the acknowledgement box.",
+        "data": {
+          "friday_automator": "Enable FRIDAY automator (can control devices) — advanced",
+          "friday_confirm": "I understand FRIDAY can actuate my home; enable it",
+          "proximity_volume": "Dampen TTS volume when I'm close to the speaker (needs mmWave distance sensors)",
+          "host_telemetry": "Monitor host hardware (CPU temp, memory pressure, NVMe I/O)"
+        }
       }
     },
     "error": {
@@ -264,7 +275,8 @@
       "invalid_auth": "API kľúč bol odmietnutý. Skontrolujte kľúč a skúste to znova.",
       "unknown": "Pripojenie k LLM sa nepodarilo overiť. Skontrolujte nastavenia a skúste to znova.",
       "no_models": "Pre tohto poskytovateľa nie sú k dispozícii žiadne modely. Skontrolujte koncový bod poskytovateľa a skúste to znova.",
-      "no_providers": "Nie sú nakonfigurovaní žiadni poskytovatelia LLM. Najprv pridajte kľúč poskytovateľa alebo koncový bod v časti LLM."
+      "no_providers": "Nie sú nakonfigurovaní žiadni poskytovatelia LLM. Najprv pridajte kľúč poskytovateľa alebo koncový bod v časti LLM.",
+      "friday_confirm_required": "You enabled FRIDAY but didn't tick the acknowledgement box. FRIDAY can actuate your home, so it stays off until you confirm."
     }
   },
   "issues": {

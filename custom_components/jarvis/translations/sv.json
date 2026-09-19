@@ -89,7 +89,8 @@
           "routing": "Routing — sovrumsområden, utsändningsgrupp, aviseringstjänst",
           "observer": "Observatör — proaktiv medvetenhet (använder konfigurerade LLM-leverantörer)",
           "identity": "Identitet — igenkänning per person",
-          "email": "E-post — skrivskyddad inkorg (lösenord via secrets.yaml)"
+          "email": "E-post — skrivskyddad inkorg (lösenord via secrets.yaml)",
+          "agents": "Agents — specialised sub-agents (FRIDAY/HOMER), autonomy toggles"
         }
       },
       "llm": {
@@ -256,6 +257,16 @@
           "imap_ssl": "Använd SSL (rekommenderas)",
           "imap_secret_key": "secrets.yaml-nyckel som innehåller lösenordet"
         }
+      },
+      "agents": {
+        "title": "JARVIS — Agents",
+        "description": "Specialised sub-agents and autonomy.\n\n⚠️ FRIDAY (background automator) can CONTROL DEVICES, run scenes, and run scripts on its own — unlike every other sub-agent, which is read-only. Leave it OFF unless you understand that it can actuate your home autonomously. To enable it you must also tick the acknowledgement box.",
+        "data": {
+          "friday_automator": "Enable FRIDAY automator (can control devices) — advanced",
+          "friday_confirm": "I understand FRIDAY can actuate my home; enable it",
+          "proximity_volume": "Dampen TTS volume when I'm close to the speaker (needs mmWave distance sensors)",
+          "host_telemetry": "Monitor host hardware (CPU temp, memory pressure, NVMe I/O)"
+        }
       }
     },
     "error": {
@@ -264,7 +275,8 @@
       "invalid_auth": "API-nyckeln avvisades. Kontrollera nyckeln och försök igen.",
       "unknown": "Kunde inte validera LLM-anslutningen. Kontrollera inställningarna och försök igen.",
       "no_models": "Det finns inga modeller tillgängliga för den här leverantören. Kontrollera leverantörens endpoint och försök igen.",
-      "no_providers": "Inga LLM-leverantörer är konfigurerade. Lägg först till en leverantörsnyckel eller endpoint i LLM-avsnittet."
+      "no_providers": "Inga LLM-leverantörer är konfigurerade. Lägg först till en leverantörsnyckel eller endpoint i LLM-avsnittet.",
+      "friday_confirm_required": "You enabled FRIDAY but didn't tick the acknowledgement box. FRIDAY can actuate your home, so it stays off until you confirm."
     }
   },
   "issues": {

@@ -37,6 +37,7 @@ from .diagnostics import FaultLog, InfrastructureTriage
 from .intent import LocalIntentRouter
 from .state_ledger import StateLedger
 from .vision import SpatialContextEngine
+from .vision import volume_damping_factor as spatial_volume_damping
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -99,6 +100,17 @@ def _as_float(value: object) -> float | None:
     if f != f or f in (float("inf"), float("-inf")):
         return None
     return f
+
+
+def _proximity_enabled() -> bool:
+    """Whether distance-based TTS volume dampening is on (default yes). It is
+    self-limiting — a no-op wherever no distance array is readable — so the
+    default is safe, and this switch lets a user turn it off outright."""
+    try:
+        from . import jarvis_config
+        return bool(jarvis_config.get("proximity_volume", True))
+    except Exception:
+        return True
 
 
 def _resolve_honorific(hass: HomeAssistant, entry: ConfigEntry) -> str:
@@ -294,6 +306,26 @@ async def _announce(hass: HomeAssistant, message: str, area_id: str, critical: b
     telemetry = _build_telemetry(hass, area_id, targets, critical)
     profile = _PROSODY.calculate_vocal_profile(telemetry)
     announce_volume = float(profile["volume"])
+
+    # Proximity dampening: when high-resolution mmWave distance arrays show the
+    # listener is right next to the room's speaker, drop the volume rather than
+    # projecting at them. Never applied to a critical alert (those must stay
+    # authoritative) and a no-op wherever no distance array is readable, so it
+    # only ever *reduces* a non-urgent announcement in rooms wired for it.
+    if not critical and _proximity_enabled():
+        try:
+            distance_m = SpatialContextEngine(hass).nearest_distance_m(area_id)
+            factor = spatial_volume_damping(distance_m)
+            if factor < 1.0:
+                new_volume = round(announce_volume * factor, 3)
+                _LOGGER.debug(
+                    "jarvis.speak proximity: area=%s distance=%.2fm factor=%.2f "
+                    "vol %.2f→%.2f", area_id, distance_m or -1.0, factor,
+                    announce_volume, new_volume,
+                )
+                announce_volume = new_volume
+        except Exception:  # noqa: BLE001 - proximity is a nicety, never a blocker
+            _LOGGER.debug("proximity dampening skipped", exc_info=True)
 
     # Duck/restore the speakers we actually announce through.
     original: dict[str, float] = {}
@@ -556,7 +588,20 @@ async def async_setup_proactive_audio(hass: HomeAssistant, entry: ConfigEntry) -
             return  # don't overlap a slow announcement with the next tick
         entry_data["_audit_running"] = True
         try:
-            verdict = InfrastructureTriage(hass, honorific=honorific).evaluate()
+            # Zorin/Linux host telemetry (CPU temp, memory pressure, NVMe I/O)
+            # is read off the event loop — the reads hit /proc and /sys and the
+            # NVMe probe samples twice — then folded into the audit verdict so
+            # host stress affecting AI latency is spoken like any other fault.
+            host_metrics = None
+            try:
+                from . import host_telemetry
+                if host_telemetry.is_enabled():
+                    host_metrics = await hass.async_add_executor_job(
+                        host_telemetry.read_metrics
+                    )
+            except Exception:  # noqa: BLE001
+                host_metrics = None
+            verdict = InfrastructureTriage(hass, honorific=honorific).evaluate(host_metrics)
             if verdict["alert_required"]:
                 message = verdict["message"]
                 tags = verdict.get("tags", [])

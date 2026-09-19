@@ -89,7 +89,8 @@
           "routing": "路由——臥室區域、廣播群組、通知服務",
           "observer": "觀察者——主動感知（使用已設定的 LLM 提供商）",
           "identity": "身份——按人識別",
-          "email": "電子郵件——只讀收件箱（密碼透過 secrets.yaml 提供）"
+          "email": "電子郵件——只讀收件箱（密碼透過 secrets.yaml 提供）",
+          "agents": "Agents — specialised sub-agents (FRIDAY/HOMER), autonomy toggles"
         }
       },
       "llm": {
@@ -256,6 +257,16 @@
           "imap_ssl": "使用 SSL（推薦）",
           "imap_secret_key": "存放密碼的 secrets.yaml 鍵"
         }
+      },
+      "agents": {
+        "title": "JARVIS — Agents",
+        "description": "Specialised sub-agents and autonomy.\n\n⚠️ FRIDAY (background automator) can CONTROL DEVICES, run scenes, and run scripts on its own — unlike every other sub-agent, which is read-only. Leave it OFF unless you understand that it can actuate your home autonomously. To enable it you must also tick the acknowledgement box.",
+        "data": {
+          "friday_automator": "Enable FRIDAY automator (can control devices) — advanced",
+          "friday_confirm": "I understand FRIDAY can actuate my home; enable it",
+          "proximity_volume": "Dampen TTS volume when I'm close to the speaker (needs mmWave distance sensors)",
+          "host_telemetry": "Monitor host hardware (CPU temp, memory pressure, NVMe I/O)"
+        }
       }
     },
     "error": {
@@ -264,7 +275,8 @@
       "invalid_auth": "API 金鑰被拒絕。請檢查金鑰後重試。",
       "unknown": "無法驗證 LLM 連線。請檢查設定後重試。",
       "no_models": "此提供商沒有可用模型。請檢查端點後重試。",
-      "no_providers": "尚未設定 LLM 提供商。請先在 LLM 區段新增 API 金鑰或端點。"
+      "no_providers": "尚未設定 LLM 提供商。請先在 LLM 區段新增 API 金鑰或端點。",
+      "friday_confirm_required": "You enabled FRIDAY but didn't tick the acknowledgement box. FRIDAY can actuate your home, so it stays off until you confirm."
     }
   },
   "issues": {

@@ -126,3 +126,98 @@ def test_delegate_task_tool_registered_but_not_in_tool_map(agent):
     names = {t["function"]["name"] for t in agent.JARVIS_TOOLS}
     assert "delegate_task" in names
     assert "delegate_task" not in agent._TOOL_MAP     # handled inline by design
+
+
+# ── named profiles: HOMER (read-only) + FRIDAY (gated actuator) ───────────────
+
+@pytest.fixture
+def friday_off(agent, load, monkeypatch):
+    cfg = load("jarvis_config")
+    monkeypatch.setattr(cfg, "get", lambda k, d=None: d)   # friday_automator → default False
+    return agent
+
+
+@pytest.fixture
+def friday_on(agent, load, monkeypatch):
+    cfg = load("jarvis_config")
+    monkeypatch.setattr(cfg, "get",
+                        lambda k, d=None: True if k == "friday_automator" else d)
+    return agent
+
+
+def test_homer_profile_is_read_only_and_never_leaks_a_denied_tool(agent):
+    allowed, turns, directive = agent._resolve_profile("HOMER")
+    assert not (allowed & agent._SUBAGENT_DENY)        # purely read-only
+    assert "control_device" not in allowed
+    assert "system_diagnostics" in allowed and "root_cause" in allowed
+    assert turns == agent.AGENT_PROFILES["HOMER"]["max_turns"]
+    assert "HOMER" in directive
+
+
+def test_homer_available_regardless_of_config(friday_off):
+    # a read-only profile needs no opt-in
+    assert isinstance(friday_off._resolve_profile("HOMER"), tuple)
+
+
+def test_profile_name_is_case_insensitive(agent):
+    assert isinstance(agent._resolve_profile("homer"), tuple)
+
+
+def test_unknown_profile_returns_error_json(agent):
+    out = json.loads(agent._resolve_profile("BATMAN"))
+    assert "error" in out and "unknown profile" in out["error"]
+
+
+def test_friday_disabled_by_default_returns_actionable_error(friday_off):
+    out = json.loads(friday_off._resolve_profile("FRIDAY"))
+    assert "error" in out and "disabled" in out["error"]
+    assert "Settings" in out["error"]
+
+
+def test_friday_enabled_grants_only_its_actuators(friday_on):
+    allowed, turns, directive = friday_on._resolve_profile("FRIDAY")
+    assert {"control_device", "bulk_control", "run_scene_or_script"} <= allowed
+    # still denied everything outside its explicit grant (defence in depth)
+    assert "delegate_task" not in allowed
+    assert "remember" not in allowed
+    assert "ingest_documents" not in allowed
+    assert turns == agent_profiles_turns(friday_on, "FRIDAY")
+    assert "FRIDAY" in directive
+
+
+def agent_profiles_turns(agent, name):
+    return agent.AGENT_PROFILES[name]["max_turns"]
+
+
+async def test_delegate_with_homer_profile_wires_directive_and_tools(friday_off, spy_run_agent):
+    out = json.loads(await _delegate(
+        friday_off, {"objective": "why is the office lamp offline", "profile": "HOMER"}))
+    assert out["profile"] == "HOMER"
+    assert len(spy_run_agent) == 1
+    kw = spy_run_agent[0]
+    assert kw["allowed_tools"] == friday_off._resolve_profile("HOMER")[0]
+    assert kw["extra_directive"] and "HOMER" in kw["extra_directive"]
+    assert kw["max_iterations"] <= friday_off.AGENT_PROFILES["HOMER"]["max_turns"]
+
+
+async def test_delegate_with_friday_disabled_does_not_run_agent(friday_off, spy_run_agent):
+    out = json.loads(await _delegate(
+        friday_off, {"objective": "dim the lights", "profile": "FRIDAY"}))
+    assert "error" in out and "disabled" in out["error"]
+    assert spy_run_agent == []                          # never actuates when off
+
+
+async def test_delegate_with_friday_enabled_runs_with_actuators(friday_on, spy_run_agent):
+    out = json.loads(await _delegate(
+        friday_on, {"objective": "run the movie scene", "profile": "FRIDAY"}))
+    assert out["profile"] == "FRIDAY"
+    assert "control_device" in spy_run_agent[0]["allowed_tools"]
+    assert spy_run_agent[0]["max_iterations"] <= 3
+
+
+def test_delegate_task_schema_exposes_profile_and_only_objective_required(agent):
+    tool = next(t for t in agent.JARVIS_TOOLS
+                if t["function"]["name"] == "delegate_task")
+    params = tool["function"]["parameters"]
+    assert params["required"] == ["objective"]
+    assert set(params["properties"]["profile"]["enum"]) == {"HOMER", "FRIDAY"}

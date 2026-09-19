@@ -424,6 +424,54 @@ def _check_routines(hass) -> dict:
     return out
 
 
+async def _check_host(hass) -> dict:
+    """Zorin/Linux host hardware stress — CPU temperature, memory pressure, and
+    NVMe I/O read straight from /proc and /sys. OFF when the host doesn't expose
+    those kernel files (e.g. a locked-down container); WARN on elevated stress;
+    DOWN only when a metric is critically high and is actively degrading the
+    assistant. The reads are blocking, so they run in an executor."""
+    out = {"name": "Host", "key": "host", "status": _OFF, "detail": ""}
+    try:
+        from .. import host_telemetry
+    except Exception:
+        out["detail"] = "host telemetry module unavailable"
+        return out
+    if not host_telemetry.is_enabled():
+        out["detail"] = "disabled in settings"
+        return out
+    try:
+        snap = await hass.async_add_executor_job(host_telemetry.snapshot)
+    except Exception as exc:  # noqa: BLE001
+        out["status"] = _WARN
+        out["detail"] = "telemetry read error: %s" % exc
+        return out
+    if not snap.get("available"):
+        out["detail"] = "host metrics not exposed (no /proc or /sys access)"
+        return out
+    m = snap.get("metrics", {})
+    bits = []
+    if m.get("cpu_temp_c") is not None:
+        bits.append("CPU %.0f°C" % m["cpu_temp_c"])
+    if m.get("mem_used_pct") is not None:
+        bits.append("mem %.0f%%" % m["mem_used_pct"])
+    if m.get("mem_psi_avg10") is not None:
+        bits.append("mem-pressure %.0f%%" % m["mem_psi_avg10"])
+    if m.get("nvme_util_pct") is not None:
+        bits.append("NVMe %.0f%%" % m["nvme_util_pct"])
+    summary = ", ".join(bits) if bits else "host reachable"
+    findings = snap.get("findings", [])
+    if snap.get("critical"):
+        out["status"] = _DOWN
+        out["detail"] = "; ".join(f["phrase"] for f in findings) or summary
+    elif findings:
+        out["status"] = _WARN
+        out["detail"] = "; ".join(f["phrase"] for f in findings)
+    else:
+        out["status"] = _OK
+        out["detail"] = summary
+    return out
+
+
 async def run_service_health(hass) -> dict:
     """Run all core dependency checks. Returns
     {overall, services: [...], summary}. Never raises."""
@@ -437,6 +485,7 @@ async def run_service_health(hass) -> dict:
         ("Routines", "routines", _check_routines, False),
         ("Conversation store", "database", _check_database, False),
         ("Scheduler", "scheduler", _check_scheduler, False),
+        ("Host", "host", _check_host, True),
     ):
         try:
             services.append(await fn(hass) if is_async else fn(hass))

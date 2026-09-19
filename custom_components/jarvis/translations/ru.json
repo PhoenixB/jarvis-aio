@@ -89,7 +89,8 @@
           "routing": "Маршрутизация — зоны спален, группа вещания, служба уведомлений",
           "observer": "Наблюдатель — проактивная осведомлённость (использует настроенных провайдеров LLM)",
           "identity": "Личность — распознавание отдельных людей",
-          "email": "Эл. почта — почтовый ящик только для чтения (пароль через secrets.yaml)"
+          "email": "Эл. почта — почтовый ящик только для чтения (пароль через secrets.yaml)",
+          "agents": "Agents — specialised sub-agents (FRIDAY/HOMER), autonomy toggles"
         }
       },
       "llm": {
@@ -256,6 +257,16 @@
           "imap_ssl": "Использовать SSL (рекомендуется)",
           "imap_secret_key": "Ключ в secrets.yaml, содержащий пароль"
         }
+      },
+      "agents": {
+        "title": "JARVIS — Agents",
+        "description": "Specialised sub-agents and autonomy.\n\n⚠️ FRIDAY (background automator) can CONTROL DEVICES, run scenes, and run scripts on its own — unlike every other sub-agent, which is read-only. Leave it OFF unless you understand that it can actuate your home autonomously. To enable it you must also tick the acknowledgement box.",
+        "data": {
+          "friday_automator": "Enable FRIDAY automator (can control devices) — advanced",
+          "friday_confirm": "I understand FRIDAY can actuate my home; enable it",
+          "proximity_volume": "Dampen TTS volume when I'm close to the speaker (needs mmWave distance sensors)",
+          "host_telemetry": "Monitor host hardware (CPU temp, memory pressure, NVMe I/O)"
+        }
       }
     },
     "error": {
@@ -264,7 +275,8 @@
       "invalid_auth": "API-ключ отклонён. Проверьте ключ и повторите попытку.",
       "unknown": "Не удалось проверить подключение к LLM. Проверьте настройки и повторите попытку.",
       "no_models": "Для этого провайдера нет доступных моделей. Проверьте конечную точку провайдера и попробуйте снова.",
-      "no_providers": "Не настроен ни один провайдер LLM. Сначала добавьте ключ провайдера или конечную точку в разделе LLM."
+      "no_providers": "Не настроен ни один провайдер LLM. Сначала добавьте ключ провайдера или конечную точку в разделе LLM.",
+      "friday_confirm_required": "You enabled FRIDAY but didn't tick the acknowledgement box. FRIDAY can actuate your home, so it stays off until you confirm."
     }
   },
   "issues": {

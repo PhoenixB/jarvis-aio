@@ -443,8 +443,45 @@ class JarvisOptionsFlow(OptionsFlow):
         """Landing menu — jump to any section directly."""
         return self.async_show_menu(
             step_id="init",
-            menu_options=["llm", "core", "routing", "observer", "identity", "email"],
+            menu_options=["llm", "core", "routing", "observer", "identity", "email", "agents"],
         )
+
+    async def async_step_agents(self, user_input: dict[str, Any] | None = None) -> dict:
+        """Agents — specialised sub-agents and related autonomy toggles.
+
+        FRIDAY is a background automator sub-agent that CAN control devices, run
+        scenes, and run scripts. That deliberately breaks the rule that keeps
+        every other sub-agent read-only, so it is off by default and turning it
+        on requires ticking an explicit acknowledgement — enabling it without the
+        acknowledgement is rejected and the form is shown again with a warning."""
+        if user_input is not None:
+            enable_friday = bool(user_input.get("friday_automator", False))
+            acknowledged = bool(user_input.pop("friday_confirm", False))
+            if enable_friday and not acknowledged:
+                # Refuse to arm an actuating sub-agent without the explicit tick.
+                return self.async_show_form(
+                    step_id="agents",
+                    data_schema=self._agents_schema(force_friday_on=True),
+                    errors={"base": "friday_confirm_required"},
+                )
+            return await self._save_section(user_input)
+        return self.async_show_form(step_id="agents", data_schema=self._agents_schema())
+
+    def _agents_schema(self, force_friday_on: bool = False):
+        friday_default = True if force_friday_on else self._cur("friday_automator", False)
+        return vol.Schema({
+            vol.Optional("friday_automator",
+                         description={"suggested_value": friday_default}):
+                selector.BooleanSelector(),
+            vol.Optional("friday_confirm", description={"suggested_value": False}):
+                selector.BooleanSelector(),
+            vol.Optional("proximity_volume",
+                         description=self._sv("proximity_volume", True)):
+                selector.BooleanSelector(),
+            vol.Optional("host_telemetry",
+                         description=self._sv("host_telemetry", True)):
+                selector.BooleanSelector(),
+        })
 
     async def async_step_llm(self, user_input: dict[str, Any] | None = None) -> dict:
         """LLM — submenu for adding or rotating provider keys."""

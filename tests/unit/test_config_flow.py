@@ -256,7 +256,36 @@ async def test_step_init_renders_menu(config_flow, fake_hass):
     # init is now a landing menu (not a form) — jump to any section directly
     res = await _flow(config_flow, fake_hass).async_step_init(None)
     assert res["type"] == "menu" and res["step_id"] == "init"
-    assert set(res["menu_options"]) == {"llm", "core", "routing", "observer", "identity", "email"}
+    assert set(res["menu_options"]) == {
+        "llm", "core", "routing", "observer", "identity", "email", "agents"}
+
+
+async def test_step_agents_renders_fields(config_flow, fake_hass):
+    res = await _flow(config_flow, fake_hass).async_step_agents(None)
+    assert res["type"] == "form" and res["step_id"] == "agents"
+    # friday toggle, friday confirm, proximity, host telemetry
+    assert len(res["data_schema"].schema) == 4
+
+
+async def test_step_agents_enabling_friday_without_confirm_is_rejected(config_flow, fake_hass):
+    flow = _flow(config_flow, fake_hass)
+    res = await flow.async_step_agents({"friday_automator": True, "friday_confirm": False})
+    assert res["type"] == "form" and res["step_id"] == "agents"
+    assert res["errors"]["base"] == "friday_confirm_required"
+
+
+async def test_step_agents_enabling_friday_with_confirm_saves(config_flow, fake_hass):
+    flow = _flow(config_flow, fake_hass)
+    res = await flow.async_step_agents({"friday_automator": True, "friday_confirm": True})
+    assert res["type"] == "create_entry"
+    # the acknowledgement checkbox is not persisted as config
+    assert "friday_confirm" not in flow._data
+
+
+async def test_step_agents_disabling_friday_needs_no_confirm(config_flow, fake_hass):
+    flow = _flow(config_flow, fake_hass)
+    res = await flow.async_step_agents({"friday_automator": False, "proximity_volume": True})
+    assert res["type"] == "create_entry"
 
 
 async def test_step_core_renders_fields(config_flow, fake_hass):
