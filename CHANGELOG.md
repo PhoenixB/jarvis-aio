@@ -8,7 +8,7 @@ Four capabilities from the JARVIS architecture roadmap, built to fit the existin
 
 **Zorin/Linux host telemetry.** The infrastructure audit and the `system_diagnostics` tool now read the physical server's stress signals straight from the kernel — CPU package temperature, system memory pressure (where a runaway local model shows up first), and NVMe I/O saturation — with **zero new dependencies** (stdlib `/proc` and `/sys` reads, done off the event loop). Critical host stress is spoken through the same audit that already surfaces infrastructure faults, so a hot or thrashing host that would otherwise only show up as sluggish AI latency becomes an explicit alert. It's self-limiting: on a host that doesn't expose those kernel files, every metric simply reads as unavailable and nothing is graded.
 
-
+## [7.95.1] — SweetHome3D floor-plan import helper
 
 Importing a floor plan into the Residence tab's `floor_plan_rooms` config no longer means hand-escaping JSON. A new helper, `scripts/sweethome3d_to_floorplan.py`, converts a SweetHome3D JSON export into the exact `{floor: {rooms: [{name, x, y, w, h}], labels: []}}` shape JARVIS reads for room adjacency — turning each SweetHome3D `room` polygon into its bounding box, grouping by level, with options to rescale centimetres (`--scale`), shift the plan to a `(0,0)` origin (`--origin-zero`), and emit a paste-ready escaped string (`--as-config-string`). If an export contains only walls and furniture with no rooms drawn, the tool says so plainly instead of producing an empty plan.
 
