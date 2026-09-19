@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/stale@v10
-
+        with:
           # "awaiting-response" acts as the stale label — you apply it by hand.
           stale-issue-label: 'awaiting-response'
           stale-pr-label: 'awaiting-response'
